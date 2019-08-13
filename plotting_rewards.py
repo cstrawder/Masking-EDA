@@ -13,19 +13,14 @@ plot number of rewards as a function of time (days) for all mice
 from __future__ import division
 import numpy as np
 import h5py
-import fileIO
 from matplotlib import pyplot as plt
 import pandas as pd 
 from behaviorAnalysis import get_files
 
 
 mice = ['460312', '460314', '457228']
-
         
 fig, axes = plt.subplots(len(mice),1)
-
-
-
 
 for im, mouse in enumerate(mice):
     numRewards = []
@@ -36,7 +31,7 @@ for im, mouse in enumerate(mice):
         trialResponse = d['trialResponse'].value
         trialRewardDir = d['trialRewardDir'][:-1]
         
-        numRewards = 0
+        trialRewards = 0
         
         if 'rewardFrames' in d.keys():
             rewardFrames = d['rewardFrames'].value
@@ -51,11 +46,13 @@ for im, mouse in enumerate(mice):
             
         for trial, rew in zip(trialResponse, trialRewardDir):
             if trial==0 & rew==0:
-                numRewards+=1
+                trialRewards+=1
             elif rew==1:
-                numRewards+=1
+                trialRewards+=1
             else:
                 pass
+            
+        numRewards.append(trialRewards)
 
         d.close()
     

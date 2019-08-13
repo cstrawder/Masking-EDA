@@ -38,7 +38,6 @@ for i, direction in enumerate([-1,1]):
 hits = np.squeeze(np.array(hits))
 misses = np.squeeze(np.array(misses))
 noResps = np.squeeze(np.array(noResps))
-resp = hits+misses
 totalTrials = hits+misses+noResps
 
 # here call no_go movement function? 
@@ -82,18 +81,23 @@ if 0 in trialTargetFrames:
 no_goR = sum(no_goTurnDir[no_goTurnDir==1])
 no_goL = sum(no_goTurnDir[no_goTurnDir==-1])*-1
 
-misses = np.insert(misses, 0, [no_goR, no_goL], axis=1)  #add the no_go move trials to misses array 
+#misses = np.insert(misses, 0, [no_goR, no_goL], axis=1)  #add the no_go move trials to misses array 
   
 
-for no_goNum, no_goDen, num, denom, title in zip([no_goCorrect, no_goCorrect,no_goR],
-                                                 [no_goTotal, no_goTotal, no_goMove],
-                                                [hits, hits, resp], 
+for no_goNum, no_goDen, num, denom, title in zip([no_goCorrect, no_goCorrect,no_goMove],
+                                                 [no_goTotal, no_goTotal, no_goTotal],
+                                                [hits, hits, hits+misses], 
                                                 [totalTrials, hits+misses, totalTrials],
                                                  ['Percent Correct', 'Percent Correct Given Response', 'Total response rate']):
     fig, ax = plt.subplots()
     ax.plot(np.unique(targetLengths), num[0]/denom[0], 'bo-')
     ax.plot(np.unique(targetLengths), num[1]/denom[1], 'ro-')
     ax.plot(0, no_goNum/no_goDen, 'ko')
+    if no_goNum == no_goMove:
+        ax.plot(0, no_goR/no_goMove, 'ro')
+        ax.plot(0, no_goL/no_goMove, 'bo')
+        
+    #ax.annotate(denom, (np.unique(targetLengths), denom))
     
     '''chanceRates = [[[i/n for i in scipy.stats.binom.interval(0.95,n,0.5)] for n in h] for h in denom]
     chanceRates = np.array(chanceRates)
@@ -108,10 +112,15 @@ for no_goNum, no_goDen, num, denom, title in zip([no_goCorrect, no_goCorrect,no_
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.tick_params(direction='out',top=False,right=False)
+
+
             
-    if 0 in trialTargetFrames:   
-        a = ax.get_xticks().tolist()
-        a = [int(i) for i in a]    
-        a[-1]='no-go' 
-        ax.set_xticklabels(a)
+if 0 in trialTargetFrames:   
+    a = ax.get_xticks().tolist()
+    a = [int(i) for i in a]    
+    a[0]='no-go' 
+    ax.set_xticklabels(a)
+    
+    
+    
 
