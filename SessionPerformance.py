@@ -39,7 +39,7 @@ df['CumPercentCorrect'] = df['trialResp'].cumsum()
 index = df.index
 values = df.values
 
-
+#function? 
 rightCorr = df[(df['trialResp']==1) & (df['rewardDir']==1)]
 leftCorr = df[(df['trialResp']==1) & (df['rewardDir']==-1)]
 nogoCorr = df[(df['trialResp']==1) & (df['rewardDir']==0)]
@@ -56,11 +56,15 @@ leftNoResp = df[(df['trialResp']==0) & (df['rewardDir']==-1)]
 
 plt.figure()
 plt.plot(df['CumPercentCorrect'])
-plt.plot(rightCorr, 'ro')
-plt.plot(leftCorr, 'bo')
-plt.plot(nogoCorr, 'go')
+plt.plot(rightCorr, 'r^')
+plt.plot(leftCorr, 'b^')
+plt.plot(nogoCorr, 'g^')
 
-plt.plot(rightMiss, 'rs')
+plt.plot(rightMiss, 'rv')
+plt.plot(leftMiss, 'bv')
+plt.plot(nogoMiss, 'gv')
+
+plt.plot(rightNoResp, 'ro', mec='r', mfc='none')
 
 
 plt.title(f.split('_')[-3:-1])
