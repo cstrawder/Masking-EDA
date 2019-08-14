@@ -31,27 +31,37 @@ for i, trial in enumerate(trialTargetFrames):
     if trial==0:
         trialRewardDirection[i] = 0 
 
-data = zip(trialResponse, trialTargetFrames, trialRewardDirection)
+data = zip(trialRewardDirection, trialResponse)
 
-
-
-#create a dataframe 
-#add columns measuring performance (cumulative % correct?)
-#plot the dataframe
-
-df = pd.DataFrame(data, index=trialResponseFrame, columns=['trialResp', 'trialTargetFrames', 'targetLoc'])
+df = pd.DataFrame(data, index=trialResponseFrame, columns=['rewardDir', 'trialResp'])
 df['CumPercentCorrect'] = df['trialResp'].cumsum()
+
+index = df.index
+values = df.values
+
+
+rightCorr = df[(df['trialResp']==1) & (df['rewardDir']==1)]
+leftCorr = df[(df['trialResp']==1) & (df['rewardDir']==-1)]
+nogoCorr = df[(df['trialResp']==1) & (df['rewardDir']==0)]
+
+rightMiss = df[(df['trialResp']==-1) & (df['rewardDir']==1)]
+leftMiss = df[(df['trialResp']==-1) & (df['rewardDir']==-1)]
+nogoMiss = df[(df['trialResp']==-1) & (df['rewardDir']==0)]
+
+rightNoResp = df[(df['trialResp']==0) & (df['rewardDir']==1)]
+leftNoResp = df[(df['trialResp']==0) & (df['rewardDir']==-1)]
+
+
 
 
 plt.figure()
 plt.plot(df['CumPercentCorrect'])
+plt.plot(rightCorr, 'ro')
+plt.plot(leftCorr, 'bo')
+plt.plot(nogoCorr, 'go')
 
-for i, j in enumerate(df['targetLoc']):
-    if j==1:
-        plt.plot(trialResponseFrame[i], df.iloc['CumPercentCorrect'], 'ro')
-    elif j==-1:
-        plt.plot(trialResponseFrame[i], df.loc[df.iloc['CumPercentCorrect'] == i], 'bo')
+plt.plot(rightMiss, 'rs')
+
 
 plt.title(f.split('_')[-3:-1])
 plt.show()
- #, trialRewardDirection, trialTargetFrames)
