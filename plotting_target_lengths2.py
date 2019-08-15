@@ -55,7 +55,8 @@ if 0 in trialTargetFrames:        # this already excludes repeats
     no_goTurnDir = []
   
     stimStart = d['trialStimStartFrame'].value[prevTrialIncorrect==False]
-    trialOpenLoop = d['trialOpenLoopFrames'].value[prevTrialIncorrect==False]
+    trialOpenLoop = d['trialOpenLoopFrames'][:-1]
+    trialOpenLoop = trialOpenLoop[prevTrialIncorrect==False]
     trialRespFrames = d['trialResponseFrame'].value[prevTrialIncorrect==False]   #gives the frame number of a response
     deltaWheel = d['deltaWheelPos'].value
     
@@ -102,6 +103,7 @@ for no_goNum, no_goDen, num, denom, title in zip([no_goCorrect, no_goCorrect,no_
     fig, ax = plt.subplots()
     ax.plot(np.unique(targetLengths), num[0]/denom[0], 'bo-')
     ax.plot(np.unique(targetLengths), num[1]/denom[1], 'ro-')
+    ax.plot(np.unique(targetLengths), (num[0]+num[1])/(denom[0]+denom[1]), 'ko-')  #plots the combined average 
     ax.plot(0, no_goNum/no_goDen, 'go')
     if no_goNum == no_goMove:
         ax.plot(0, no_goR/no_goMove, 'ro')   #plot the side that was turned in no-go
