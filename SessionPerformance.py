@@ -51,7 +51,10 @@ nogoMiss = df[(df['trialResp']==-1) & (df['rewardDir']==0)]
 rightNoResp = df[(df['trialResp']==0) & (df['rewardDir']==1)]
 leftNoResp = df[(df['trialResp']==0) & (df['rewardDir']==-1)]
 
-
+# for i in nogoMiss:
+# add in code that determines which direction was turned
+# and plot by half-filling marker that color
+    
 
 
 plt.figure()
