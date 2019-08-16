@@ -56,15 +56,16 @@ leftNoResp = df[(df['trialResp']==0) & (df['rewardDir']==-1)]
 
 plt.figure()
 plt.plot(df['CumPercentCorrect'])
-plt.plot(rightCorr, 'r^')
-plt.plot(leftCorr, 'b^')
-plt.plot(nogoCorr, 'g^')
+plt.plot(rightCorr, 'r^', ms=10)
+plt.plot(leftCorr, 'b^', ms=10)
+plt.plot(nogoCorr, 'g^', ms=10)
 
-plt.plot(rightMiss, 'rv')
-plt.plot(leftMiss, 'bv')
-plt.plot(nogoMiss, 'gv')
+plt.plot(rightMiss, 'rv', ms=10)
+plt.plot(leftMiss, 'bv', ms=10)
+plt.plot(nogoMiss, 'gv', ms=10, markerfacecoloralt='red', fillstyle='right')  # set marker face fill style to reflect direction turned (e.g. half red)
 
-plt.plot(rightNoResp, 'ro', mec='r', mfc='none')
+plt.plot(rightNoResp, 'o', mec='r', mfc='none',  ms=10)
+plt.plot(leftNoResp, 'o', mec='b', mfc='none', ms=10)
 
 
 plt.title(f.split('_')[-3:-1])
