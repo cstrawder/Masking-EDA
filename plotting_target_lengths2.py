@@ -93,7 +93,7 @@ no_goL = sum(no_goTurnDir[no_goTurnDir==-1])*-1
 
 #misses = np.insert(misses, 0, [no_goR, no_goL], axis=1)  #add the no_go move trials to misses array 
   
-texts = [str(j) for i in hits for j in i]
+texts = [str(j) for i in hits for j in i] #to add n as text for each point
 
 for no_goNum, no_goDen, num, denom, title in zip([no_goCorrect, no_goCorrect,no_goMove],
                                                  [no_goTotal, no_goTotal, no_goTotal],
@@ -101,7 +101,7 @@ for no_goNum, no_goDen, num, denom, title in zip([no_goCorrect, no_goCorrect,no_
                                                 [totalTrials, hits+misses, totalTrials],
                                                  ['Percent Correct', 'Percent Correct Given Response', 'Total response rate']):
     fig, ax = plt.subplots()
-    ax.plot(np.unique(targetLengths), num[0]/denom[0], 'bo-')
+    ax.plot(np.unique(targetLengths), num[0]/denom[0], 'bo-')  #here [0] is right trials and [1] is left
     ax.plot(np.unique(targetLengths), num[1]/denom[1], 'ro-')
     ax.plot(np.unique(targetLengths), (num[0]+num[1])/(denom[0]+denom[1]), 'ko-')  #plots the combined average 
     ax.plot(0, no_goNum/no_goDen, 'go')
