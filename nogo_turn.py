@@ -18,7 +18,7 @@ def nogo_turn(data, ignoreRepeats=True):
     trialTargetFrames = d['trialTargetFrames'].value[:len(trialResponse)]
     trialRespFrames = d['trialResponseFrame'].value
     trialOpenLoop = d['trialOpenLoopFrames'].value 
-    stimStart = d['trialStimStartFrames'].value
+    stimStart = d['trialStimStartFrame'].value
     deltaWheel = d['deltaWheelPos'].value
     
     no_goTurnDir = []   #returns an array of values that show the direction turned for ALL no-go trials,
@@ -38,7 +38,7 @@ def nogo_turn(data, ignoreRepeats=True):
             prevTrialIncorrect = d['trialRepeat'].value
         else:
             prevTrialIncorrect = np.concatenate(([False],trialResponseOG[:-1]<1))
-        stimStart = d['trialStimStartFrames'][:len(prevTrialIncorrect)]
+        stimStart = d['trialStimStartFrame'][:len(prevTrialIncorrect)]
         trialResponse = trialResponseOG[prevTrialIncorrect==False]
         trialTargetFrames = trialTargetFrames[prevTrialIncorrect==False]
         stimStart = stimStart[prevTrialIncorrect==False]
@@ -75,6 +75,6 @@ def nogo_turn(data, ignoreRepeats=True):
             no_goTurnDir.append(-1)
     
     no_goTurnDir = np.array(no_goTurnDir)
-    return no_goTurnDir
+   # return no_goTurnDir
     print('no-go turn R:  ' + str(sum(no_goTurnDir==1)))
     print('no-go turn L:  ' + str(sum(no_goTurnDir==-1)))
