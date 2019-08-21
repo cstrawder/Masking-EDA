@@ -75,6 +75,12 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True):
             no_goTurnDir.append(-1)
     
     no_goTurnDir = np.array(no_goTurnDir)
-    return no_goTurnDir
-    print('no-go turn R:  ' + str(sum(no_goTurnDir==1)))
-    print('no-go turn L:  ' + str(sum(no_goTurnDir==-1)))
+    
+    
+    
+    if returnArray==True:    
+        return no_goTurnDir
+    else:
+        print('no-go turn R:  ' + str(sum(no_goTurnDir==1)))
+        print('no-go turn L:  ' + str(sum(no_goTurnDir==-1)))        
+        

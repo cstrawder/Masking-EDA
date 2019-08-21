@@ -56,7 +56,7 @@ leftNoResp = df[(df['trialResp']==0) & (df['rewardDir']==-1)]
 # add in code that determines which direction was turned
 # and plot by half-filling marker that color
     
-no_gos = nogo_turn(d, ignoreRepeats=False)
+no_gos = nogo_turn(d, ignoreRepeats=False)  # False bc we want to see all the trials in order 
 nogoMiss = pd.DataFrame(nogoMiss['CumPercentCorrect'])
 
 plt.figure()
