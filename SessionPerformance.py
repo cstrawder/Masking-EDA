@@ -11,6 +11,7 @@ import fileIO
 import numpy as np
 import pandas as pd 
 from matplotlib import pyplot as plt
+from nogo_turn import nogo_turn
 
 """
 plots the choices (in temporal order) over the length of a session
@@ -73,3 +74,5 @@ plt.plot(leftNoResp['CumPercentCorrect'], 'o', mec='b', mfc='none', ms=10)
 
 plt.title(f.split('_')[-3:-1])
 plt.show()
+
+no_gos = nogo_turn(d, ignoreRepeats=False)
