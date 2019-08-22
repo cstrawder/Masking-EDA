@@ -15,6 +15,7 @@ import fileIO, h5py
 import numpy as np
 import pandas as pd
 import seaborn as sns 
+from behaviorAnalysis import formatFigure
 
 
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
@@ -24,16 +25,36 @@ trialResponse = d['trialResponse'].value
 end = len(trialResponse)
 trialRewardDirection = d['trialRewardDir'][:end]
 trialTargetFrames = d['trialTargetFrames'][:end]
-trialStimStartFrame = d['trialStimStartFrame'][:end]
-trialResponseFrame = d['trialResponseFrame'][:end]
+trialStimStartFrame = d['trialStimStartFrame'].value
+trialResponseFrame = d['trialResponseFrame'][:end]    #if they don't respond, then nothing is recorded here - this limits df to length of this variable
 trialOpenLoopFrames = d['trialOpenLoopFrames'][:end]
+quiescentMoveFrames = d['quiescentMoveFrames'].value
+trialEndFrame = d['trialEndFrame'][:end]
 deltaWheel = d['deltaWheelPos'].value
 
-data = zip(trialTargetFrames, trialRewardDirection, trialResponse, trialStimStartFrame, trialResponseFrame, trialOpenLoopFrames)
+for i, trial in enumerate(trialTargetFrames):
+    if trial==0:
+        trialRewardDirection[i] = 0
 
-df = pd.DataFrame(data, index=range(len(trialResponse)), columns=['targetFrames', 'rewDir', 'resp', 'stimStart', 'respFrame', 'trialOpenLoopFrames'])
+data = zip(trialRewardDirection, trialResponse, trialStimStartFrame, trialResponseFrame)
 
-print(trialResponseFrame-trialStimStartFrame-trialOpenLoopFrames) * 8.3
+df = pd.DataFrame(data, index=range(len(trialResponse)), columns=['rewDir', 'resp', 'stimStart', 'respFrame'])
+
+df['responseTime'] = (trialResponseFrame-trialStimStartFrame-trialOpenLoopFrames)
+
+rightTrials = df[df['rewDir']==1]
+rightCorrect = rightTrials[rightTrials['resp']==1]
+
+leftTrials = df[df['rewDir']==-1]
+leftCorrect = leftTrials[leftTrials['resp']==1]
+
+
+
+plt.figure()
+plt.hist(rightCorrect['responseTime'], bins=50, color='r', alpha=.5)   # choose bin-width based on freedman-diaconis
+plt.hist(leftCorrect['responseTime'], bins=50, color='b', alpha=.5)
+plt.axvline(np.mean(leftCorrect['responseTime']), c='b', ls='--')
+plt.axvline(np.mean(rightCorrect['responseTime']), c='r', ls='--')
 
 '''want:
 rew Dir so we know what trial type it was (L or R)
