@@ -29,7 +29,7 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True):
         no_goCorrect = len(trialResponse[(trialResponse==1) & (trialTargetFrames==0)]) 
         print('No-go Correct:  ' + str(round(no_goCorrect/no_goTotal, 2)) + ' of ' + str(no_goTotal))
     else:
-        print('There were no repeated trials')
+        print('There were no no-go trials')
 
 
     if ignoreRepeats== True: 
