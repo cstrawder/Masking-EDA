@@ -15,9 +15,9 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True):
 
     d = data
     trialResponse = d['trialResponse'].value
-    trialTargetFrames = d['trialTargetFrames'].value[:len(trialResponse)]
+    trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]
     trialRespFrames = d['trialResponseFrame'].value
-    trialOpenLoop = d['trialOpenLoopFrames'].value 
+    trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)] 
     stimStart = d['trialStimStartFrame'].value
     deltaWheel = d['deltaWheelPos'].value
     
@@ -35,13 +35,13 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True):
     if ignoreRepeats== True: 
         trialResponseOG = d['trialResponse'].value
         if 'trialRepeat' in d.keys():
-            prevTrialIncorrect = d['trialRepeat'].value
+            prevTrialIncorrect = d['trialRepeat'][:len(trialResponseOG)]
         else:
             prevTrialIncorrect = np.concatenate(([False],trialResponseOG[:-1]<1))
-        stimStart = d['trialStimStartFrame'][:len(prevTrialIncorrect)]
+            
+        stimStart = stimStart[prevTrialIncorrect==False]
         trialResponse = trialResponseOG[prevTrialIncorrect==False]
         trialTargetFrames = trialTargetFrames[prevTrialIncorrect==False]
-        stimStart = stimStart[prevTrialIncorrect==False]
         trialRespFrames = trialRespFrames[prevTrialIncorrect==False]
         trialOpenLoop = trialOpenLoop[prevTrialIncorrect==False]
     elif ignoreRepeats==False:
