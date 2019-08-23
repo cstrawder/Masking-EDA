@@ -30,7 +30,7 @@ trialResponseFrame = d['trialResponseFrame'][:end]    #if they don't respond, th
 trialOpenLoopFrames = d['trialOpenLoopFrames'][:end]
 quiescentMoveFrames = d['quiescentMoveFrames'].value
 trialEndFrame = d['trialEndFrame'][:end]
-deltaWheel = d['deltaWheelPos'].value
+deltaWheel = d['deltaWheelPos'].value   # has wheel movement for every frame of session
 
 for i, trial in enumerate(trialTargetFrames):
     if trial==0:
@@ -40,21 +40,28 @@ data = zip(trialRewardDirection, trialResponse, trialStimStartFrame, trialRespon
 
 df = pd.DataFrame(data, index=range(len(trialResponse)), columns=['rewDir', 'resp', 'stimStart', 'respFrame'])
 
-df['responseTime'] = (trialResponseFrame-trialStimStartFrame-trialOpenLoopFrames)
+df['responseTime'] = (trialResponseFrame-trialStimStartFrame-trialOpenLoopFrames)*8.33
 
 rightTrials = df[df['rewDir']==1]
 rightCorrect = rightTrials[rightTrials['resp']==1]
 
 leftTrials = df[df['rewDir']==-1]
-leftCorrect = leftTrials[leftTrials['resp']==1]
+leftCorrect = leftTrials[leftTrials['resp']==1]    #need to take delta wheel into account, to know when they started moving the wheel 
+
+# does wheel pos reset for each trial start?? ask Sam
 
 
 
-plt.figure()
-plt.hist(rightCorrect['responseTime'], bins=50, color='r', alpha=.5)   # choose bin-width based on freedman-diaconis
+fig, ax = plt.subplots()
+plt.hist(rightCorrect['responseTime'], bins=30, color='r', alpha=.5)   # choose bin-width based on freedman-diaconis
 plt.hist(leftCorrect['responseTime'], bins=50, color='b', alpha=.5)
-plt.axvline(np.mean(leftCorrect['responseTime']), c='b', ls='--')
-plt.axvline(np.mean(rightCorrect['responseTime']), c='r', ls='--')
+plt.axvline(np.median(leftCorrect['responseTime']), c='b', ls='--')
+plt.axvline(np.mean(rightCorrect['responseTime']), c='r', ls='--')    # mean or median?
+
+
+
+formatFigure(fig, ax, title='Response time for trial direction', xLabel='Response Time (ms)')
+
 
 '''want:
 rew Dir so we know what trial type it was (L or R)
@@ -64,7 +71,7 @@ stimstart so we know when the stim came on screen
 trialResponseFrames so we know time to response
 
 want to plot a distribution of both trial types and estimate parameters for each side 
-
+for response time, it would be great to know time from moving wheel to hitting normRew
 
 qperiod:
 trialstartframes, openloop, quiescentframes (scalar), quiescent moveframes (frames in which movement ended/restarted q period) ** think about this one more
