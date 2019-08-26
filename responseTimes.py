@@ -14,6 +14,7 @@ from __future__ import division
 import fileIO, h5py
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import seaborn as sns 
 from behaviorAnalysis import formatFigure
 from freedmanDiaconis import freedman_diaconis
@@ -91,4 +92,5 @@ trialstartframes, openloop, quiescentframes (scalar), quiescent moveframes (fram
 
 
 nogos:
-distance and direction turned for nogo, as well as responsetime
+distance and direction turned for nogo, as well as responsetime'''
+
