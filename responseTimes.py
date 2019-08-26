@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns 
 from behaviorAnalysis import formatFigure
+from freedmanDiaconis import freedman_diaconis
 
 
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
@@ -48,15 +49,26 @@ rightCorrect = rightTrials[rightTrials['resp']==1]
 leftTrials = df[df['rewDir']==-1]
 leftCorrect = leftTrials[leftTrials['resp']==1]    #need to take delta wheel into account, to know when they started moving the wheel 
 
+rightArray = np.array(rightCorrect['responseTime'])
+leftArray = np.array(leftCorrect['responseTime'])
+
+
+
+
+
+
 # does wheel pos reset for each trial start?? ask Sam
 
 
 
 fig, ax = plt.subplots()
-plt.hist(rightCorrect['responseTime'], bins=30, color='r', alpha=.5)   # choose bin-width based on freedman-diaconis
+plt.hist(rightCorrect['responseTime'], bins=50, color='r', alpha=.5)   # choose bin-width based on freedman-diaconis
 plt.hist(leftCorrect['responseTime'], bins=50, color='b', alpha=.5)
 plt.axvline(np.median(leftCorrect['responseTime']), c='b', ls='--')
 plt.axvline(np.mean(rightCorrect['responseTime']), c='r', ls='--')    # mean or median?
+
+
+# use gaussian KDE
 
 
 
@@ -69,6 +81,7 @@ trial target frames so we know which trials were nogos
 trialResponse so we know if they answered correctly 
 stimstart so we know when the stim came on screen
 trialResponseFrames so we know time to response
+deltaWheel bc we want to know when they started moving the wheel and how quickly they moved it to center
 
 want to plot a distribution of both trial types and estimate parameters for each side 
 for response time, it would be great to know time from moving wheel to hitting normRew
