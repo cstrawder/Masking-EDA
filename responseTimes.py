@@ -38,9 +38,11 @@ for i, trial in enumerate(trialTargetFrames):
     if trial==0:
         trialRewardDirection[i] = 0
 
-data = zip(trialRewardDirection, trialResponse, trialStimStartFrame, trialResponseFrame)
+data = list(zip(trialRewardDirection, trialResponse, trialStimStartFrame, trialResponseFrame))
 
-df = pd.DataFrame(data, index=range(len(trialResponse)), columns=['rewDir', 'resp', 'stimStart', 'respFrame'])
+index = range(len(trialResponse))
+
+df = pd.DataFrame(data, index=index, columns=['rewDir', 'resp', 'stimStart', 'respFrame'])
 
 df['responseTime'] = (trialResponseFrame-trialStimStartFrame-trialOpenLoopFrames)*8.33
 
@@ -53,22 +55,24 @@ leftCorrect = leftTrials[leftTrials['resp']==1]    #need to take delta wheel int
 rightArray = np.array(rightCorrect['responseTime'])
 leftArray = np.array(leftCorrect['responseTime'])
 
-
-
-
+rBins = freedman_diaconis(rightArray, returnas='bins')
+lBins = freedman_diaconis(leftArray, returnas='bins')
 
 
 # does wheel pos reset for each trial start?? ask Sam
 
 
+#
+#fig, ax = plt.subplots()
+#plt.hist(rightCorrect['responseTime'], bins=rBins, rwidth=4.1, color='r', alpha=.5)   # choose bin-width based on freedman-diaconis
+#plt.hist(leftCorrect['responseTime'], bins=lBins, color='b', alpha=.5)
+#plt.axvline(np.median(leftCorrect['responseTime']), c='b', ls='--')
+#plt.axvline(np.mean(rightCorrect['responseTime']), c='r', ls='--')    # mean or median?
 
-fig, ax = plt.subplots()
-plt.hist(rightCorrect['responseTime'], bins=50, color='r', alpha=.5)   # choose bin-width based on freedman-diaconis
-plt.hist(leftCorrect['responseTime'], bins=50, color='b', alpha=.5)
-plt.axvline(np.median(leftCorrect['responseTime']), c='b', ls='--')
-plt.axvline(np.mean(rightCorrect['responseTime']), c='r', ls='--')    # mean or median?
-
-
+plt.figure()
+sns.distplot(rightArray)
+sns.distplot(leftArray)
+plt.title('Distribution of response times by side:  ' + '-'.join(f.split('_')[-3:-1]))
 # use gaussian KDE
 
 
