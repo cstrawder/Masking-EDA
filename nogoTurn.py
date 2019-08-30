@@ -26,19 +26,19 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True):
 
     if 0 in trialTargetFrames:
         no_goTotal = len(trialTargetFrames[trialTargetFrames==0])
-        no_goCorrect = len(trialResponse[(trialResponse==1) & (trialTargetFrames==0)]) 
-        print('No-go Correct:  ' + str(round(no_goCorrect/no_goTotal, 2)) + ' of ' + str(no_goTotal))
+        no_goCorrect = len(trialResponse[(trialResponse==1) & (trialTargetFrames==0)])  
     else:
         print('There were no no-go trials')
 
 
-    if ignoreRepeats== True: 
+    if ignoreRepeats == True: 
         trialResponseOG = d['trialResponse'].value
         if 'trialRepeat' in d.keys():
             prevTrialIncorrect = d['trialRepeat'][:len(trialResponseOG)]
         else:
             prevTrialIncorrect = np.concatenate(([False],trialResponseOG[:-1]<1))
-            
+        no_goTotal = len(trialTargetFrames[(prevTrialIncorrect==False) & (trialTargetFrames==0)])
+        no_goCorrect = len(trialTargetFrames[(prevTrialIncorrect==False) & (trialResponse==1) & (trialTargetFrames==0)])
         stimStart = stimStart[prevTrialIncorrect==False]
         trialResponse = trialResponseOG[prevTrialIncorrect==False]
         trialTargetFrames = trialTargetFrames[prevTrialIncorrect==False]
@@ -49,10 +49,11 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True):
    
     
     stimStart = stimStart[trialTargetFrames==0]
+    no_goResp = trialResponse[trialTargetFrames==0]     #trial response
     trialRespFrames = trialRespFrames[trialTargetFrames==0]
     trialOpenLoop = trialOpenLoop[trialTargetFrames==0]
     deltaWheel = d['deltaWheelPos'].value
-    no_goResp = trialResponse[trialTargetFrames==0]
+    
     
     stimStart += trialOpenLoop
     
@@ -81,6 +82,7 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True):
     if returnArray==True:    
         return no_goTurnDir
     else:
+        print('No-go Correct:  ' + str(round(no_goCorrect/no_goTotal, 2)) + ' of ' + str(no_goTotal))
         print('no-go turn R:  ' + str(sum(no_goTurnDir==1)))
         print('no-go turn L:  ' + str(sum(no_goTurnDir==-1)))        
         
