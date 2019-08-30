@@ -93,7 +93,7 @@ no_goL = sum(no_goTurnDir[no_goTurnDir==-1])*-1
 
 #misses = np.insert(misses, 0, [no_goR, no_goL], axis=1)  #add the no_go move trials to misses array 
   
-texts = [str(j) for i in hits for j in i] #to add n as text for each point
+#texts = [str(j) for i in hits for j in i] #to add n as text for each point
 
 for no_goNum, no_goDen, num, denom, title in zip([no_goCorrect, no_goCorrect,no_goMove],
                                                  [no_goTotal, no_goTotal, no_goTotal],
@@ -108,7 +108,7 @@ for no_goNum, no_goDen, num, denom, title in zip([no_goCorrect, no_goCorrect,no_
     if no_goNum == no_goMove:
         ax.plot(0, no_goR/no_goMove, 'ro')   #plot the side that was turned in no-go
         ax.plot(0, no_goL/no_goMove, 'bo')
-    ax.text(np.unique(targetLengths), num[0]/denom[0], str(texts))    
+  #  ax.text(np.unique(targetLengths), num[0]/denom[0], str(texts))    
     formatFigure(fig, ax, xLabel='Target Length (frames)', yLabel='percent trials', 
                  title=title + " :  " + '-'.join(f.split('_')[-3:-1]))
     ax.set_xlim([-2, targetLengths[-1]+2])
