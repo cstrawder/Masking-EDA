@@ -95,7 +95,7 @@ no_goL = sum(no_goTurnDir[no_goTurnDir==-1])*-1
   
 #texts = [str(j) for i in hits for j in i] #to add n as text for each point
 
-for no_goNum, no_goDen, num, denom, title in zip([no_goCorrect, no_goCorrect,no_goMove],
+for no_goNum, no_goDenom, num, denom, title in zip([no_goCorrect, no_goCorrect,no_goMove],
                                                  [no_goTotal, no_goTotal, no_goTotal],
                                                 [hits, hits, hits+misses], 
                                                 [totalTrials, hits+misses, totalTrials],
@@ -104,11 +104,12 @@ for no_goNum, no_goDen, num, denom, title in zip([no_goCorrect, no_goCorrect,no_
     ax.plot(np.unique(targetLengths), num[0]/denom[0], 'bo-')  #here [0] is right trials and [1] is left
     ax.plot(np.unique(targetLengths), num[1]/denom[1], 'ro-')
     ax.plot(np.unique(targetLengths), (num[0]+num[1])/(denom[0]+denom[1]), 'ko-')  #plots the combined average 
-    ax.plot(0, no_goNum/no_goDen, 'go')
+    #ax.text(np.unique(targetLengths), num[0]/denom[0], totalTrials) 
+    ax.plot(0, no_goNum/no_goDenom, 'go')
     if no_goNum == no_goMove:
-        ax.plot(0, no_goR/no_goMove, 'ro')   #plot the side that was turned in no-go
-        ax.plot(0, no_goL/no_goMove, 'bo')
-  #  ax.text(np.unique(targetLengths), num[0]/denom[0], str(texts))    
+        ax.plot(0, no_goR/no_goMove, 'g>')   #plot the side that was turned in no-go with an arrow in that direction
+        ax.plot(0, no_goL/no_goMove, 'g<')
+       
     formatFigure(fig, ax, xLabel='Target Length (frames)', yLabel='percent trials', 
                  title=title + " :  " + '-'.join(f.split('_')[-3:-1]))
     ax.set_xlim([-2, targetLengths[-1]+2])
@@ -120,11 +121,11 @@ for no_goNum, no_goDen, num, denom, title in zip([no_goCorrect, no_goCorrect,no_
 
     #ax.text(np.unique(targetLengths), (num[0]/denom[0]), str(denom))
             
-if 0 in trialTargetFrames:   
-    a = ax.get_xticks().tolist()
-    a = [int(i) for i in a]    
-    a[0]='no-go' 
-    ax.set_xticklabels(a)
+    if 0 in trialTargetFrames:   
+        a = ax.get_xticks().tolist()
+        a = [int(i) for i in a]    
+        a[0]='no-go' 
+        ax.set_xticklabels(a)
     
     
     

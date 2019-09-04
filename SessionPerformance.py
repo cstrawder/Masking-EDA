@@ -71,7 +71,7 @@ for nogo, x, direction in zip(no_gos, nogoMiss.index, nogoMiss['CumPercentCorrec
     if nogo > 0:
         plt.plot(x, direction, 'gv', ms=10, markerfacecoloralt='red', fillstyle='left')  # set marker face fill style to reflect direction turned (e.g. half red)
     elif nogo < 0:
-        plt.plot(x, direction, 'gv', ms=10, markerfacecoloralt='blue', fillstyle='right')
+        plt.plot(x, direction, 'gv', ms=10)
 plt.plot(rightNoResp['CumPercentCorrect'], 'o', mec='r', mfc='none',  ms=10)
 plt.plot(leftNoResp['CumPercentCorrect'], 'o', mec='b', mfc='none', ms=10)
 
