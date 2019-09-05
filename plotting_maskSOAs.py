@@ -20,7 +20,7 @@ trialRewardDirection = d['trialRewardDir'].value[:-1]    # leave off last trial,
 trialResponse = d['trialResponse'].value
 maskOnset = d['maskOnset'].value                  # list of ind lengths, does not include no-gos (0)
 trialMaskOnset = d['trialMaskOnset'][:-1] 
-trialTargetFrames = d['trialTargetFrames'][:-1]         # also leaves off last trial
+trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]         # also leaves off last trial
 
 
 # [R stim] , [L stim]
@@ -51,7 +51,6 @@ if 0 in trialTargetFrames:        # this already excludes repeats
   
     stimStart = d['trialStimStartFrame'].value
     trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)]
-    trialOpenLoop = trialOpenLoop[:-1]
     trialRespFrames = d['trialResponseFrame'].value  #gives the frame number of a response
     deltaWheel = d['deltaWheelPos'].value
     
