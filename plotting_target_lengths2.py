@@ -60,10 +60,10 @@ if 0 in trialTargetFrames:        # this already excludes repeats
     trialRespFrames = d['trialResponseFrame'].value[prevTrialIncorrect==False]   #gives the frame number of a response
     deltaWheel = d['deltaWheelPos'].value
     
-    stimStart = stimStart[trialTargetFrames==0]
-    trialRespFrames = trialRespFrames[trialTargetFrames==0]
-    trialOpenLoop = trialOpenLoop[trialTargetFrames==0]
-    no_goResp = trialResponse[trialTargetFrames==0]
+    stimStart = stimStart[(trialTargetFrames==0)]
+    trialRespFrames = trialRespFrames[(trialTargetFrames==0)]
+    trialOpenLoop = trialOpenLoop[(trialTargetFrames==0)]
+    no_goResp = trialResponse[(trialTargetFrames==0)]
     
     stimStart += trialOpenLoop
     

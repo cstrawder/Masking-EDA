@@ -56,25 +56,31 @@ leftNoResp = df[(df['trialResp']==0) & (df['rewardDir']==-1)]
 # add in code that determines which direction was turned
 # and plot by half-filling marker that color
     
-no_gos = nogo_turn(d, ignoreRepeats=False)  # False bc we want to see all the trials in order 
-nogoMiss = pd.DataFrame(nogoMiss['CumPercentCorrect'])
+
 
 plt.figure()
 plt.plot(df['CumPercentCorrect'])
 plt.plot(rightCorr['CumPercentCorrect'], 'r^', ms=10)
 plt.plot(leftCorr['CumPercentCorrect'], 'b^', ms=10)
-plt.plot(nogoCorr['CumPercentCorrect'], 'g^', ms=10)
-
 plt.plot(rightMiss['CumPercentCorrect'], 'rv', ms=10)
 plt.plot(leftMiss['CumPercentCorrect'], 'bv', ms=10)
-for nogo, x, direction in zip(no_gos, nogoMiss.index, nogoMiss['CumPercentCorrect']):
-    if nogo > 0:
-        plt.plot(x, direction, 'gv', ms=10, markerfacecoloralt='red', fillstyle='left')  # set marker face fill style to reflect direction turned (e.g. half red)
-    elif nogo < 0:
-        plt.plot(x, direction, 'gv', ms=10)
 plt.plot(rightNoResp['CumPercentCorrect'], 'o', mec='r', mfc='none',  ms=10)
 plt.plot(leftNoResp['CumPercentCorrect'], 'o', mec='b', mfc='none', ms=10)
 
+
+if 0 in trialTargetFrames:
+
+    no_gos = nogo_turn(d, ignoreRepeats=False)  # False bc we want to see all the trials in order 
+    nogoMiss = pd.DataFrame(nogoMiss['CumPercentCorrect'])
+    plt.plot(nogoCorr['CumPercentCorrect'], 'g^', ms=10)
+    
+    for nogo, x, direction in zip(no_gos, nogoMiss.index, nogoMiss['CumPercentCorrect']):
+        if nogo > 0:
+            plt.plot(x, direction, 'gv', ms=10, markerfacecoloralt='red', fillstyle='left')  # set marker face fill style to reflect direction turned (e.g. half red)
+        elif nogo < 0:
+            plt.plot(x, direction, 'gv', ms=10)
+    
+    
 
 plt.title(f.split('_')[-3:-1])
 plt.show()

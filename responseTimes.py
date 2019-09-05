@@ -85,8 +85,9 @@ rew Dir so we know what trial type it was (L or R)
 trial target frames so we know which trials were nogos
 trialResponse so we know if they answered correctly 
 stimstart so we know when the stim came on screen
-trialResponseFrames so we know time to response
-deltaWheel bc we want to know when they started moving the wheel and how quickly they moved it to center
+trialResponseFrames so we know when they responded
+deltaWheel bc we want to know WHEN they started moving the wheel and how quickly they moved it to center - tis is the response time
+stimStart and Resp create a window within which deltawheal matters 
 
 want to plot a distribution of both trial types and estimate parameters for each side 
 for response time, it would be great to know time from moving wheel to hitting normRew
