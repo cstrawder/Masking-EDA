@@ -72,57 +72,57 @@ def performance_data(mouse, ignoreRepeats=True):
                                  
          
     #  make this a function? 
-        if 0 not in trialTargetFrames:
-            pass
-        elif 0 in trialTargetFrames:     
-            no_goTotal = len(trialTargetFrames[trialTargetFrames==0])
-            no_goCorrect = len(trialResponse[(trialTargetFrames==0) & (trialResponse==1)]) 
-            print('No-go Correct:  ' + str(round(no_goCorrect/no_goTotal, 2)) + ' of ' + str(no_goTotal))
-        
-        #returns an array of values that show the direction turned for ALL no-go trials, then returns % per direction  
-            no_goTurnDir = []
-      
-            stimStart= d['trialStimStartFrame'][:len(trialResponse)]
-            trialRespFrames = d['trialResponseFrame'][:len(trialResponse)]
-            trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)] 
-            deltaWheel = d['deltaWheelPos'].value
-            
-            
-            if ignoreRepeats== True: 
-               stimStart = stimStart[prevTrialIncorrect==False]
-               trialRespFrames = trialRespFrames[prevTrialIncorrect==False]
-               trialOpenLoop = trialOpenLoop[prevTrialIncorrect==False]
-        
-            stimStart = stimStart[trialTargetFrames==0]
-            trialRespFrames = trialRespFrames[trialTargetFrames==0]
-            trialOpenLoop = trialOpenLoop[trialTargetFrames==0]
-            deltaWheel = d['deltaWheelPos'].value
-            no_goResp = trialResponse[trialTargetFrames==0]
-            
-            stimStart += trialOpenLoop
-            
-            startWheelPos = []
-            endWheelPos = []
-            
-            for (start, end, resp) in zip(stimStart, trialRespFrames, no_goResp):
-                if resp==-1:
-                    endWheelPos.append(deltaWheel[end])
-                    startWheelPos.append(deltaWheel[start])
-                
-            endWheelPos = np.array(endWheelPos)
-            startWheelPos = np.array(startWheelPos)   
-            wheelPos = endWheelPos - startWheelPos
-            
-            for i in wheelPos:
-                if i >0:
-                    no_goTurnDir.append(1)
-                else:
-                    no_goTurnDir.append(-1)
-            
-            no_goTurnDir = np.array(no_goTurnDir)
-            print('no-go turn R:  ' + str(sum(no_goTurnDir==1)))
-            print('no-go turn L:  ' + str(sum(no_goTurnDir==-1)))
-        
+#        if 0 not in trialTargetFrames:
+#            pass
+#        elif 0 in trialTargetFrames:     
+#            no_goTotal = len(trialTargetFrames[trialTargetFrames==0])
+#            no_goCorrect = len(trialResponse[(trialTargetFrames==0) & (trialResponse==1)]) 
+#            print('No-go Correct:  ' + str(round(no_goCorrect/no_goTotal, 2)) + ' of ' + str(no_goTotal))
+#        
+#        #returns an array of values that show the direction turned for ALL no-go trials, then returns % per direction  
+#            no_goTurnDir = []
+#      
+#            stimStart= d['trialStimStartFrame'][:len(trialResponse)]
+#            trialRespFrames = d['trialResponseFrame'][:len(trialResponse)]
+#            trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)] 
+#            deltaWheel = d['deltaWheelPos'].value
+#            
+#            
+#            if ignoreRepeats== True: 
+#               stimStart = stimStart[prevTrialIncorrect==False]
+#               trialRespFrames = trialRespFrames[prevTrialIncorrect==False]
+#               trialOpenLoop = trialOpenLoop[prevTrialIncorrect==False]
+#        
+#            stimStart = stimStart[trialTargetFrames==0]
+#            trialRespFrames = trialRespFrames[trialTargetFrames==0]
+#            trialOpenLoop = trialOpenLoop[trialTargetFrames==0]
+#            deltaWheel = d['deltaWheelPos'].value
+#            no_goResp = trialResponse[trialTargetFrames==0]
+#            
+#            stimStart += trialOpenLoop
+#            
+#            startWheelPos = []
+#            endWheelPos = []
+#            
+#            for (start, end, resp) in zip(stimStart, trialRespFrames, no_goResp):
+#                if resp==-1:
+#                    endWheelPos.append(deltaWheel[end])
+#                    startWheelPos.append(deltaWheel[start])
+#                
+#            endWheelPos = np.array(endWheelPos)
+#            startWheelPos = np.array(startWheelPos)   
+#            wheelPos = endWheelPos - startWheelPos
+#            
+#            for i in wheelPos:
+#                if i >0:
+#                    no_goTurnDir.append(1)
+#                else:
+#                    no_goTurnDir.append(-1)
+#            
+#            no_goTurnDir = np.array(no_goTurnDir)
+#            print('no-go turn R:  ' + str(sum(no_goTurnDir==1)))
+#            print('no-go turn L:  ' + str(sum(no_goTurnDir==-1)))
+#        
 
         d.close()
 
