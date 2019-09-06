@@ -14,13 +14,12 @@ For the orientation task, returns a single plot with all information (no no-go t
 """
 
 
-from __future__ import division
 import h5py
 import fileIO
 import numpy as np
-import performanceData
+from performanceData import performance_data
 
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
 d = h5py.File(f)
 
-performanceData.performance_data(mouse='460312', ignoreRepeats=True)
+performance_data(mouse='460312', ignoreRepeats=True)

@@ -8,7 +8,6 @@ Created on Mon Aug 12 12:42:51 2019
 replica of percentCorrectBySideIgnoreRepeats, just turned into a function (maily for use in plotting)
 """
 
-from __future__ import division
 import h5py
 import fileIO
 import numpy as np
@@ -17,7 +16,7 @@ from behaviorAnalysis import get_files, formatFigure
 
 
 def performance_data(mouse, ignoreRepeats=True):
-    mouse='457230'
+    
     def count(resp, direction):
         return len(trialResponse[(trialResponse==resp) & (trialRewardDirection==direction) & (trialTargetFrames!=0)])
         

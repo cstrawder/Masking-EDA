@@ -5,7 +5,6 @@ Created on Tue Aug 13 11:20:20 2019
 @author: svc_ccg
 """
 
-from __future__ import division
 import h5py
 import fileIO
 import numpy as np
