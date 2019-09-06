@@ -10,13 +10,11 @@ including quiescent period violations
 
 """
 
-from __future__ import division
 import fileIO, h5py
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns 
-from behaviorAnalysis import formatFigure
 from freedmanDiaconis import freedman_diaconis
 
 
@@ -44,6 +42,11 @@ index = range(len(trialResponse))
 
 df = pd.DataFrame(data, index=index, columns=['rewDir', 'resp', 'stimStart', 'respFrame'])
 
+#for i, (start, end, resp) in enumerate(zip(trialStimStartFrame, trialEndFrame, trialResponseFrame)):
+    
+
+
+
 df['responseTime'] = (trialResponseFrame-trialStimStartFrame-trialOpenLoopFrames)*8.33
 
 rightTrials = df[df['rewDir']==1]
@@ -58,7 +61,9 @@ leftArray = np.array(leftCorrect['responseTime'])
 rBins = freedman_diaconis(rightArray, returnas='bins')
 lBins = freedman_diaconis(leftArray, returnas='bins')
 
-
+totalTrials = df[df['resp']==1]
+totalTrials = totalTrials[totalTrials['rewDir']!=0]
+totalArray = np.array(totalTrials['responseTime'])
 # does wheel pos reset for each trial start?? ask Sam
 
 
@@ -73,11 +78,11 @@ plt.figure()
 sns.distplot(rightArray)
 sns.distplot(leftArray)
 plt.title('Distribution of response times by side:  ' + '-'.join(f.split('_')[-3:-1]))
+plt.figure()
+sns.distplot(totalArray, color='r')
+
 # use gaussian KDE
 
-
-
-formatFigure(fig, ax, title='Response time for trial direction', xLabel='Response Time (ms)')
 
 
 '''want:
@@ -93,8 +98,9 @@ want to plot a distribution of both trial types and estimate parameters for each
 for response time, it would be great to know time from moving wheel to hitting normRew
 
 qperiod:
-trialstartframes, openloop, quiescentframes (scalar), quiescent moveframes (frames in which movement ended/restarted q period) ** think about this one more
-
+trialstartframes, openloop, quiescentframes (scalar), quiescent moveframes 
+(frames in which movement ended/restarted q period) ** think about this one more
+why do we want this plot?
 
 nogos:
 distance and direction turned for nogo, as well as responsetime'''
