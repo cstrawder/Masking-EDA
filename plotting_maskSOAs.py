@@ -103,7 +103,7 @@ for no_goNum, no_goDenom, num, denom, title in zip([no_goCorrect, no_goCorrect,n
         ax.plot(0, no_goR/no_goMove, 'g>')   #plot the side that was turned in no-go with an arrow in that direction
         ax.plot(0, no_goL/no_goMove, 'g<')
        
-    formatFigure(fig, ax, xLabel='Target Length (frames)', yLabel='percent trials', 
+    formatFigure(fig, ax, xLabel='SOA (frames)', yLabel='percent trials', 
                  title=title + " :  " + '-'.join(f.split('_')[-3:-1]))
     ax.set_xlim([-2, maskOnset[-1]+2])
     ax.set_ylim([0,1.01])
