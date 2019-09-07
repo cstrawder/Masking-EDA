@@ -15,19 +15,20 @@ import fileIO
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
 d = h5py.File(f)
 
-trialRewardDirection = d['trialRewardDir'].value[:-1]    # leave off last trial, ended session before answer 
-trialResponse = d['trialResponse'].value
-maskOnset = d['maskOnset'].value                  # list of ind lengths, does not include no-gos (0)
+trialRewardDirection = d['trialRewardDir'][:-1]    # leave off last trial, ended session before answer 
+trialResponse = d['trialResponse'][()]
+maskOnset = d['maskOnset'][()]                  # list of ind lengths, does not include no-gos (0)
 trialMaskOnset = d['trialMaskOnset'][:-1] 
-trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]         # also leaves off last trial
+trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)] 
+maskContrast = d['trialMaskContrast'][:len(trialResponse)]      # also leaves off last trial
 
 
-# [R stim] , [L stim]
+# [l stim] , [R stim]
 hits = [[],[]]
 misses = [[], []]
 noResps = [[],[]]
 
-for i, direction in enumerate([-1,1]):
+for i, direction in enumerate([1,-1]):
     directionResponses = [trialResponse[(trialRewardDirection==direction) & (trialMaskOnset == soa)] for soa in maskOnset]
     hits[i].append([np.sum(drs==1) for drs in directionResponses])
     misses[i].append([np.sum(drs==-1) for drs in directionResponses])
@@ -94,8 +95,8 @@ for no_goNum, no_goDenom, num, denom, title in zip([no_goCorrect, no_goCorrect,n
                                                 [totalTrials, hits+misses, totalTrials],
                                                  ['Percent Correct', 'Percent Correct Given Response', 'Total response rate']):
     fig, ax = plt.subplots()
-    ax.plot(np.unique(maskOnset), num[0]/denom[0], 'bo-')  #here [0] is right trials and [1] is left
-    ax.plot(np.unique(maskOnset), num[1]/denom[1], 'ro-')
+    ax.plot(np.unique(maskOnset), num[0]/denom[0], 'ro-')  #here [0] is right trials and [1] is left
+    ax.plot(np.unique(maskOnset), num[1]/denom[1], 'bo-')
     ax.plot(np.unique(maskOnset), (num[0]+num[1])/(denom[0]+denom[1]), 'ko-')  #plots the combined average 
     #ax.text(np.unique(maskOnset), num[0]/denom[0], totalTrials) 
     ax.plot(0, no_goNum/no_goDenom, 'go')
