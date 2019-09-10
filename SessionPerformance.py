@@ -58,7 +58,7 @@ leftNoResp = df[(df['trialResp']==0) & (df['rewardDir']==-1)]
 
 
 plt.figure()
-plt.plot(df['CumPercentCorrect'])
+plt.plot(df['CumPercentCorrect'], 'k-')
 plt.plot(rightCorr['CumPercentCorrect'], 'r^', ms=10)
 plt.plot(leftCorr['CumPercentCorrect'], 'b^', ms=10)
 plt.plot(rightMiss['CumPercentCorrect'], 'rv', ms=10)
