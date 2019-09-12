@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns 
 from freedmanDiaconis import freedman_diaconis
 
+# %% 
 
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
 d = h5py.File(f)
@@ -25,12 +26,12 @@ trialResponse = d['trialResponse'].value
 end = len(trialResponse)
 trialRewardDirection = d['trialRewardDir'][:end]
 trialTargetFrames = d['trialTargetFrames'][:end]
-trialStimStartFrame = d['trialStimStartFrame'].value
+trialStimStartFrame = d['trialStimStartFrame'][:]
 trialResponseFrame = d['trialResponseFrame'][:end]    #if they don't respond, then nothing is recorded here - this limits df to length of this variable
 trialOpenLoopFrames = d['trialOpenLoopFrames'][:end]
-quiescentMoveFrames = d['quiescentMoveFrames'].value
+quiescentMoveFrames = d['quiescentMoveFrames'][:]
 trialEndFrame = d['trialEndFrame'][:end]
-deltaWheel = d['deltaWheelPos'].value   # has wheel movement for every frame of session
+deltaWheel = d['deltaWheelPos'][:]   # has wheel movement for every frame of session
 
 for i, trial in enumerate(trialTargetFrames):
     if trial==0:
@@ -42,8 +43,14 @@ index = range(len(trialResponse))
 
 df = pd.DataFrame(data, index=index, columns=['rewDir', 'resp', 'stimStart', 'respFrame'])
 
-#for i, (start, end, resp) in enumerate(zip(trialStimStartFrame, trialEndFrame, trialResponseFrame)):
-    
+responseTime = []
+
+for i, (start, resp) in enumerate(zip(trialStimStartFrame, trialResponseFrame)):
+        print(deltaWheel[start:resp])
+        
+        respTime = deltaWheel[start:resp]
+        response = np.where(respTime>respTime[0]+1)
+        respTime+=len(respTime[respTime>1])
 
 
 
@@ -67,7 +74,7 @@ totalArray = np.array(totalTrials['responseTime'])
 # does wheel pos reset for each trial start?? ask Sam
 
 
-#
+# %%
 #fig, ax = plt.subplots()
 #plt.hist(rightCorrect['responseTime'], bins=rBins, rwidth=4.1, color='r', alpha=.5)   # choose bin-width based on freedman-diaconis
 #plt.hist(leftCorrect['responseTime'], bins=lBins, color='b', alpha=.5)
@@ -83,7 +90,7 @@ sns.distplot(totalArray, color='r')
 
 # use gaussian KDE
 
-
+ # %% Next steps 
 
 '''want:
 rew Dir so we know what trial type it was (L or R)
