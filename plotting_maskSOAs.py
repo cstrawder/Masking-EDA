@@ -16,8 +16,8 @@ f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbet
 d = h5py.File(f)
 
 trialRewardDirection = d['trialRewardDir'][:-1]    # leave off last trial, ended session before answer 
-trialResponse = d['trialResponse'][()]
-maskOnset = d['maskOnset'][()]                  # list of ind lengths, does not include no-gos (0)
+trialResponse = d['trialResponse'][:]
+maskOnset = d['maskOnset'][:]                  # list of ind lengths, does not include no-gos (0)
 trialMaskOnset = d['trialMaskOnset'][:-1] 
 trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)] 
 maskContrast = d['trialMaskContrast'][:len(trialResponse)]      # also leaves off last trial
@@ -39,71 +39,72 @@ misses = np.squeeze(np.array(misses))
 noResps = np.squeeze(np.array(noResps))
 totalTrials = hits+misses+noResps
 
-# here call no_go movement function? 
+# this is plotting all the mask-only trials 
 
-if 0 in trialTargetFrames:        # this already excludes repeats 
+maskOnly = len(trialResponse[(maskContrast>0) & (trialTargetFrames==0)])
+maskOnlyCorr = len(trialResponse[(maskContrast>0) & (trialTargetFrames==0) & (trialResponse==1)])
+maskMove = maskOnly - maskOnlyCorr
 
-    no_goTotal = len(trialTargetFrames[trialTargetFrames==0])
-    no_goCorrect = len(trialResponse[(trialResponse==1) & (trialTargetFrames==0)])
-    no_goMove = no_goTotal - no_goCorrect
-    
-    no_goTurnDir = []
+nogoTurnDir = []
   
-    stimStart = d['trialStimStartFrame'].value
-    trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)]
-    trialRespFrames = d['trialResponseFrame'].value  #gives the frame number of a response
-    deltaWheel = d['deltaWheelPos'].value
-    
-    stimStart = stimStart[(trialTargetFrames==0)]
-    trialRespFrames = trialRespFrames[(trialTargetFrames==0)]
-    trialOpenLoop = trialOpenLoop[(trialTargetFrames==0)]
-    no_goResp = trialResponse[(trialTargetFrames==0)]
-    
-    stimStart += trialOpenLoop
-    
-    startWheelPos = []
-    endWheelPos = []
-    
-    # we want to see which direction they moved the wheel on an incorrect no-go
-    for (start, end, resp) in zip(stimStart, trialRespFrames, no_goResp):   
-        if resp==-1:
-            endWheelPos.append(deltaWheel[end])
-            startWheelPos.append(deltaWheel[start])
-        
-    endWheelPos = np.array(endWheelPos)
-    startWheelPos = np.array(startWheelPos)   
-    wheelPos = endWheelPos - startWheelPos
-    
-    for i in wheelPos:
-        if i >0:
-            no_goTurnDir.append(1)
-        else:
-            no_goTurnDir.append(-1)
-    
-    no_goTurnDir = np.array(no_goTurnDir)
+stimStart = d['trialStimStartFrame'][:]
+trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)]
+trialRespFrames = d['trialResponseFrame'][:]   #gives the frame number of a response
+deltaWheel = d['deltaWheelPos'][:]
 
-no_goR = sum(no_goTurnDir[no_goTurnDir==1])
-no_goL = sum(no_goTurnDir[no_goTurnDir==-1])*-1
+stimStart = stimStart[(trialTargetFrames==0) & (maskContrast>0)]
+trialRespFrames = trialRespFrames[(trialTargetFrames==0) & (maskContrast>0)]
+trialOpenLoop = trialOpenLoop[(trialTargetFrames==0) & (maskContrast>0)]
+trialResp = trialResponse[(trialTargetFrames==0) & (maskContrast>0)]
+
+stimStart += trialOpenLoop
+
+startWheelPos = []
+endWheelPos = []
+
+# we want to see which direction they moved the wheel on an incorrect no-go
+for i, (start, end, resp) in enumerate(zip(stimStart, trialRespFrames, trialResp)):   
+    if (resp==-1):
+        endWheelPos.append(deltaWheel[end])
+        startWheelPos.append(deltaWheel[start])
+
+endWheelPos = np.array(endWheelPos)
+startWheelPos = np.array(startWheelPos)   
+wheelPos = endWheelPos - startWheelPos
+
+for i in wheelPos:
+    if i>0:
+        nogoTurnDir.append(1)
+    else:
+        nogoTurnDir.append(-1)
+
+nogoTurnDir = np.array(nogoTurnDir)
+
+nogoR = sum(nogoTurnDir[nogoTurnDir==1])
+nogoL = sum(nogoTurnDir[nogoTurnDir==-1])*-1
+
 
 #misses = np.insert(misses, 0, [no_goR, no_goL], axis=1)  #add the no_go move trials to misses array 
   
 #texts = [str(j) for i in hits for j in i] #to add n as text for each point
 
-for no_goNum, no_goDenom, num, denom, title in zip([no_goCorrect, no_goCorrect,no_goMove],
-                                                 [no_goTotal, no_goTotal, no_goTotal],
-                                                [hits, hits, hits+misses], 
-                                                [totalTrials, hits+misses, totalTrials],
-                                                 ['Percent Correct', 'Percent Correct Given Response', 'Total response rate']):
+for nogoNum, nogoDenom, num, denom, title in zip(
+        [maskOnlyCorr, maskOnlyCorr,maskMove],                              
+        [maskOnly, maskOnly, maskOnly],
+        [hits, hits, hits+misses],
+        [totalTrials, hits+misses, totalTrials],
+        ['Percent Correct', 'Percent Correct Given Response', 'Total response rate']
+        ):
     fig, ax = plt.subplots()
     ax.plot(np.unique(maskOnset), num[0]/denom[0], 'ro-')  #here [0] is right trials and [1] is left
     ax.plot(np.unique(maskOnset), num[1]/denom[1], 'bo-')
     ax.plot(np.unique(maskOnset), (num[0]+num[1])/(denom[0]+denom[1]), 'ko-')  #plots the combined average 
     #ax.text(np.unique(maskOnset), num[0]/denom[0], totalTrials) 
-    ax.plot(0, no_goNum/no_goDenom, 'go')
-    if no_goNum == no_goMove:
-        ax.plot(0, no_goR/no_goMove, 'g>')   #plot the side that was turned in no-go with an arrow in that direction
-        ax.plot(0, no_goL/no_goMove, 'g<')
-       
+    ax.plot(0, nogoNum/nogoDenom, 'go')
+    if nogoNum == maskMove:
+        ax.plot(0, nogoR/maskOnly, 'r>', ms=8)   #plot the side that was turned in no-go with an arrow in that direction
+        ax.plot(0, nogoL/maskOnly, 'b<', ms=8)
+
     formatFigure(fig, ax, xLabel='SOA (frames)', yLabel='percent trials', 
                  title=title + " :  " + '-'.join(f.split('_')[-3:-1]))
     ax.set_xlim([-2, maskOnset[-1]+2])
@@ -118,5 +119,5 @@ for no_goNum, no_goDenom, num, denom, title in zip([no_goCorrect, no_goCorrect,n
     if 0 in trialTargetFrames:   
         a = ax.get_xticks().tolist()
         a = [int(i) for i in a]    
-        a[0]='no-go' 
+        a[0]='mask only' 
         ax.set_xticklabels(a)

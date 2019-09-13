@@ -14,10 +14,11 @@ import fileIO, h5py
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import scipy.signal
 import seaborn as sns 
 from freedmanDiaconis import freedman_diaconis
 
-# %% 
+
 
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
 d = h5py.File(f)
@@ -46,15 +47,51 @@ df = pd.DataFrame(data, index=index, columns=['rewDir', 'resp', 'stimStart', 're
 responseTime = []
 
 for i, (start, resp) in enumerate(zip(trialStimStartFrame, trialResponseFrame)):
-        print(deltaWheel[start:resp])
+       # print(deltaWheel[start-20:resp])
         
-        respTime = deltaWheel[start:resp]
-        response = np.where(respTime>respTime[0]+1)
+        respTime = (deltaWheel[start:resp])
+        responseTime.append(respTime)
+
+for i, time in enumerate(responseTime):
+    for t in time:
+        time = np.sum(np.abs(t))
+    responseTime[i] = time
+    
+#for i, time in enumerate(responseTime):
+#    for t in time:
+#        time = np.cumsum(np.abs(t))
+#    responseTime[i] = time
+        
+
+
+for time in responseTime[:10]:
+    plt.figure()
+    plt.plot(time)
+    plt.plot(0*len(time), len(time), 'k--')
+        response = np.where(respTime<respTime[0]-1)
         respTime+=len(respTime[respTime>1])
+        
+        
+encoderAngle = d['rotaryEncoderRadians'][:]
+#angleChange = np.concatenate(([0],np.diff(encoderAngle)))
+#angleChange[angleChange<-np.pi] += 2*np.pi
+#angleChange[angleChange>np.pi] -= 2*np.pi
+#angleChange = scipy.signal.medfilt(angleChange,5)
+reactionThresh = 0.1
+reactionTime = np.full(trialResponse.size,np.nan)
 
+for trial,(start,end) in enumerate(zip(trialStimStartFrame,trialEndFrame)):
+    r = np.where(np.absolute(deltaWheel[start:end])>reactionThresh)[0]
+    if any(r):
+        reactionTime[trial] = r[0]/120
 
+df['responseTime'] = responseTime
 
-df['responseTime'] = (trialResponseFrame-trialStimStartFrame-trialOpenLoopFrames)*8.33
+df['wheelMvmt'] = responseTime
+
+df['trialLength'] = (trialResponseFrame-trialStimStartFrame)
+
+df['responseTime'] = (trialResponseFrame-trialStimStartFrame-trialOpenLoopFrames)
 
 rightTrials = df[df['rewDir']==1]
 rightCorrect = rightTrials[rightTrials['resp']==1]
@@ -74,7 +111,7 @@ totalArray = np.array(totalTrials['responseTime'])
 # does wheel pos reset for each trial start?? ask Sam
 
 
-# %%
+
 #fig, ax = plt.subplots()
 #plt.hist(rightCorrect['responseTime'], bins=rBins, rwidth=4.1, color='r', alpha=.5)   # choose bin-width based on freedman-diaconis
 #plt.hist(leftCorrect['responseTime'], bins=lBins, color='b', alpha=.5)
@@ -90,7 +127,7 @@ sns.distplot(totalArray, color='r')
 
 # use gaussian KDE
 
- # %% Next steps 
+ 
 
 '''want:
 rew Dir so we know what trial type it was (L or R)
