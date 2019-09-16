@@ -23,7 +23,7 @@ trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]
 maskContrast = d['trialMaskContrast'][:len(trialResponse)]      # also leaves off last trial
 
 
-# [l stim] , [R stim]
+# [L stim/right turning] , [R stim/left turning]
 hits = [[],[]]
 misses = [[], []]
 noResps = [[],[]]
@@ -39,7 +39,6 @@ misses = np.squeeze(np.array(misses))
 noResps = np.squeeze(np.array(noResps))
 totalTrials = hits+misses+noResps
 
-# this is plotting all the mask-only trials 
 
 maskOnly = len(trialResponse[(maskContrast>0) & (trialTargetFrames==0)])
 maskOnlyCorr = len(trialResponse[(maskContrast>0) & (trialTargetFrames==0) & (trialResponse==1)])
@@ -49,7 +48,7 @@ nogoTurnDir = []
   
 stimStart = d['trialStimStartFrame'][:]
 trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)]
-trialRespFrames = d['trialResponseFrame'][:]   #gives the frame number of a response
+trialRespFrames = d['trialResponseFrame'][:]
 deltaWheel = d['deltaWheelPos'][:]
 
 stimStart = stimStart[(trialTargetFrames==0) & (maskContrast>0)]
@@ -62,7 +61,7 @@ stimStart += trialOpenLoop
 startWheelPos = []
 endWheelPos = []
 
-# we want to see which direction they moved the wheel on an incorrect no-go
+# we want to see which direction they moved the wheel on mask-only trials (nogo with mask)
 for i, (start, end, resp) in enumerate(zip(stimStart, trialRespFrames, trialResp)):   
     if (resp==-1):
         endWheelPos.append(deltaWheel[end])

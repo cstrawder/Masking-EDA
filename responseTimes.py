@@ -23,7 +23,7 @@ from freedmanDiaconis import freedman_diaconis
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
 d = h5py.File(f)
 
-trialResponse = d['trialResponse'].value
+trialResponse = d['trialResponse'][()]
 end = len(trialResponse)
 trialRewardDirection = d['trialRewardDir'][:end]
 trialTargetFrames = d['trialTargetFrames'][:end]
@@ -62,14 +62,21 @@ for i, time in enumerate(responseTime):
 #        time = np.cumsum(np.abs(t))
 #    responseTime[i] = time
         
-
+'''
+HOW to flatten noise from rotary encoder?  Plot shows under +-1.5 is sufficient to pass no-go. 
+how can we either flatten out those values, or plot them a different color?
+Want to show when the mouse is actually moving the wheel to respond
+'''
 
 for time in responseTime[:10]:
-    plt.figure()
+    fig, ax = plt.subplots()
     plt.plot(time)
-    plt.plot(0*len(time), len(time), 'k--')
-        response = np.where(respTime<respTime[0]-1)
-        respTime+=len(respTime[respTime>1])
+    plt.axvline(x=24, ymin=0, ymax=1, c='k', ls='--', alpha=.5)
+        
+    
+    
+    response = np.where(respTime<respTime[0]-1)
+    respTime+=len(respTime[respTime>1])
         
         
 encoderAngle = d['rotaryEncoderRadians'][:]

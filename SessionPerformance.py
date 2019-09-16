@@ -22,7 +22,7 @@ d = h5py.File(f)
 
 #pull necessary variable arrays from hdf5 file
 
-trialResponse = d['trialResponse'].value
+trialResponse = d['trialResponse'][()]
 trialResponseFrame = d['trialResponseFrame'][:len(trialResponse)]
 trialTargetFrames= d['trialTargetFrames'][:len(trialResponse)]   # to identify nogos 
 trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]
