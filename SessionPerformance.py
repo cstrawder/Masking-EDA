@@ -22,7 +22,7 @@ d = h5py.File(f)
 
 #pull necessary variable arrays from hdf5 file
 
-trialResponse = d['trialResponse'].value
+trialResponse = d['trialResponse'][()]
 trialResponseFrame = d['trialResponseFrame'][:len(trialResponse)]
 trialTargetFrames= d['trialTargetFrames'][:len(trialResponse)]   # to identify nogos 
 trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]
@@ -58,7 +58,7 @@ leftNoResp = df[(df['trialResp']==0) & (df['rewardDir']==-1)]
 
 
 plt.figure()
-plt.plot(df['CumPercentCorrect'])
+plt.plot(df['CumPercentCorrect'], 'k-')
 plt.plot(rightCorr['CumPercentCorrect'], 'r^', ms=10)
 plt.plot(leftCorr['CumPercentCorrect'], 'b^', ms=10)
 plt.plot(rightMiss['CumPercentCorrect'], 'rv', ms=10)

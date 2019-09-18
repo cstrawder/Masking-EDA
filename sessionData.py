@@ -20,10 +20,17 @@ def session(data, ignoreRepeats=True):
     def count(resp, direction):
         return len(trialResponse[(trialResponse==resp) & (trialRewardDirection==direction) & (trialTargetFrames!=0)])
     
+<<<<<<< HEAD
     trialResponse = d['trialResponse'][()]
     trialRewardDirection = d['trialRewardDir'].value[:len(trialResponse)]
     trialTargetFrames = d['trialTargetFrames'].value[:len(trialResponse)]
     targetFrames = d['targetFrames'][()]
+=======
+    trialResponse = d['trialResponse'][:]
+    trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]
+    trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]
+    targetFrames = d['targetFrames'][:]
+>>>>>>> 90da5681eeca938df90c8f73dfc49c216109e4ee
     
     trialRewards = 0    
     
@@ -35,7 +42,11 @@ def session(data, ignoreRepeats=True):
     
     
     if ignoreRepeats == True:
+<<<<<<< HEAD
         trialResponseOG = trialResponse
+=======
+        trialResponseOG = d['trialResponse'][:]
+>>>>>>> 90da5681eeca938df90c8f73dfc49c216109e4ee
         #nogo_turn(d, ignoreRepeats=True, returnArray=False)
         if 'trialRepeat' in d.keys():
             prevTrialIncorrect = d['trialRepeat'][:len(trialResponse)]
@@ -47,33 +58,45 @@ def session(data, ignoreRepeats=True):
         print('Repeats: ' + (str((len(trialResponseOG) - len(trialResponse)))) + '/' + str(len(trialResponseOG)))
         
     elif ignoreRepeats == False:
+<<<<<<< HEAD
         trialResponse = d['trialResponse'][()]
+=======
+        trialResponse = d['trialResponse'][:]
+>>>>>>> 90da5681eeca938df90c8f73dfc49c216109e4ee
         #nogo_turn(d, ignoreRepeats=False, returnArray=False)
         print('Trials: ' + (str(len(trialResponse))))
     else:
         pass
            
     
+<<<<<<< HEAD
     rightTurnTotal = sum((trialRewardDirection==1) & (trialTargetFrames!=0))   #left stim
     leftTurnTotal = sum((trialRewardDirection==-1) & (trialTargetFrames!=0))   #right stim
+=======
+    rightTurnTotal = sum((trialRewardDirection==1) & (trialTargetFrames!=0))
+    leftTurnTotal = sum((trialRewardDirection==-1) & (trialTargetFrames!=0))
+    nogoTotal = sum(trialTargetFrames==0)
+>>>>>>> 90da5681eeca938df90c8f73dfc49c216109e4ee
     
     # count(response, reward direction) where -1 is turn left 
     rightTurnCorr, leftTurnCorr = count(1,1), count(1,-1)
     rightTurnIncorrect, leftTurnIncorrect = count(-1,1), count(-1,-1)
     rightNoResp, leftNoResp = count(0,1), count(0,-1)
     
+    nogoCorr = sum((trialResponse==1) & (trialTargetFrames==0))
     respTotal = (leftTurnTotal + rightTurnTotal) - (rightNoResp + leftNoResp)
-    total = (leftTurnTotal + rightTurnTotal)
+    totalCorrect = len(trialResponse[trialResponse==1])
+    total = (len(trialResponse))
     
     for i, (num, denom, title) in enumerate(zip([
                                     rightTurnCorr, rightTurnIncorrect, rightNoResp, 
-                                    leftTurnCorr, leftTurnIncorrect, leftNoResp, 
-                                    (leftTurnCorr+rightTurnCorr), (leftTurnCorr+rightTurnCorr)], 
+                                    leftTurnCorr, leftTurnIncorrect, leftNoResp, nogoCorr, 
+                                    (leftTurnCorr+rightTurnCorr), totalCorrect], 
                                      [rightTurnTotal, rightTurnTotal, rightTurnTotal, 
-                                      leftTurnTotal, leftTurnTotal, leftTurnTotal, respTotal, total],
+                                      leftTurnTotal, leftTurnTotal, leftTurnTotal, nogoTotal, respTotal, total],
                                  ['Turn R % Correct:', 'Turn R % Incorre:', 'Turn R % No Resp:', 
-                                 'L % Correct:', 'L % Incorre:', 'L % No Resp:', 
-                                 'Total Correct, given Response:', 'Total Correct:'])):
+                                 'L % Correct:', 'L % Incorre:', 'L % No Resp:', 'NoGo Corr:',
+                                 'Total Correct, given Response:', 'Total Correct (incl nogos):'])):
                              
         print(str(title) + '   ' + str(round(num/denom, 2)))
     
