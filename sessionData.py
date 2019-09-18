@@ -10,7 +10,6 @@ Choose whether you want the repeated trials to be included in the averages
 Can be used for either task, based on turning direction 
 """
 
-from __future__ import division
 import numpy as np
 from nogoTurn import nogo_turn
 
@@ -21,10 +20,10 @@ def session(data, ignoreRepeats=True):
     def count(resp, direction):
         return len(trialResponse[(trialResponse==resp) & (trialRewardDirection==direction) & (trialTargetFrames!=0)])
     
-    trialResponse = d['trialResponse'].value
+    trialResponse = d['trialResponse'][()]
     trialRewardDirection = d['trialRewardDir'].value[:len(trialResponse)]
     trialTargetFrames = d['trialTargetFrames'].value[:len(trialResponse)]
-    targetFrames = d['targetFrames'].value
+    targetFrames = d['targetFrames'][()]
     
     trialRewards = 0    
     
@@ -36,7 +35,7 @@ def session(data, ignoreRepeats=True):
     
     
     if ignoreRepeats == True:
-        trialResponseOG = d['trialResponse'].value
+        trialResponseOG = trialResponse
         #nogo_turn(d, ignoreRepeats=True, returnArray=False)
         if 'trialRepeat' in d.keys():
             prevTrialIncorrect = d['trialRepeat'][:len(trialResponse)]
@@ -48,15 +47,15 @@ def session(data, ignoreRepeats=True):
         print('Repeats: ' + (str((len(trialResponseOG) - len(trialResponse)))) + '/' + str(len(trialResponseOG)))
         
     elif ignoreRepeats == False:
-        trialResponse = d['trialResponse'].value
+        trialResponse = d['trialResponse'][()]
         #nogo_turn(d, ignoreRepeats=False, returnArray=False)
         print('Trials: ' + (str(len(trialResponse))))
     else:
         pass
            
     
-    rightTurnTotal = sum((trialRewardDirection==1) & (trialTargetFrames!=0))
-    leftTurnTotal = sum((trialRewardDirection==-1) & (trialTargetFrames!=0))
+    rightTurnTotal = sum((trialRewardDirection==1) & (trialTargetFrames!=0))   #left stim
+    leftTurnTotal = sum((trialRewardDirection==-1) & (trialTargetFrames!=0))   #right stim
     
     # count(response, reward direction) where -1 is turn left 
     rightTurnCorr, leftTurnCorr = count(1,1), count(1,-1)
