@@ -39,7 +39,6 @@ for i, trial in enumerate(trialTargetFrames):
         trialRewardDirection[i] = 0
 
 data = list(zip(trialRewardDirection, trialResponse, trialStimStartFrame, trialResponseFrame))
-
 index = range(len(trialResponse))
 
 df = pd.DataFrame(data, index=index, columns=['rewDir', 'resp', 'stimStart', 'respFrame'])
@@ -47,20 +46,33 @@ df = pd.DataFrame(data, index=index, columns=['rewDir', 'resp', 'stimStart', 're
 responseTime = []
 
 for i, (start, resp) in enumerate(zip(trialStimStartFrame, trialResponseFrame)):
-       # print(deltaWheel[start-20:resp])
-        
         respTime = (deltaWheel[start:resp])
         responseTime.append(respTime)
 
-for i, time in enumerate(responseTime):
-    for t in time:
-        time = np.sum(np.abs(t))
-    responseTime[i] = time
-    
 #for i, time in enumerate(responseTime):
 #    for t in time:
-#        time = np.cumsum(np.abs(t))
+#        time = np.sum(np.abs(t))
 #    responseTime[i] = time
+    
+cumRespTime = []
+for i, time in enumerate(responseTime):
+    time = np.cumsum(time)
+    cumRespTime.append(time)
+    
+rxnTimes=[]         
+for resp, time in zip(trialResponse, cumRespTime):
+    rxntime = []
+    if resp==1:
+        for x in time:
+            if abs(x)<abs(2):
+                rxntime.append(x)
+    rxnTimes.append(rxntime)
+   
+df['reactionTime'] = [len(n) for n in rxnTimes]
+
+df[(df['rewDir']!=0) & (df['resp']==1)]
+
+plt.hist(df['reactionTime'])
         
 '''
 HOW to flatten noise from rotary encoder?  Plot shows under +-1.5 is sufficient to pass no-go. 
@@ -68,37 +80,55 @@ how can we either flatten out those values, or plot them a different color?
 Want to show when the mouse is actually moving the wheel to respond
 '''
 
-for time in responseTime[:10]:
-    fig, ax = plt.subplots()
-    plt.plot(time)
-    plt.axvline(x=24, ymin=0, ymax=1, c='k', ls='--', alpha=.5)
+for i, (time, resp) in enumerate(zip(cumRespTime, df['resp'])):
+    if resp==1:
+        fig, ax = plt.subplots()
+        plt.plot(time)
+        plt.plot(0, len(time))
+        plt.axvline(x=24, ymin=0, ymax=1, c='k', ls='--', alpha=.5)
+        plt.title('-'.join(f.split('_')[-3:-1] + [str(i)]))
         
     
     
     response = np.where(respTime<respTime[0]-1)
     respTime+=len(respTime[respTime>1])
-        
-        
-encoderAngle = d['rotaryEncoderRadians'][:]
-#angleChange = np.concatenate(([0],np.diff(encoderAngle)))
-#angleChange[angleChange<-np.pi] += 2*np.pi
-#angleChange[angleChange>np.pi] -= 2*np.pi
-#angleChange = scipy.signal.medfilt(angleChange,5)
-reactionThresh = 0.1
-reactionTime = np.full(trialResponse.size,np.nan)
-
-for trial,(start,end) in enumerate(zip(trialStimStartFrame,trialEndFrame)):
-    r = np.where(np.absolute(deltaWheel[start:end])>reactionThresh)[0]
-    if any(r):
-        reactionTime[trial] = r[0]/120
 
 df['responseTime'] = responseTime
 
-df['wheelMvmt'] = responseTime
-
 df['trialLength'] = (trialResponseFrame-trialStimStartFrame)
 
-df['responseTime'] = (trialResponseFrame-trialStimStartFrame-trialOpenLoopFrames)
+df['respTime'] = [len(i) for i in responseTime[i>1]]
+
+newTimes=[] 
+rxnTimes=[]         
+for resp, time in zip(trialResponse, responseTime):
+    newtime = []
+    rxntime = []
+    if resp==1:
+        for x in time:
+            if abs(x)>abs(3):
+                newtime.append(x)
+            else:
+                rxntime.append(x)
+                
+    newTimes.append(newtime)
+    rxnTimes.append(rxntime)
+    
+df['newTimes'] = [len(m) for m in newTimes]
+df['reactionTime'] = [len(n) for n in rxnTimes]
+            
+#encoderAngle = d['rotaryEncoderRadians'][:]
+#reactionThresh = 0.1
+#reactionTime = np.full(trialResponse.size,np.nan)
+
+#for trial,(start,end) in enumerate(zip(trialStimStartFrame,trialEndFrame)):
+#    r = np.where(np.absolute(deltaWheel[start:end])>reactionThresh)[0]
+#    if any(r):
+#        reactionTime[trial] = r[0]/120
+
+
+
+#df['responseTime'] = (trialResponseFrame-trialStimStartFrame)
 
 rightTrials = df[df['rewDir']==1]
 rightCorrect = rightTrials[rightTrials['resp']==1]
@@ -117,6 +147,19 @@ totalTrials = totalTrials[totalTrials['rewDir']!=0]
 totalArray = np.array(totalTrials['responseTime'])
 # does wheel pos reset for each trial start?? ask Sam
 
+
+ #need to take delta wheel into account, to know when they started moving the wheel 
+ 
+ 
+rightArray = np.array(rightCorrect['newTimes'])
+leftArray = np.array(leftCorrect['newTimes'])
+
+rBins = freedman_diaconis(rightArray, returnas='bins')
+lBins = freedman_diaconis(leftArray, returnas='bins')
+
+totalTrials = df[df['resp']==1]
+totalTrials = totalTrials[totalTrials['rewDir']!=0]
+totalArray = np.array(totalTrials['newTimes'])
 
 
 #fig, ax = plt.subplots()

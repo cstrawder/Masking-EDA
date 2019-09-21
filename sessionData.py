@@ -32,9 +32,6 @@ def session(data, ignoreRepeats=True):
         if trial==1:
             trialRewards+=1
         
-    print("Rewards this session:  " + str(trialRewards))
-    
-    
     if ignoreRepeats == True:
         trialResponseOG = d['trialResponse'][:]
         #nogo_turn(d, ignoreRepeats=True, returnArray=False)
@@ -46,6 +43,7 @@ def session(data, ignoreRepeats=True):
         trialRewardDirection = trialRewardDirection[prevTrialIncorrect==False]
         trialTargetFrames = trialTargetFrames[prevTrialIncorrect==False]
         print('Repeats: ' + (str((len(trialResponseOG) - len(trialResponse)))) + '/' + str(len(trialResponseOG)))
+        print((round(len(trialResponseOG)-len(trialResponse))/len(trialResponseOG)))
         
     elif ignoreRepeats == False:
         trialResponse = d['trialResponse'][:]
@@ -68,6 +66,15 @@ def session(data, ignoreRepeats=True):
     respTotal = (leftTurnTotal + rightTurnTotal) - (rightNoResp + leftNoResp)
     totalCorrect = len(trialResponse[trialResponse==1])
     total = (len(trialResponse))
+    
+    trialRewards2 = 0    
+    
+    for trial in trialResponse:
+        if trial==1:
+            trialRewards2+=1
+    print('Counted rewards: ' + str(trialRewards2))
+    print("Rewards this session:  " + str(trialRewards))
+   
     
     for i, (num, denom, title) in enumerate(zip([
                                     rightTurnCorr, rightTurnIncorrect, rightNoResp, 
