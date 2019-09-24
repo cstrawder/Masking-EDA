@@ -14,7 +14,7 @@ import numpy as np
 def nogo_turn(data, ignoreRepeats=True, returnArray=True):
 
     d = data
-    trialResponse = d['trialResponse'].value
+    trialResponse = d['trialResponse'][:]
     trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]
 
 
@@ -22,7 +22,7 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True):
         print('There were no nogo trials')
     else:
 
-        trialRespFrames = d['trialResponseFrame'].value
+        trialRespFrames = d['trialResponseFrame'][:]
         trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)] 
         stimStart = d['trialStimStartFrame'][:len(trialResponse)]
         deltaWheel = d['deltaWheelPos'].value
@@ -34,7 +34,7 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True):
 
     
         if ignoreRepeats == True: 
-            trialResponseOG = d['trialResponse'].value
+            trialResponseOG = d['trialResponse'][:]
             if 'trialRepeat' in d.keys():
                 prevTrialIncorrect = d['trialRepeat'][:len(trialResponseOG)]
             else:
