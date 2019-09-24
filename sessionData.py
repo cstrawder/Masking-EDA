@@ -20,17 +20,17 @@ def session(data, ignoreRepeats=True):
     def count(resp, direction):
         return len(trialResponse[(trialResponse==resp) & (trialRewardDirection==direction) & (trialTargetFrames!=0)])
     
-<<<<<<< HEAD
+
     trialResponse = d['trialResponse'][()]
     trialRewardDirection = d['trialRewardDir'].value[:len(trialResponse)]
     trialTargetFrames = d['trialTargetFrames'].value[:len(trialResponse)]
     targetFrames = d['targetFrames'][()]
-=======
+
     trialResponse = d['trialResponse'][:]
     trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]
     trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]
     targetFrames = d['targetFrames'][:]
->>>>>>> 90da5681eeca938df90c8f73dfc49c216109e4ee
+
     
     trialRewards = 0    
     
@@ -39,11 +39,10 @@ def session(data, ignoreRepeats=True):
             trialRewards+=1
         
     if ignoreRepeats == True:
-<<<<<<< HEAD
+
         trialResponseOG = trialResponse
-=======
         trialResponseOG = d['trialResponse'][:]
->>>>>>> 90da5681eeca938df90c8f73dfc49c216109e4ee
+
         #nogo_turn(d, ignoreRepeats=True, returnArray=False)
         if 'trialRepeat' in d.keys():
             prevTrialIncorrect = d['trialRepeat'][:len(trialResponse)]
@@ -56,25 +55,23 @@ def session(data, ignoreRepeats=True):
         print((round(len(trialResponseOG)-len(trialResponse))/len(trialResponseOG)))
         
     elif ignoreRepeats == False:
-<<<<<<< HEAD
+
         trialResponse = d['trialResponse'][()]
-=======
+
         trialResponse = d['trialResponse'][:]
->>>>>>> 90da5681eeca938df90c8f73dfc49c216109e4ee
+
         #nogo_turn(d, ignoreRepeats=False, returnArray=False)
         print('Trials: ' + (str(len(trialResponse))))
     else:
         pass
-           
     
-<<<<<<< HEAD
+       
     rightTurnTotal = sum((trialRewardDirection==1) & (trialTargetFrames!=0))   #left stim
     leftTurnTotal = sum((trialRewardDirection==-1) & (trialTargetFrames!=0))   #right stim
-=======
+
     rightTurnTotal = sum((trialRewardDirection==1) & (trialTargetFrames!=0))
     leftTurnTotal = sum((trialRewardDirection==-1) & (trialTargetFrames!=0))
     nogoTotal = sum(trialTargetFrames==0)
->>>>>>> 90da5681eeca938df90c8f73dfc49c216109e4ee
     
     # count(response, reward direction) where -1 is turn left 
     rightTurnCorr, leftTurnCorr = count(1,1), count(1,-1)
