@@ -15,7 +15,6 @@ import fileIO
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
 d = h5py.File(f)
 
-<<<<<<< HEAD
 trialResponse = d['trialResponse'][()]
 trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]    # leave off last trial, ended session before answer 
 
@@ -25,7 +24,6 @@ trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]         # also l
 
 
 # [R stim/left-turning] , [L stim/rightturning]
-=======
 trialRewardDirection = d['trialRewardDir'][:-1]    # leave off last trial, ended session before answer 
 trialResponse = d['trialResponse'][:]
 maskOnset = d['maskOnset'][:]                  # list of ind lengths, does not include no-gos (0)
@@ -35,7 +33,6 @@ maskContrast = d['trialMaskContrast'][:len(trialResponse)]      # also leaves of
 
 
 # [L stim/right turning] , [R stim/left turning]
->>>>>>> 90da5681eeca938df90c8f73dfc49c216109e4ee
 hits = [[],[]]
 misses = [[], []]
 noResps = [[],[]]
@@ -107,13 +104,12 @@ for nogoNum, nogoDenom, num, denom, title in zip(
         ['Percent Correct', 'Percent Correct Given Response', 'Total response rate']
         ):
     fig, ax = plt.subplots()
-<<<<<<< HEAD
+
     ax.plot(np.unique(maskOnset), num[0]/denom[0], 'bo-')  #here [0] is right stim/left turning trials and [1] is left stim/r turning
     ax.plot(np.unique(maskOnset), num[1]/denom[1], 'ro-')
-=======
+
     ax.plot(np.unique(maskOnset), num[0]/denom[0], 'ro-')  #here [0] is right trials and [1] is left
     ax.plot(np.unique(maskOnset), num[1]/denom[1], 'bo-')
->>>>>>> 90da5681eeca938df90c8f73dfc49c216109e4ee
     ax.plot(np.unique(maskOnset), (num[0]+num[1])/(denom[0]+denom[1]), 'ko-')  #plots the combined average 
     #ax.text(np.unique(maskOnset), num[0]/denom[0], totalTrials) 
     ax.plot(0, nogoNum/nogoDenom, 'go')
