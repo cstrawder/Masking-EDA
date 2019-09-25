@@ -94,7 +94,7 @@ nogoL = sum(nogoTurnDir[nogoTurnDir==-1])*-1
 
 #misses = np.insert(misses, 0, [no_goR, no_goL], axis=1)  #add the no_go move trials to misses array 
   
-#texts = [str(j) for i in hits for j in i] #to add n as text for each point
+texts = [str(j) for i in hits for j in i] #to add n as text for each point
 
 for nogoNum, nogoDenom, num, denom, title in zip(
         [maskOnlyCorr, maskOnlyCorr,maskMove],                              
@@ -111,7 +111,7 @@ for nogoNum, nogoDenom, num, denom, title in zip(
     ax.plot(np.unique(maskOnset), num[0]/denom[0], 'ro-')  #here [0] is right trials and [1] is left
     ax.plot(np.unique(maskOnset), num[1]/denom[1], 'bo-')
     ax.plot(np.unique(maskOnset), (num[0]+num[1])/(denom[0]+denom[1]), 'ko-')  #plots the combined average 
-    #ax.text(np.unique(maskOnset), num[0]/denom[0], totalTrials) 
+    ax.text(np.unique(maskOnset), num[0]/denom[0], texts) 
     ax.plot(0, nogoNum/nogoDenom, 'go')
     if nogoNum == maskMove:
         ax.plot(0, nogoR/maskOnly, 'r>', ms=8)   #plot the side that was turned in no-go with an arrow in that direction
