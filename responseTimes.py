@@ -49,11 +49,6 @@ for i, (start, resp) in enumerate(zip(trialStimStartFrame, trialResponseFrame)):
         respTime = (deltaWheel[start:resp])
         responseTime.append(respTime)
 
-#for i, time in enumerate(responseTime):
-#    for t in time:
-#        time = np.sum(np.abs(t))
-#    responseTime[i] = time
-    
 cumRespTime = []
 for i, time in enumerate(responseTime):
     time = np.cumsum(time)
@@ -74,19 +69,15 @@ df[(df['rewDir']!=0) & (df['resp']==1)]
 
 plt.hist(df['reactionTime'])
         
-'''
-HOW to flatten noise from rotary encoder?  Plot shows under +-1.5 is sufficient to pass no-go. 
-how can we either flatten out those values, or plot them a different color?
-Want to show when the mouse is actually moving the wheel to respond
-'''
 
 for i, (time, resp) in enumerate(zip(cumRespTime, df['resp'])):
-    if resp==1:
-        fig, ax = plt.subplots()
-        plt.plot(time)
-        plt.plot(0, len(time))
-        plt.axvline(x=24, ymin=0, ymax=1, c='k', ls='--', alpha=.5)
-        plt.title('-'.join(f.split('_')[-3:-1] + [str(i)]))
+    if i<50:
+        if resp==1:
+            fig, ax = plt.subplots()
+            plt.plot(time)
+            plt.plot(0, len(time))
+            plt.axvline(x=24, ymin=0, ymax=1, c='k', ls='--', alpha=.5)
+            plt.title('-'.join(f.split('_')[-3:-1] + [str(i)]))
         
     
     
@@ -97,7 +88,7 @@ df['responseTime'] = responseTime
 
 df['trialLength'] = (trialResponseFrame-trialStimStartFrame)
 
-df['respTime'] = [len(i) for i in responseTime[i>1]]
+df['respTime'] = [len(i) for i in responseTime[i>1] if len(i)>0]
 
 newTimes=[] 
 rxnTimes=[]         
@@ -126,9 +117,6 @@ df['reactionTime'] = [len(n) for n in rxnTimes]
 #    if any(r):
 #        reactionTime[trial] = r[0]/120
 
-
-
-#df['responseTime'] = (trialResponseFrame-trialStimStartFrame)
 
 rightTrials = df[df['rewDir']==1]
 rightCorrect = rightTrials[rightTrials['resp']==1]

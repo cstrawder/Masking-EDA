@@ -5,7 +5,6 @@ Created on Tue Aug 20 15:47:02 2019
 @author: chelsea.strawder
 """
 
-from __future__ import division
 import h5py
 import fileIO
 import numpy as np

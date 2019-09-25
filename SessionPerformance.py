@@ -20,8 +20,6 @@ plots the choices (in temporal order) over the length of a session
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
 d = h5py.File(f)
 
-#pull necessary variable arrays from hdf5 file
-
 trialResponse = d['trialResponse'][()]
 trialResponseFrame = d['trialResponseFrame'][:len(trialResponse)]
 trialTargetFrames= d['trialTargetFrames'][:len(trialResponse)]   # to identify nogos 
@@ -51,11 +49,6 @@ nogoMiss = df[(df['trialResp']==-1) & (df['rewardDir']==0)]
 rightNoResp = df[(df['trialResp']==0) & (df['rewardDir']==1)]
 leftNoResp = df[(df['trialResp']==0) & (df['rewardDir']==-1)]
 
-# for i in nogoMiss:
-# add in code that determines which direction was turned
-# and plot by half-filling marker that color
-    
-
 
 plt.figure()
 plt.plot(df['CumPercentCorrect'], 'k-')
@@ -80,7 +73,6 @@ if 0 in trialTargetFrames:
             plt.plot(x, direction, 'gv', ms=10)
     
     
-
 plt.title(f.split('_')[-3:-1])
 plt.show()
 
