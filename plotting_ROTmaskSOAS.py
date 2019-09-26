@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Sep 04 17:07:09 2019
+Created on Thu Sep 26 12:59:31 2019
 
-@author: svc_ccg
+@author: chelsea.strawder
+
+
+This is for plotting masking sessions in the rotation mice, where there are no nogos
+and we want to see their performance plotted against no mask trials
+
 """
 
 import numpy as np
@@ -31,6 +36,11 @@ trialMaskOnset = d['trialMaskOnset'][:-1]
 trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)] 
 maskContrast = d['trialMaskContrast'][:len(trialResponse)]      # also leaves off last trial
 
+maskOnset = np.append(maskOnset, 30)  # makes final value the no-mask condition
+
+for i, val in enumerate(trialMaskOnset):
+    if val==0:
+        trialMaskOnset[i]=30
 
 # [L stim/right turning] , [R stim/left turning]
 hits = [[],[]]
@@ -48,57 +58,7 @@ misses = np.squeeze(np.array(misses))
 noResps = np.squeeze(np.array(noResps))
 totalTrials = hits+misses+noResps
 
-
-maskOnly = len(trialResponse[(maskContrast>0) & (trialTargetFrames==0)])
-maskOnlyCorr = len(trialResponse[(maskContrast>0) & (trialTargetFrames==0) & (trialResponse==1)])
-maskMove = maskOnly - maskOnlyCorr
-
-nogoTurnDir = []
-  
-stimStart = d['trialStimStartFrame'][:]
-trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)]
-trialRespFrames = d['trialResponseFrame'][:]
-deltaWheel = d['deltaWheelPos'][:]
-
-stimStart = stimStart[(trialTargetFrames==0) & (maskContrast>0)]
-trialRespFrames = trialRespFrames[(trialTargetFrames==0) & (maskContrast>0)]
-trialOpenLoop = trialOpenLoop[(trialTargetFrames==0) & (maskContrast>0)]
-trialResp = trialResponse[(trialTargetFrames==0) & (maskContrast>0)]
-
-stimStart += trialOpenLoop
-
-startWheelPos = []
-endWheelPos = []
-
-# we want to see which direction they moved the wheel on mask-only trials (nogo with mask)
-for i, (start, end, resp) in enumerate(zip(stimStart, trialRespFrames, trialResp)):   
-    if (resp==-1):
-        endWheelPos.append(deltaWheel[end])
-        startWheelPos.append(deltaWheel[start])
-
-endWheelPos = np.array(endWheelPos)
-startWheelPos = np.array(startWheelPos)   
-wheelPos = endWheelPos - startWheelPos
-
-for i in wheelPos:
-    if i>0:
-        nogoTurnDir.append(1)
-    else:
-        nogoTurnDir.append(-1)
-
-nogoTurnDir = np.array(nogoTurnDir)
-
-nogoR = sum(nogoTurnDir[nogoTurnDir==1])
-nogoL = sum(nogoTurnDir[nogoTurnDir==-1])*-1
-
-
-#misses = np.insert(misses, 0, [no_goR, no_goL], axis=1)  #add the no_go move trials to misses array 
-  
-#texts = [str(j) for i in hits for j in i] #to add n as text for each point
-
-for nogoNum, nogoDenom, num, denom, title in zip(
-        [maskOnlyCorr, maskOnlyCorr,maskMove],                              
-        [maskOnly, maskOnly, maskOnly],
+for num, denom, title in zip(
         [hits, hits, hits+misses],
         [totalTrials, hits+misses, totalTrials],
         ['Percent Correct', 'Percent Correct Given Response', 'Total response rate']
@@ -111,12 +71,6 @@ for nogoNum, nogoDenom, num, denom, title in zip(
     ax.plot(np.unique(maskOnset), num[0]/denom[0], 'ro-')  #here [0] is right trials and [1] is left
     ax.plot(np.unique(maskOnset), num[1]/denom[1], 'bo-')
     ax.plot(np.unique(maskOnset), (num[0]+num[1])/(denom[0]+denom[1]), 'ko--', alpha=.5)  #plots the combined average 
-    #ax.text(np.unique(maskOnset), num[0]/denom[0], texts) 
-    #ax.plot(0, nogoNum/nogoDenom, 'go')
-#    if nogoNum == maskMove:
-#        ax.plot(0, nogoR/maskOnly, 'r>', ms=8)   #plot the side that was turned in no-go with an arrow in that direction
-#        ax.plot(0, nogoL/maskOnly, 'b<', ms=8)
-
     formatFigure(fig, ax, xLabel='SOA (frames)', yLabel='percent trials', 
                  title=title + " :  " + '-'.join(f.split('_')[-3:-1]))
     ax.set_xlim([-2, maskOnset[-1]+2])
@@ -125,11 +79,9 @@ for nogoNum, nogoDenom, num, denom, title in zip(
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.tick_params(direction='out',top=False,right=False)
-
-    #ax.text(np.unique(maskOnset), (num[0]/denom[0]), str(denom))
             
-    if 0 in trialTargetFrames:   
+    if 30 in trialMaskOnset:   
         a = ax.get_xticks().tolist()
         a = [int(i) for i in a]    
-        a[0]='mask only' 
+        a[-1]='no mask' 
         ax.set_xticklabels(a)
