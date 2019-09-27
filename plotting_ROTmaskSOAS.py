@@ -27,8 +27,6 @@ maskOnset = d['maskOnset'][()]                  # list of ind lengths, does not 
 trialMaskOnset = d['trialMaskOnset'][:len(trialResponse)]
 trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]         # also leaves off last trial
 
-
-# [R stim/left-turning] , [L stim/rightturning]
 trialRewardDirection = d['trialRewardDir'][:-1]    # leave off last trial, ended session before answer 
 trialResponse = d['trialResponse'][:]
 maskOnset = d['maskOnset'][:]                  # list of ind lengths, does not include no-gos (0)
@@ -65,11 +63,13 @@ for num, denom, title in zip(
         ):
     fig, ax = plt.subplots()
 
-    ax.plot(np.unique(maskOnset), num[0]/denom[0], 'bo-')  #here [0] is right stim/left turning trials and [1] is left stim/r turning
-    ax.plot(np.unique(maskOnset), num[1]/denom[1], 'ro-')
-
-    ax.plot(np.unique(maskOnset), num[0]/denom[0], 'ro-')  #here [0] is right trials and [1] is left
+    ax.plot(np.unique(maskOnset), num[0]/denom[0], 'ro-')  #here [0] is right stim/left turning trials and [1] is left stim/r turning
     ax.plot(np.unique(maskOnset), num[1]/denom[1], 'bo-')
+    y=(num[0]/denom[0])
+    y2=(num[1]/denom[1])
+    for i, length in enumerate(np.unique(maskOnset)):
+        plt.annotate(str(denom[0][i]), xy=(length,y[i]), xytext=(0, 10), textcoords='offset points')
+        plt.annotate(str(denom[1][i]), xy=(length,y2[i]), xytext=(0, -20), textcoords='offset points')
     ax.plot(np.unique(maskOnset), (num[0]+num[1])/(denom[0]+denom[1]), 'ko--', alpha=.5)  #plots the combined average 
     formatFigure(fig, ax, xLabel='SOA (frames)', yLabel='percent trials', 
                  title=title + " :  " + '-'.join(f.split('_')[-3:-1]))

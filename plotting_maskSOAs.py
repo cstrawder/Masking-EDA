@@ -92,9 +92,6 @@ nogoR = sum(nogoTurnDir[nogoTurnDir==1])
 nogoL = sum(nogoTurnDir[nogoTurnDir==-1])*-1
 
 
-#misses = np.insert(misses, 0, [no_goR, no_goL], axis=1)  #add the no_go move trials to misses array 
-  
-#texts = [str(j) for i in hits for j in i] #to add n as text for each point
 
 for nogoNum, nogoDenom, num, denom, title in zip(
         [maskOnlyCorr, maskOnlyCorr,maskMove],                              
