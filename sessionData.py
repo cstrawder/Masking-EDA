@@ -29,7 +29,7 @@ def session(data, ignoreRepeats=True):
     trialResponse = d['trialResponse'][:]
     trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]
     trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]
-    targetFrames = d['targetFrames'][:]
+    #targetFrames = d['targetFrames'][:]
 
     
     trialRewards = 0    
