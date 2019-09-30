@@ -68,7 +68,7 @@ for num, denom, title in zip(
     y=(num[0]/denom[0])
     y2=(num[1]/denom[1])
     for i, length in enumerate(np.unique(maskOnset)):
-        plt.annotate(str(denom[0][i]), xy=(length,y[i]), xytext=(0, 10), textcoords='offset points')
+        plt.annotate(str(denom[0][i]), xy=(length,y[i]), xytext=(0, 10), textcoords='offset points')  #adds total num of trials
         plt.annotate(str(denom[1][i]), xy=(length,y2[i]), xytext=(0, -20), textcoords='offset points')
     ax.plot(np.unique(maskOnset), (num[0]+num[1])/(denom[0]+denom[1]), 'ko--', alpha=.5)  #plots the combined average 
     formatFigure(fig, ax, xLabel='SOA (frames)', yLabel='percent trials', 
