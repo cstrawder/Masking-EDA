@@ -13,7 +13,7 @@ Can be used for either task, based on turning direction
 import numpy as np
 from nogoTurn import nogo_turn
 
-def session(data, ignoreRepeats=True):
+def session(data, ignoreRepeats=True, printValues=True):
     
     d = data
     
@@ -68,9 +68,6 @@ def session(data, ignoreRepeats=True):
        
     rightTurnTotal = sum((trialRewardDirection==1) & (trialTargetFrames!=0))   #left stim
     leftTurnTotal = sum((trialRewardDirection==-1) & (trialTargetFrames!=0))   #right stim
-
-    rightTurnTotal = sum((trialRewardDirection==1) & (trialTargetFrames!=0))
-    leftTurnTotal = sum((trialRewardDirection==-1) & (trialTargetFrames!=0))
     nogoTotal = sum(trialTargetFrames==0)
     
     # count(response, reward direction) where -1 is turn left 
@@ -79,9 +76,10 @@ def session(data, ignoreRepeats=True):
     rightNoResp, leftNoResp = count(0,1), count(0,-1)
     
     nogoCorr = sum((trialResponse==1) & (trialTargetFrames==0))
-    respTotal = (leftTurnTotal + rightTurnTotal) - (rightNoResp + leftNoResp)
+    nogoMove = len(trialResponse[(trialTargetFrames==0) & (trialResponse==-1)])
+    respTotal = len(trialResponse[trialResponse!=0])
     totalCorrect = len(trialResponse[trialResponse==1])
-    total = (len(trialResponse))
+    total = len(trialResponse)
     
     trialRewards2 = 0    
     
@@ -90,18 +88,54 @@ def session(data, ignoreRepeats=True):
             trialRewards2+=1
     print('Counted rewards: ' + str(trialRewards2))
     print("Rewards this session:  " + str(trialRewards))
-   
     
-    for i, (num, denom, title) in enumerate(zip([
-                                    rightTurnCorr, rightTurnIncorrect, rightNoResp, 
-                                    leftTurnCorr, leftTurnIncorrect, leftNoResp, nogoCorr, 
-                                    (leftTurnCorr+rightTurnCorr), totalCorrect], 
+    
+    
+    
+    for i, (num, denom, title) in enumerate(zip([rightTurnCorr, rightTurnIncorrect, rightNoResp, leftTurnCorr, leftTurnIncorrect, leftNoResp, nogoCorr, (leftTurnCorr+rightTurnCorr), totalCorrect], 
                                      [rightTurnTotal, rightTurnTotal, rightTurnTotal, 
                                       leftTurnTotal, leftTurnTotal, leftTurnTotal, nogoTotal, respTotal, total],
                                  ['Turn R % Correct:', 'Turn R % Incorre:', 'Turn R % No Resp:', 
                                  'L % Correct:', 'L % Incorre:', 'L % No Resp:', 'NoGo Corr:',
                                  'Total Correct, given Response:', 'Total Correct (incl nogos):'])):
-                             
-        print(str(title) + '   ' + str(round(num/denom, 2)))
+        cell_text[i].append(num[i]/denom[i])
+        
+        
+        if printValues==True:         
+            print(str(title) + '   ' + str(round(num/denom, 2)))
+        else:
+            pass
     
-    
+    cell_texts=[]
+    for i, (trials, corr, incorr, noresp) in enumerate(zip([total, leftTurnTotal, rightTurnTotal, nogoTotal],
+                                                [totalCorrect, leftTurnCorr, rightTurnCorr, nogoCorr],
+                                                [(respTotal-totalCorrect), leftTurnIncorrect, rightTurnIncorrect, nogoMove],
+                                                [(total-respTotal), leftNoResp,rightNoResp, None])):
+        cell_texts.append([trials, corr, incorr, noresp])
+        for cell in cell_texts:
+            cell[1]/cell[0]
+
+
+
+
+columns = ('Trials', 'Correct', 'Incorrect', 'No Resp')
+rows = ('Total', 'Left', 'Right', 'No Go')
+cell_text = [[],[],[],[]]   # each internal list is a row, and the values in the lists are the columns 
+
+# example 
+#data = [[ trials, corr, incorr, noResp],
+#        [ left,   left,  left,  left],
+#        [ right,  right, right, right],
+#        [ 78415,  81858, 150656, 193263],
+#        [139361, 331509, 343164, 781380]]
+
+plt.table(cellText=cell_texts,
+                      rowLabels=rows,
+                      colLabels=columns,
+                      colWidths=[.1,.2,.3,.4],
+                      loc='bottom')
+plt.xticks([])
+plt.subplots_adjust(left=.2, bottom=0.2)
+
+
+
