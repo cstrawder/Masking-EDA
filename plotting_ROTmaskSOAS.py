@@ -25,14 +25,8 @@ trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]    # leave off l
 
 maskOnset = d['maskOnset'][()]                  # list of ind lengths, does not include no-gos (0)
 trialMaskOnset = d['trialMaskOnset'][:len(trialResponse)]
-trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]         # also leaves off last trial
-
-trialRewardDirection = d['trialRewardDir'][:-1]    # leave off last trial, ended session before answer 
-trialResponse = d['trialResponse'][:]
-maskOnset = d['maskOnset'][:]                  # list of ind lengths, does not include no-gos (0)
-trialMaskOnset = d['trialMaskOnset'][:-1] 
-trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)] 
-maskContrast = d['trialMaskContrast'][:len(trialResponse)]      # also leaves off last trial
+trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]       
+maskContrast = d['trialMaskContrast'][:len(trialResponse)]     
 
 maskOnset = np.append(maskOnset, 30)  # makes final value the no-mask condition
 np.insert(maskOnset, 0, 0)
@@ -40,8 +34,6 @@ np.insert(maskOnset, 0, 0)
 for i, (mask, trial) in enumerate(zip(trialMaskOnset, trialTargetFrames)):
     if trial>0 and mask==0:
         trialMaskOnset[i]=30
-        
-        
 
 # [L stim/right turning] , [R stim/left turning]
 hits = [[],[]]
@@ -60,7 +52,7 @@ noResps = np.squeeze(np.array(noResps))
 totalTrials = hits+misses+noResps
 respOnly = hits+misses
 
-maskOnly = len(trialResponse[(maskContrast>0) & (trialTargetFrames==0)])  # rotation task mask only can't be 'correct'
+maskOnly = len(trialResponse[(maskContrast>0) & (trialTargetFrames==0)])  # rotation task 'mask only' trials can't be 'correct'
 
 nogoTurnDir = []
   
