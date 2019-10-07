@@ -82,14 +82,14 @@ def session(data, ignoreRepeats=True, printValues=True):
     print("Rewards this session:  " + str(trialRewards))
       
     
-    for i, (num, denom, title) in enumerate(zip([rightTurnCorr, rightTurnIncorrect, rightNoResp, leftTurnCorr, leftTurnIncorrect, leftNoResp, nogoCorr, (leftTurnCorr+rightTurnCorr), totalCorrect], 
-                                     [rightTurnTotal, rightTurnTotal, rightTurnTotal, 
-                                      leftTurnTotal, leftTurnTotal, leftTurnTotal, nogoTotal, respTotal, total],
-                                 ['Turn R % Correct:', 'Turn R % Incorre:', 'Turn R % No Resp:', 
-                                 'L % Correct:', 'L % Incorre:', 'L % No Resp:', 'NoGo Corr:',
-                                 'Total Correct, given Response:', 'Total Correct (incl nogos):'])):
-        cell_text[i].append(num[i]/denom[i])
-        
+    for i, (num, denom, title) in enumerate(zip([
+            rightTurnCorr, rightTurnIncorrect, rightNoResp, leftTurnCorr, leftTurnIncorrect, 
+            leftNoResp, nogoCorr, (leftTurnCorr+rightTurnCorr), totalCorrect], 
+            [rightTurnTotal, rightTurnTotal, rightTurnTotal, 
+            leftTurnTotal, leftTurnTotal, leftTurnTotal, nogoTotal, respTotal, total],
+            ['Turn R % Correct:', 'Turn R % Incorre:', 'Turn R % No Resp:', 
+             'L % Correct:', 'L % Incorre:', 'L % No Resp:', 'NoGo Corr:',
+             'Total Correct, given Response:', 'Total Correct (incl nogos):'])):
         
         if printValues==True:         
             print(str(title) + '   ' + str(round(num/denom, 2)))
