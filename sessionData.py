@@ -14,6 +14,11 @@ import numpy as np
 import matplotlib.pyplot as plt 
 from nogoTurn import nogo_turn
 
+# still need to remove trials where they definitely guessed (moved before 180 ms)
+# and apply priors to determine what % of trials would be guesses 
+
+
+
 def session(data, ignoreRepeats=True, printValues=True):
     
     d = data
@@ -57,7 +62,7 @@ def session(data, ignoreRepeats=True, printValues=True):
     else:
         pass
     
-       
+    
     rightTurnTotal = sum((trialRewardDirection==1) & (trialTargetFrames!=0))   #left stim
     leftTurnTotal = sum((trialRewardDirection==-1) & (trialTargetFrames!=0))   #right stim
     nogoTotal = sum(trialTargetFrames==0)
@@ -69,8 +74,8 @@ def session(data, ignoreRepeats=True, printValues=True):
     
     nogoCorr = sum((trialResponse==1) & (trialTargetFrames==0))
     nogoMove = len(trialResponse[(trialTargetFrames==0) & (trialResponse==-1)])
-    respTotal = len(trialResponse[trialResponse!=0])
-    totalCorrect = len(trialResponse[trialResponse==1])
+    respTotal = len(trialResponse[(trialResponse!=0) & (trialTargetFrames>0)])  # response of go trials 
+    totalCorrect = len(trialResponse[trialResponse==1])                         # this includes nogos 
     total = len(trialResponse)
     
     trialRewards2 = 0    
@@ -95,7 +100,3 @@ def session(data, ignoreRepeats=True, printValues=True):
             print(str(title) + '   ' + str(round(num/denom, 2)))
         else:
             pass
-
-
-
-
