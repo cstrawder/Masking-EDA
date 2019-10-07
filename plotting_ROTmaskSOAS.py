@@ -6,24 +6,23 @@ Created on Thu Sep 26 12:59:31 2019
 
 
 This is for plotting masking sessions in the rotation mice, where there are no nogos
-and we want to see their performance plotted against no mask trials
+and we want to see their performance plotted against 'no mask' trials
 
 """
 
-import numpy as np
+import fileIO
 import h5py, os
+import numpy as np
 from matplotlib import pyplot as plt
 from behaviorAnalysis import formatFigure
-import fileIO
 
 
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
 d = h5py.File(f)
 
-trialResponse = d['trialResponse'][()]
-trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]    # leave off last trial, ended session before answer 
-
-maskOnset = d['maskOnset'][()]                  # list of ind lengths, does not include no-gos (0)
+trialResponse = d['trialResponse'][:]
+trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]
+maskOnset = d['maskOnset'][()]                  
 trialMaskOnset = d['trialMaskOnset'][:len(trialResponse)]
 trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]       
 maskContrast = d['trialMaskContrast'][:len(trialResponse)]     
@@ -71,7 +70,7 @@ stimStart += trialOpenLoop
 startWheelPos = []
 endWheelPos = []
 
-# we want to see which direction they moved the wheel on mask-only trials (nogo with mask)
+# we want to see which direction they moved the wheel on mask-only trials 
 for i, (start, end, resp) in enumerate(zip(stimStart, trialRespFrames, trialResp)):   
     if (resp==-1):
         endWheelPos.append(deltaWheel[end])
@@ -96,8 +95,8 @@ nogoL = sum(nogoTurnDir[nogoTurnDir==-1])*-1
 for num, denom, title in zip(
         [hits, hits, respOnly],
         [totalTrials, respOnly, totalTrials],
-        ['Percent Correct', 'Percent Correct Given Response', 'Total response rate']
-        ):
+        ['Percent Correct', 'Percent Correct Given Response', 'Total response rate']):
+    
     fig, ax = plt.subplots()
 
     ax.plot(np.unique(maskOnset), num[0]/denom[0], 'ro-')  #here [0] is right stim/left turning trials and [1] is left stim/r turning
