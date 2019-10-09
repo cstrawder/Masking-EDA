@@ -4,22 +4,21 @@ Created on Mon Jul 08 18:07:23 2019
 
 @author: svc_ccg
 """
-
-from __future__ import division
-import numpy as np
+import fileIO
 import h5py, os
+import numpy as np
 from matplotlib import pyplot as plt
 from behaviorAnalysis import formatFigure
-import fileIO
+
 
 
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
 d = h5py.File(f)
 
-trialRewardDirection = d['trialRewardDir'].value[:-1]    # leave off last trial, ended session before answer 
-trialResponse = d['trialResponse'].value
-targetLengths = d['targetFrames'].value                  # list of ind lengths, does not include no-gos (0)
-trialTargetFrames = d['trialTargetFrames'][:-1]          # also leaves off last trial
+trialResponse = d['trialResponse'][:]
+trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]    # leave off last trial, ended session before answer 
+targetLengths = d['targetFrames'][:]                  # list of ind lengths, does not include no-gos (0)
+trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]          # also leaves off last trial
 
 
 prevTrialIncorrect = np.concatenate(([False],trialResponse[:-1]<1))         # array of boolean values about whethe the trial before was incorr
@@ -54,11 +53,11 @@ if 0 in trialTargetFrames:        # this already excludes repeats
     
     no_goTurnDir = []
   
-    stimStart = d['trialStimStartFrame'].value[prevTrialIncorrect==False]
-    trialOpenLoop = d['trialOpenLoopFrames'][:-1]
+    stimStart = d['trialStimStartFrame'][:][prevTrialIncorrect==False]
+    trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)]
     trialOpenLoop = trialOpenLoop[prevTrialIncorrect==False]
-    trialRespFrames = d['trialResponseFrame'].value[prevTrialIncorrect==False]   #gives the frame number of a response
-    deltaWheel = d['deltaWheelPos'].value
+    trialRespFrames = d['trialResponseFrame'][:][prevTrialIncorrect==False]   #gives the frame number of a response
+    deltaWheel = d['deltaWheelPos'][:]
     
     stimStart = stimStart[(trialTargetFrames==0)]
     trialRespFrames = trialRespFrames[(trialTargetFrames==0)]
