@@ -95,8 +95,7 @@ if 0 in trialTargetFrames:        # this already excludes repeats
 else:
     pass
 #misses = np.insert(misses, 0, [no_goR, no_goL], axis=1)  #add the no_go move trials to misses array 
-  
-#texts = [str(j) for i in hits for j in i] #to add n as text for each point
+
 
 for num, denom, title in zip([hits, hits, hits+misses], 
                              [totalTrials, hits+misses, totalTrials],
@@ -108,8 +107,8 @@ for num, denom, title in zip([hits, hits, hits+misses],
     y=(num[0]/denom[0])
     y2=(num[1]/denom[1])
     for i, length in enumerate(np.unique(targetLengths)):
-        plt.annotate(str(denom[0][i]), xy=(length,y[i]), xytext=(0, 10), textcoords='offset points')  #adds total num of trials
-        plt.annotate(str(denom[1][i]), xy=(length,y2[i]), xytext=(0, -20), textcoords='offset points')
+        plt.annotate(str(denom[0][i]), xy=(length,y[i]), xytext=(5, -10), textcoords='offset points')  #adds total num of trials
+        plt.annotate(str(denom[1][i]), xy=(length,y2[i]), xytext=(5, -10), textcoords='offset points')
     
     if 0 in trialTargetFrames:
         ax.plot(0, nogoCorrect/nogoTotal, 'go')

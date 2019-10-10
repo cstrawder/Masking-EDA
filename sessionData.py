@@ -39,10 +39,7 @@ def session(data, ignoreRepeats=True, printValues=True):
         
     if ignoreRepeats == True:
 
-        trialResponseOG = trialResponse
         trialResponseOG = d['trialResponse'][:]
-
-        #nogo_turn(d, ignoreRepeats=True, returnArray=False)
         if 'trialRepeat' in d.keys():
             prevTrialIncorrect = d['trialRepeat'][:len(trialResponse)]
         else:
@@ -54,9 +51,7 @@ def session(data, ignoreRepeats=True, printValues=True):
         print((round(len(trialResponseOG)-len(trialResponse))/len(trialResponseOG)))
         
     elif ignoreRepeats == False:
-
         trialResponse = d['trialResponse'][:]
-
         #nogo_turn(d, ignoreRepeats=False, returnArray=False)
         print('Trials: ' + (str(len(trialResponse))))
     else:
@@ -86,7 +81,7 @@ def session(data, ignoreRepeats=True, printValues=True):
     print('Counted rewards: ' + str(trialRewards2))
     print("Rewards this session:  " + str(trialRewards))
       
-    
+    cell_texts = dict()
     for i, (num, denom, title) in enumerate(zip([
             rightTurnCorr, rightTurnIncorrect, rightNoResp, leftTurnCorr, leftTurnIncorrect, 
             leftNoResp, nogoCorr, (leftTurnCorr+rightTurnCorr), totalCorrect], 
@@ -99,4 +94,6 @@ def session(data, ignoreRepeats=True, printValues=True):
         if printValues==True:         
             print(str(title) + '   ' + str(round(num/denom, 2)))
         else:
-            pass
+            val = (round(num/denom,2))
+            cell_texts.update({title:val})
+    return cell_texts
