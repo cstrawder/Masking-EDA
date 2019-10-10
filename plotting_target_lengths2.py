@@ -18,11 +18,14 @@ d = h5py.File(f)
 trialResponse = d['trialResponse'][:]
 trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]    # leave off last trial, ended session before answer 
 targetLengths = d['targetFrames'][:]                  # list of ind lengths, does not include no-gos (0)
-trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]          # also leaves off last trial
+trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]
+repeats = d['incorrectTrialRepeats'][()]
 
-
-prevTrialIncorrect = np.concatenate(([False],trialResponse[:-1]<1))         # array of boolean values about whethe the trial before was incorr
-trialResponse = trialResponse[prevTrialIncorrect==False]                    # false = not a repeat, true = repeat
+if 'trialRepeat' in d.keys():
+    prevTrialIncorrect = d['trialRepeat'][()]  #recommended, since keeps track of how many repeats occurred 
+else:
+    prevTrialIncorrect = np.concatenate(([False],trialResponse[:-1]<1))         # array of boolean values about whethe the trial before was incorr
+trialResponse = trialResponse[(prevTrialIncorrect==False)]                    # false = not a repeat, true = repeat
 trialRewardDirection = trialRewardDirection[prevTrialIncorrect==False]      # use this to filter out repeated trials 
 trialTargetFrames = trialTargetFrames[prevTrialIncorrect==False]
 
@@ -86,28 +89,33 @@ if 0 in trialTargetFrames:        # this already excludes repeats
             nogoTurnDir.append(-1)
     
     nogoTurnDir = np.array(nogoTurnDir)
-
-nogoR = sum(nogoTurnDir[nogoTurnDir==1])
-nogoL = sum(nogoTurnDir[nogoTurnDir==-1])*-1
-
+    
+    nogoR = sum(nogoTurnDir[nogoTurnDir==1])
+    nogoL = sum(nogoTurnDir[nogoTurnDir==-1])*-1
+else:
+    pass
 #misses = np.insert(misses, 0, [no_goR, no_goL], axis=1)  #add the no_go move trials to misses array 
   
 #texts = [str(j) for i in hits for j in i] #to add n as text for each point
 
-for nogoNum, nogoDenom, num, denom, title in zip([nogoCorrect, nogoCorrect,nogoMove],
-                                                 [nogoTotal, nogoTotal, nogoTotal],
-                                                [hits, hits, hits+misses], 
-                                                [totalTrials, hits+misses, totalTrials],
-                                                 ['Percent Correct', 'Percent Correct Given Response', 'Total response rate']):
+for num, denom, title in zip([hits, hits, hits+misses], 
+                             [totalTrials, hits+misses, totalTrials],
+                             ['Percent Correct', 'Percent Correct Given Response', 'Total response rate']):
     fig, ax = plt.subplots()
     ax.plot(np.unique(targetLengths), num[0]/denom[0], 'bo-')  #here [0] is right trials and [1] is left
     ax.plot(np.unique(targetLengths), num[1]/denom[1], 'ro-')
     ax.plot(np.unique(targetLengths), (num[0]+num[1])/(denom[0]+denom[1]), 'ko-')  #plots the combined average 
-    #ax.text(np.unique(targetLengths), num[0]/denom[0], totalTrials) 
-    ax.plot(0, nogoNum/nogoDenom, 'go')
-    if nogoNum == nogoMove:
-        ax.plot(0, nogoR/nogoMove, 'g>')   #plot the side that was turned in no-go with an arrow in that direction
-        ax.plot(0, nogoL/nogoMove, 'g<')
+    y=(num[0]/denom[0])
+    y2=(num[1]/denom[1])
+    for i, length in enumerate(np.unique(targetLengths)):
+        plt.annotate(str(denom[0][i]), xy=(length,y[i]), xytext=(0, 10), textcoords='offset points')  #adds total num of trials
+        plt.annotate(str(denom[1][i]), xy=(length,y2[i]), xytext=(0, -20), textcoords='offset points')
+    
+    if 0 in trialTargetFrames:
+        ax.plot(0, nogoCorrect/nogoTotal, 'go')
+        if title=='Total Response Rate':
+            ax.plot(0, nogoR/nogoMove, 'g>')   #plot the side that was turned in no-go with an arrow in that direction
+            ax.plot(0, nogoL/nogoMove, 'g<')
        
     formatFigure(fig, ax, xLabel='Target Length (frames)', yLabel='percent trials', 
                  title=title + " :  " + '-'.join(f.split('_')[-3:-1]))
@@ -127,5 +135,3 @@ for nogoNum, nogoDenom, num, denom, title in zip([nogoCorrect, nogoCorrect,nogoM
         ax.set_xticklabels(a)
     
     
-    
-
