@@ -8,6 +8,8 @@ Creats dataframe of response times per trial, by side, and plots distributions -
 including quiescent period violations 
 (how quickly they turn after stim onset and/or goTone)
 
+Use this to determine which trials to not include in analysis (move before 180 ms)
+
 """
 
 import fileIO, h5py
@@ -136,7 +138,7 @@ totalArray = np.array(totalTrials['responseTime'])
 # does wheel pos reset for each trial start?? ask Sam
 
 
- #need to take delta wheel into account, to know when they started moving the wheel 
+#need to take delta wheel into account, to know when they started moving the wheel 
  
  
 rightArray = np.array(rightCorrect['newTimes'])

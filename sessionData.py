@@ -11,9 +11,15 @@ Can be used for either task, based on turning direction
 """
 
 import numpy as np
+import matplotlib.pyplot as plt 
 from nogoTurn import nogo_turn
 
-def session(data, ignoreRepeats=True):
+# still need to remove trials where they definitely guessed (moved before 180 ms)
+# and apply priors to determine what % of trials would be guesses 
+
+
+
+def session(data, ignoreRepeats=True, printValues=True):
     
     d = data
     
@@ -22,16 +28,9 @@ def session(data, ignoreRepeats=True):
     
 
     trialResponse = d['trialResponse'][()]
-    trialRewardDirection = d['trialRewardDir'].value[:len(trialResponse)]
-    trialTargetFrames = d['trialTargetFrames'].value[:len(trialResponse)]
-    targetFrames = d['targetFrames'][()]
-
-    trialResponse = d['trialResponse'][:]
     trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]
     trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]
-    targetFrames = d['targetFrames'][:]
 
-    
     trialRewards = 0    
     
     for trial in trialResponse:
@@ -56,8 +55,6 @@ def session(data, ignoreRepeats=True):
         
     elif ignoreRepeats == False:
 
-        trialResponse = d['trialResponse'][()]
-
         trialResponse = d['trialResponse'][:]
 
         #nogo_turn(d, ignoreRepeats=False, returnArray=False)
@@ -65,12 +62,9 @@ def session(data, ignoreRepeats=True):
     else:
         pass
     
-       
+    
     rightTurnTotal = sum((trialRewardDirection==1) & (trialTargetFrames!=0))   #left stim
     leftTurnTotal = sum((trialRewardDirection==-1) & (trialTargetFrames!=0))   #right stim
-
-    rightTurnTotal = sum((trialRewardDirection==1) & (trialTargetFrames!=0))
-    leftTurnTotal = sum((trialRewardDirection==-1) & (trialTargetFrames!=0))
     nogoTotal = sum(trialTargetFrames==0)
     
     # count(response, reward direction) where -1 is turn left 
@@ -79,9 +73,10 @@ def session(data, ignoreRepeats=True):
     rightNoResp, leftNoResp = count(0,1), count(0,-1)
     
     nogoCorr = sum((trialResponse==1) & (trialTargetFrames==0))
-    respTotal = (leftTurnTotal + rightTurnTotal) - (rightNoResp + leftNoResp)
-    totalCorrect = len(trialResponse[trialResponse==1])
-    total = (len(trialResponse))
+    nogoMove = len(trialResponse[(trialTargetFrames==0) & (trialResponse==-1)])
+    respTotal = len(trialResponse[(trialResponse!=0) & (trialTargetFrames>0)])  # response of go trials 
+    totalCorrect = len(trialResponse[trialResponse==1])                         # this includes nogos 
+    total = len(trialResponse)
     
     trialRewards2 = 0    
     
@@ -90,18 +85,18 @@ def session(data, ignoreRepeats=True):
             trialRewards2+=1
     print('Counted rewards: ' + str(trialRewards2))
     print("Rewards this session:  " + str(trialRewards))
-   
+      
     
     for i, (num, denom, title) in enumerate(zip([
-                                    rightTurnCorr, rightTurnIncorrect, rightNoResp, 
-                                    leftTurnCorr, leftTurnIncorrect, leftNoResp, nogoCorr, 
-                                    (leftTurnCorr+rightTurnCorr), totalCorrect], 
-                                     [rightTurnTotal, rightTurnTotal, rightTurnTotal, 
-                                      leftTurnTotal, leftTurnTotal, leftTurnTotal, nogoTotal, respTotal, total],
-                                 ['Turn R % Correct:', 'Turn R % Incorre:', 'Turn R % No Resp:', 
-                                 'L % Correct:', 'L % Incorre:', 'L % No Resp:', 'NoGo Corr:',
-                                 'Total Correct, given Response:', 'Total Correct (incl nogos):'])):
-                             
-        print(str(title) + '   ' + str(round(num/denom, 2)))
-    
-    
+            rightTurnCorr, rightTurnIncorrect, rightNoResp, leftTurnCorr, leftTurnIncorrect, 
+            leftNoResp, nogoCorr, (leftTurnCorr+rightTurnCorr), totalCorrect], 
+            [rightTurnTotal, rightTurnTotal, rightTurnTotal, 
+            leftTurnTotal, leftTurnTotal, leftTurnTotal, nogoTotal, respTotal, total],
+            ['Turn R % Correct:', 'Turn R % Incorre:', 'Turn R % No Resp:', 
+             'L % Correct:', 'L % Incorre:', 'L % No Resp:', 'NoGo Corr:',
+             'Total Correct, given Response:', 'Total Correct (incl nogos):'])):
+        
+        if printValues==True:         
+            print(str(title) + '   ' + str(round(num/denom, 2)))
+        else:
+            pass

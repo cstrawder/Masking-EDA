@@ -30,8 +30,7 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True):
     
         no_goTotal = len(trialTargetFrames[trialTargetFrames==0])
         no_goCorrect = len(trialResponse[(trialResponse==1) & (trialTargetFrames==0)])  
-
-    
+   
         if ignoreRepeats == True: 
             trialResponseOG = d['trialResponse'][:]
             if 'trialRepeat' in d.keys():
@@ -54,8 +53,7 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True):
         no_goResp = trialResponse[(trialTargetFrames==0)]     #trial response
         trialRespFrames = trialRespFrames[(trialTargetFrames==0)]
         trialOpenLoop = trialOpenLoop[(trialTargetFrames==0)]
-        deltaWheel = d['deltaWheelPos'].value
-        
+        deltaWheel = d['deltaWheelPos'].value       
         
         stimStart += trialOpenLoop
         
@@ -78,9 +76,7 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True):
                 no_goTurnDir.append(-1)
         
         no_goTurnDir = np.array(no_goTurnDir)
-        
-        
-        
+           
     if returnArray==True:    
         return no_goTurnDir
     else:
