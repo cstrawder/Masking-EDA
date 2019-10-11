@@ -19,7 +19,7 @@ import scipy.signal
 import seaborn as sns 
 from freedmanDiaconis import freedman_diaconis
 
-
+matplotlib.rcParams['pdf.fonttype'] = 42
 
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
 d = h5py.File(f)
@@ -42,7 +42,7 @@ for i, trial in enumerate(trialTargetFrames):
         trialRewardDirection[i] = 0
 
 
-# length of time from start of stim to response (or no response)
+# length of time from start of stim to response (or no response) for each trial
 trialTimes = []   
 for i, (start, resp) in enumerate(zip(trialStimStartFrame, trialResponseFrame)):
         respTime = (deltaWheel[start:resp])

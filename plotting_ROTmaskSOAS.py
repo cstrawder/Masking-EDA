@@ -16,6 +16,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from behaviorAnalysis import formatFigure
 
+matplotlib.rcParams['pdf.fonttype'] = 42
 
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
 d = h5py.File(f)

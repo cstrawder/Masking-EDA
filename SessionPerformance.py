@@ -17,6 +17,8 @@ plots the choices (in temporal order) over the length of a session
 
 """
 
+matplotlib.rcParams['pdf.fonttype'] = 42
+
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
 d = h5py.File(f)
 
