@@ -52,7 +52,7 @@ totalTrials = hits+misses+noResps
 respOnly = hits+misses
 
 maskOnly = len(trialResponse[(maskContrast>0) & (trialTargetFrames==0)])  # rotation task 'mask only' trials can't be 'correct'
-
+maskTotal = len(trialResponse[(maskContrast>0)])
 nogoTurnDir = []
   
 stimStart = d['trialStimStartFrame'][:]
@@ -107,10 +107,11 @@ for num, denom, title in zip(
         plt.annotate(str(denom[0][i]), xy=(length,y[i]), xytext=(0, 10), textcoords='offset points')  #adds total num of trials
         plt.annotate(str(denom[1][i]), xy=(length,y2[i]), xytext=(0, -20), textcoords='offset points')
     ax.plot(np.unique(maskOnset), (num[0]+num[1])/(denom[0]+denom[1]), 'ko--', alpha=.5)  #plots the combined average  
-    ax.plot(0, (nogoR/maskOnly), 'r>', ms=8)   #plot the side that was turned in no-go with an arrow in that direction
-    ax.plot(0, (nogoL/maskOnly), 'b<', ms=8)
-    ax.annotate(str(nogoR), xy=(1,nogoR/maskOnly), xytext=(0, 0), textcoords='offset points')
-    ax.annotate(str(nogoL), xy=(1,nogoL/maskOnly), xytext=(0, 0), textcoords='offset points')
+    if 0 in trialTargetFrames:
+        ax.plot(0, (nogoR/maskOnly), 'r>', ms=8)   #plot the side that was turned in no-go with an arrow in that direction
+        ax.plot(0, (nogoL/maskOnly), 'b<', ms=8)
+        ax.annotate(str(nogoR), xy=(1,nogoR/maskOnly), xytext=(0, 0), textcoords='offset points')
+        ax.annotate(str(nogoL), xy=(1,nogoL/maskOnly), xytext=(0, 0), textcoords='offset points')
     
     formatFigure(fig, ax, xLabel='SOA (frames)', yLabel='percent trials', 
                  title=title + " :  " + '-'.join(f.split('_')[-3:-1]))
@@ -125,6 +126,8 @@ for num, denom, title in zip(
         a = ax.get_xticks().tolist()
         a = [int(i) for i in a]    
         a[-1]='no mask' 
-        a[0]='mask only'
+        if maskOnly:
+            a[0]='mask only'
         ax.set_xticklabels(a)
-        
+     
+    plt.tight_layout()    

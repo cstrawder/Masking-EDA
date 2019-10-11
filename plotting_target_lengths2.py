@@ -22,10 +22,10 @@ trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]
 repeats = d['incorrectTrialRepeats'][()]
 
 if 'trialRepeat' in d.keys():
-    prevTrialIncorrect = d['trialRepeat'][()]  #recommended, since keeps track of how many repeats occurred 
+    prevTrialIncorrect = d['trialRepeat'][:len(trialResponse)]  #recommended, since keeps track of how many repeats occurred 
 else:
     prevTrialIncorrect = np.concatenate(([False],trialResponse[:-1]<1))         # array of boolean values about whethe the trial before was incorr
-trialResponse = trialResponse[(prevTrialIncorrect==False)]                    # false = not a repeat, true = repeat
+trialResponse2 = trialResponse[(prevTrialIncorrect==False)]                    # false = not a repeat, true = repeat
 trialRewardDirection = trialRewardDirection[prevTrialIncorrect==False]      # use this to filter out repeated trials 
 trialTargetFrames = trialTargetFrames[prevTrialIncorrect==False]
 
@@ -36,7 +36,7 @@ misses = [[], []]
 noResps = [[],[]]
 
 for i, direction in enumerate([-1,1]):
-    directionResponses = [trialResponse[(trialRewardDirection==direction) & (trialTargetFrames == tf)] for tf in targetLengths]
+    directionResponses = [trialResponse2[(trialRewardDirection==direction) & (trialTargetFrames == tf)] for tf in np.unique(targetLengths)]
     hits[i].append([np.sum(drs==1) for drs in directionResponses])
     misses[i].append([np.sum(drs==-1) for drs in directionResponses])
     noResps[i].append([np.sum(drs==0) for drs in directionResponses])
@@ -51,21 +51,20 @@ totalTrials = hits+misses+noResps
 if 0 in trialTargetFrames:        # this already excludes repeats 
 
     nogoTotal = len(trialTargetFrames[trialTargetFrames==0])
-    nogoCorrect = len(trialResponse[(trialResponse==1) & (trialTargetFrames==0)])
+    nogoCorrect = len(trialResponse2[(trialResponse2==1) & (trialTargetFrames==0)])
     nogoMove = nogoTotal - nogoCorrect
     
     nogoTurnDir = []
   
     stimStart = d['trialStimStartFrame'][:][prevTrialIncorrect==False]
-    trialOpenLoop = d['trialOpenLoopFrames'][:]
-    trialOpenLoop = trialOpenLoop[prevTrialIncorrect==False]
+    trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)][prevTrialIncorrect==False]
     trialRespFrames = d['trialResponseFrame'][:][prevTrialIncorrect==False]   #gives the frame number of a response
     deltaWheel = d['deltaWheelPos'][:]
     
     stimStart = stimStart[(trialTargetFrames==0)]
     trialRespFrames = trialRespFrames[(trialTargetFrames==0)]
     trialOpenLoop = trialOpenLoop[(trialTargetFrames==0)]
-    nogoResp = trialResponse[(trialTargetFrames==0)]
+    nogoResp = trialResponse2[(trialTargetFrames==0)]
     
     stimStart += trialOpenLoop
     
@@ -112,9 +111,9 @@ for num, denom, title in zip([hits, hits, hits+misses],
     
     if 0 in trialTargetFrames:
         ax.plot(0, nogoCorrect/nogoTotal, 'go')
-        if title=='Total Response Rate':
+        if title=='Total response rate':
             ax.plot(0, nogoR/nogoMove, 'g>')   #plot the side that was turned in no-go with an arrow in that direction
-            ax.plot(0, nogoL/nogoMove, 'g<')
+            ax.plot(0, nogoL/nogoMove, 'g<')  #add counts
        
     formatFigure(fig, ax, xLabel='Target Length (frames)', yLabel='percent trials', 
                  title=title + " :  " + '-'.join(f.split('_')[-3:-1]))
