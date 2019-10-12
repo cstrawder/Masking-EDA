@@ -7,6 +7,7 @@ Created on Mon Jul 08 18:07:23 2019
 import fileIO
 import h5py, os
 import numpy as np
+import matplotlib
 from matplotlib import pyplot as plt
 from behaviorAnalysis import formatFigure
 
@@ -102,7 +103,7 @@ for num, denom, title in zip([hits, hits, hits+misses],
     fig, ax = plt.subplots()
     ax.plot(np.unique(targetLengths), num[0]/denom[0], 'bo-')  #here [0] is right trials and [1] is left
     ax.plot(np.unique(targetLengths), num[1]/denom[1], 'ro-')
-    ax.plot(np.unique(targetLengths), (num[0]+num[1])/(denom[0]+denom[1]), 'ko-')  #plots the combined average 
+    ax.plot(np.unique(targetLengths), (num[0]+num[1])/(denom[0]+denom[1]), 'ko--', alpha=.3)  #plots the combined average 
     y=(num[0]/denom[0])
     y2=(num[1]/denom[1])
     for i, length in enumerate(np.unique(targetLengths)):

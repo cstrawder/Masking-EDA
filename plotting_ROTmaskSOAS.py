@@ -13,6 +13,7 @@ and we want to see their performance plotted against 'no mask' trials
 import fileIO
 import h5py, os
 import numpy as np
+import matplotlib
 from matplotlib import pyplot as plt
 from behaviorAnalysis import formatFigure
 
@@ -30,18 +31,20 @@ maskContrast = d['trialMaskContrast'][:len(trialResponse)]
 
 maskOnset = np.append(maskOnset, 30)  # makes final value the no-mask condition
 np.insert(maskOnset, 0, 0)
+
+# 30 doesnt do well for soft coding but makes the conditional plotting statement easier (bottom)
      
 for i, (mask, trial) in enumerate(zip(trialMaskOnset, trialTargetFrames)):
     if trial>0 and mask==0:
         trialMaskOnset[i]=30
 
-# [L stim/right turning] , [R stim/left turning]
+# [turn R] , [turn L]
 hits = [[],[]]
 misses = [[], []]
 noResps = [[],[]]
 
 for i, direction in enumerate([1,-1]):
-    directionResponses = [trialResponse[(trialRewardDirection==direction) & (trialMaskOnset == soa)] for soa in maskOnset]
+    directionResponses = [trialResponse[(trialRewardDirection==direction) & (trialMaskOnset==soa)] for soa in np.unique(maskOnset)]
     hits[i].append([np.sum(drs==1) for drs in directionResponses])
     misses[i].append([np.sum(drs==-1) for drs in directionResponses])
     noResps[i].append([np.sum(drs==0) for drs in directionResponses])
@@ -56,7 +59,7 @@ maskOnly = len(trialResponse[(maskContrast>0) & (trialTargetFrames==0)])  # rota
 maskTotal = len(trialResponse[(maskContrast>0)])
 nogoTurnDir = []
   
-stimStart = d['trialStimStartFrame'][:]
+stimStart = d['trialStimStartFrame'][:len(trialResponse)]
 trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)]
 trialRespFrames = d['trialResponseFrame'][:]
 deltaWheel = d['deltaWheelPos'][:]
@@ -100,7 +103,7 @@ for num, denom, title in zip(
     
     fig, ax = plt.subplots()
 
-    ax.plot(np.unique(maskOnset), num[0]/denom[0], 'ro-')  #here [0] is right stim/left turning trials and [1] is left stim/r turning
+    ax.plot(np.unique(maskOnset), num[0]/denom[0], 'ro-')  #here [0] is right turning trials and [1] is left turning
     ax.plot(np.unique(maskOnset), num[1]/denom[1], 'bo-')
     y=(num[0]/denom[0])
     y2=(num[1]/denom[1])
