@@ -10,12 +10,12 @@ import fileIO
 import numpy as np
 
 
-def nogo_turn(data, ignoreRepeats=True, returnArray=True):
+def nogo_turn(data, ignoreRepeats=True, returnArray=True, x=0):
 
     d = data
     trialResponse = d['trialResponse'][:]
     trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]
-
+    maskContrast = d['trialMaskContrast'][:len(trialResponse)]
 
     if 0 not in trialTargetFrames:
         print('There were no nogo trials')
@@ -50,13 +50,11 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True):
         # these are down here (rather than logical index above) for option to include/exclude repeats 
        
         stimStart = stimStart[(trialTargetFrames==0)]
-        no_goResp = trialResponse[(trialTargetFrames==0)]     #trial response
-        trialRespFrames = trialRespFrames[(trialTargetFrames==0)]
-        trialOpenLoop = trialOpenLoop[(trialTargetFrames==0)]
-        deltaWheel = d['deltaWheelPos'].value       
-        
-        stimStart += trialOpenLoop
-        
+        no_goResp = trialResponse[(trialTargetFrames==0) & (maskContrast==0)]     #trial response
+        trialRespFrames = trialRespFrames[(trialTargetFrames==0) & (maskContrast==0)]
+        trialOpenLoop = trialOpenLoop[(trialTargetFrames==0) & (maskContrast==0)]
+        deltaWheel = d['deltaWheelPos'][()]      
+                
         startWheelPos = []
         endWheelPos = []
         

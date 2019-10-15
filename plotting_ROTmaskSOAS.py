@@ -16,6 +16,7 @@ import numpy as np
 import matplotlib
 from matplotlib import pyplot as plt
 from behaviorAnalysis import formatFigure
+from nogoTurn import nogo_turn
 
 matplotlib.rcParams['pdf.fonttype'] = 42
 
@@ -29,14 +30,15 @@ trialMaskOnset = d['trialMaskOnset'][:len(trialResponse)]
 trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]       
 maskContrast = d['trialMaskContrast'][:len(trialResponse)]     
 
-maskOnset = np.append(maskOnset, 30)  # makes final value the no-mask condition
-np.insert(maskOnset, 0, 0)
+maskOnset = np.append(maskOnset, 20)  # makes final value the no-mask condition
 
-# 30 doesnt do well for soft coding but makes the conditional plotting statement easier (bottom)
+
+# 30 doesnt do well for soft coding but makes the conditional plotting statement easier (bottom)200
      
-for i, (mask, trial) in enumerate(zip(trialMaskOnset, trialTargetFrames)):
+for i, (mask, trial) in enumerate(zip(trialMaskOnset, trialTargetFrames)):   # filters target-Only trials 
     if trial>0 and mask==0:
-        trialMaskOnset[i]=30
+        trialMaskOnset[i]=20
+ 
 
 # [turn R] , [turn L]
 hits = [[],[]]
@@ -55,45 +57,51 @@ noResps = np.squeeze(np.array(noResps))
 totalTrials = hits+misses+noResps
 respOnly = hits+misses
 
-maskOnly = len(trialResponse[(maskContrast>0) & (trialTargetFrames==0)])  # rotation task 'mask only' trials can't be 'correct'
 maskTotal = len(trialResponse[(maskContrast>0)])
-nogoTurnDir = []
-  
+
+nogoTurnDir = nogo_turn(d, ignoreRepeats=False, returnArray=True)   #set false for masking
+nogoMove = len(nogoTurnDir) 
+maskOnlyTotal = len(trialResponse[(maskContrast>0) & (trialTargetFrames==0)])   # rotation task 'mask only' trials can't be 'correct'
+
 stimStart = d['trialStimStartFrame'][:len(trialResponse)]
 trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)]
 trialRespFrames = d['trialResponseFrame'][:]
 deltaWheel = d['deltaWheelPos'][:]
 
-stimStart = stimStart[(trialTargetFrames==0) & (maskContrast>0)]
-trialRespFrames = trialRespFrames[(trialTargetFrames==0) & (maskContrast>0)]
-trialOpenLoop = trialOpenLoop[(trialTargetFrames==0) & (maskContrast>0)]
-trialResp = trialResponse[(trialTargetFrames==0) & (maskContrast>0)]
+stimStart = stimStart[(trialTargetFrames==0)]             
+#trialRespFrames = trialRespFrames[(trialTargetFrames==0)]
+trialEnd = stimStart + 54   # this includes openLoop and 30 frames after (250 ms)
 
-stimStart += trialOpenLoop
-
+# [[nogo], [maskOnly]]
 startWheelPos = []
 endWheelPos = []
 
 # we want to see which direction they moved the wheel on mask-only trials 
-for i, (start, end, resp) in enumerate(zip(stimStart, trialRespFrames, trialResp)):   
-    if (resp==-1):
+for i, (start, end, mask) in enumerate(zip(stimStart, trialEnd, maskContrast)):   
+    if (mask==1):  #nogo
         endWheelPos.append(deltaWheel[end])
         startWheelPos.append(deltaWheel[start])
 
-endWheelPos = np.array(endWheelPos)
-startWheelPos = np.array(startWheelPos)   
-wheelPos = endWheelPos - startWheelPos
 
-for i in wheelPos:
-    if i>0:
-        nogoTurnDir.append(1)
+maskEnd = np.array(endWheelPos)
+maskStart = np.array(startWheelPos)
+maskWheelPos = maskEnd - maskStart
+
+maskOnlyTurnDir = []
+
+for j in maskWheelPos:
+    if j>0:
+        maskOnlyTurnDir.append(1)
     else:
-        nogoTurnDir.append(-1)
+        maskOnlyTurnDir.append(-1)
 
 nogoTurnDir = np.array(nogoTurnDir)
+maskOnlyTurnDir = np.array(maskOnlyTurnDir)
 
-nogoR = sum(nogoTurnDir[nogoTurnDir==1])
-nogoL = sum(nogoTurnDir[nogoTurnDir==-1])*-1
+nogoR = sum(nogoTurnDir==1)
+nogoL = sum(nogoTurnDir==-1)
+maskOnlyR = sum(maskOnlyTurnDir==1)
+maskOnlyL = (sum(maskOnlyTurnDir==-1))
 
 
 for num, denom, title in zip(
@@ -112,10 +120,10 @@ for num, denom, title in zip(
         plt.annotate(str(denom[1][i]), xy=(length,y2[i]), xytext=(0, -20), textcoords='offset points')
     ax.plot(np.unique(maskOnset), (num[0]+num[1])/(denom[0]+denom[1]), 'ko--', alpha=.5)  #plots the combined average  
     if 0 in trialTargetFrames:
-        ax.plot(0, (nogoR/maskOnly), 'r>', ms=8)   #plot the side that was turned in no-go with an arrow in that direction
-        ax.plot(0, (nogoL/maskOnly), 'b<', ms=8)
-        ax.annotate(str(nogoR), xy=(1,nogoR/maskOnly), xytext=(0, 0), textcoords='offset points')
-        ax.annotate(str(nogoL), xy=(1,nogoL/maskOnly), xytext=(0, 0), textcoords='offset points')
+        ax.plot(0, (maskOnlyR/maskOnlyTotal), 'r>', ms=8)   #plot the side that was turned in no-go with an arrow in that direction
+        ax.plot(0, (maskOnlyL/maskOnlyTotal), 'b<', ms=8)
+        ax.annotate(str(maskOnlyR), xy=(1,maskOnlyR/maskOnlyTotal), xytext=(0, 0), textcoords='offset points')
+        ax.annotate(str(maskOnlyL), xy=(1,maskOnlyR/maskOnlyTotal), xytext=(0, 0), textcoords='offset points')
     
     formatFigure(fig, ax, xLabel='SOA (frames)', yLabel='percent trials', 
                  title=title + " :  " + '-'.join(f.split('_')[-3:-1]))
@@ -126,11 +134,11 @@ for num, denom, title in zip(
     ax.spines['top'].set_visible(False)
     ax.tick_params(direction='out',top=False,right=False)
             
-    if 30 in trialMaskOnset:   
+    if 20 in trialMaskOnset:   
         a = ax.get_xticks().tolist()
         a = [int(i) for i in a]    
         a[-1]='no mask' 
-        if maskOnly:
+        if maskOnlyTotal:
             a[0]='mask only'
         ax.set_xticklabels(a)
      
