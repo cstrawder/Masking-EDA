@@ -24,7 +24,7 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True, x=0):
         trialRespFrames = d['trialResponseFrame'][:]
         trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)] 
         stimStart = d['trialStimStartFrame'][:len(trialResponse)]
-        deltaWheel = d['deltaWheelPos'].value
+        deltaWheel = d['deltaWheelPos'][:]
         
         no_goTurnDir = []   #returns an array of values that show the direction turned for ALL no-go trials,
     
