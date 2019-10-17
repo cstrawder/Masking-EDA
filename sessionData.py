@@ -27,7 +27,7 @@ def session(data, ignoreRepeats=True, printValues=True):
         return len(trialResponse[(trialResponse==resp) & (trialRewardDirection==direction) & (trialTargetFrames!=0)])
     
 
-    trialResponse = d['trialResponse'][()]
+    trialResponse = d['trialResponse'][:]
     trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]
     trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]
 

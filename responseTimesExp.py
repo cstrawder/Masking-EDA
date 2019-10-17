@@ -14,6 +14,7 @@ import fileIO, h5py
 import math
 import numpy as np
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
 import scipy.signal
 import seaborn as sns 
@@ -31,10 +32,12 @@ trialTargetFrames = d['trialTargetFrames'][:end]
 trialStimStartFrame = d['trialStimStartFrame'][:]
 trialResponseFrame = d['trialResponseFrame'][:end]    #if they don't respond, then nothing is recorded here - this limits df to length of this variable
 trialOpenLoopFrames = d['trialOpenLoopFrames'][:end]
+openLoop = d['openLoopFramesFixed'][()]
 quiescentMoveFrames = d['quiescentMoveFrames'][:]
 trialEndFrame = d['trialEndFrame'][:end]
 deltaWheel = d['deltaWheelPos'][:]                      # has wheel movement for every frame of session
 maxResp = d['maxResponseWaitFrames'][()]   
+maskContrast = d['trialMaskContrast'][:end]==1
 
 
 for i, trial in enumerate(trialTargetFrames):
@@ -57,22 +60,36 @@ for i, time in enumerate(trialTimes):
 
 rxnTimes = []
 for i, time2 in enumerate(cumRespTimes):
-    val = np.argmax(abs(time2)>4)
+    val = np.argmax(abs(time2)>46)   #this is in pixels, calculated from Monitor norm and quiescent move threshold (.025)
     rxnTimes.append(val)
 
-data = list(zip(trialRewardDirection, trialResponse, trialStimStartFrame, trialResponseFrame))
+data = list(zip(trialRewardDirection, trialResponse, trialStimStartFrame, trialResponseFrame, maskContrast))
 index = range(len(trialResponse))
 
-df = pd.DataFrame(data, index=index, columns=['rewDir', 'resp', 'stimStart', 'respFrame'])
+df = pd.DataFrame(data, index=index, columns=['rewDir', 'resp', 'stimStart', 'respFrame', 'mask'])
 df['trialLength'] = [len(t) for t in trialTimes]
 df['reactionTime'] = rxnTimes
 
-
+ignoreTrials = []
+for i, t in enumerate(df['reactionTime']):     # 18 frames = 150 ms 
+    if 0<t<18:
+        ignoreTrials.append(i)
+# return ignoreTrials and use in WheelPlot/behaviorAnalusis
 
 plt.axvline(np.mean(df['reactionTime']), c='r', ls='--', alpha=.5)  #plots mena of rxn time - refine furhter by using by side and resp
 
 
+# correct nogos have a rxn time of 0
 
+for i, (time, mask, rew, resp) in enumerate(zip(cumRespTimes, df['mask'], df['rewDir'], df['reactionTime'])):
+    #if mask==False and rew!=0:
+       if i in ignoreTrials[:]:
+            plt.figure()
+            plt.plot(time)
+            plt.plot(0, len(time))
+            plt.axvline(x=openLoop, ymin=0, ymax=1, c='k', ls='--', alpha=.5)
+            plt.axvline(x=18, ymin=0, ymax=1, c='c', ls='--', alpha=.8)
+            plt.title('-'.join(f.split('_')[-3:-1] + [str(i)] + [' nogo']))
 
 
 
