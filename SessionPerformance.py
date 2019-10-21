@@ -9,8 +9,9 @@ import h5py
 import fileIO
 import numpy as np
 import pandas as pd 
+import matplotlib
 from matplotlib import pyplot as plt
-from nogo_turn import nogo_turn
+from nogoTurn import nogo_turn
 
 """
 plots the choices (in temporal order) over the length of a session
@@ -26,14 +27,15 @@ trialResponse = d['trialResponse'][()]
 trialResponseFrame = d['trialResponseFrame'][:len(trialResponse)]
 trialTargetFrames= d['trialTargetFrames'][:len(trialResponse)]   # to identify nogos 
 trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]
+maskOnset = d['trialMaskOnset'][:len(trialResponse)]
 
 for i, trial in enumerate(trialTargetFrames):
     if trial==0:
         trialRewardDirection[i] = 0 
 
-data = zip(trialRewardDirection, trialResponse)
+data = zip(trialRewardDirection, trialResponse, maskOnset)
 
-df = pd.DataFrame(data, index=trialResponseFrame, columns=['rewardDir', 'trialResp'])
+df = pd.DataFrame(data, index=trialResponseFrame, columns=['rewardDir', 'trialResp', 'mask'])
 df['CumPercentCorrect'] = df['trialResp'].cumsum()
 
 index = df.index
@@ -52,28 +54,34 @@ rightNoResp = df[(df['trialResp']==0) & (df['rewardDir']==1)]
 leftNoResp = df[(df['trialResp']==0) & (df['rewardDir']==-1)]
 
 
-plt.figure()
-plt.plot(df['CumPercentCorrect'], 'k-')
-plt.plot(rightCorr['CumPercentCorrect'], 'r^', ms=10)
-plt.plot(leftCorr['CumPercentCorrect'], 'b^', ms=10)
-plt.plot(rightMiss['CumPercentCorrect'], 'rv', ms=10)
-plt.plot(leftMiss['CumPercentCorrect'], 'bv', ms=10)
-plt.plot(rightNoResp['CumPercentCorrect'], 'o', mec='r', mfc='none',  ms=10)
-plt.plot(leftNoResp['CumPercentCorrect'], 'o', mec='b', mfc='none', ms=10)
+fig, ax = plt.subplots()
+ax.plot(df['CumPercentCorrect'], 'k-')
+ax.plot(rightCorr['CumPercentCorrect'], 'r^', ms=10)
+ax.plot(leftCorr['CumPercentCorrect'], 'b^', ms=10)
+ax.plot(rightMiss['CumPercentCorrect'], 'rv', ms=10)
+ax.plot(leftMiss['CumPercentCorrect'], 'bv', ms=10)
+ax.plot(rightNoResp['CumPercentCorrect'], 'o', mec='r', mfc='none',  ms=10)
+ax.plot(leftNoResp['CumPercentCorrect'], 'o', mec='b', mfc='none', ms=10)
 
 
 if 0 in trialTargetFrames:
 
-    no_gos = nogo_turn(d, ignoreRepeats=False)  # False bc we want to see all the trials in order 
+    no_gos = nogo_turn(d, ignoreRepeats=False, returnArray=True)  # False bc we want to see all the trials in order 
     nogoMiss = pd.DataFrame(nogoMiss['CumPercentCorrect'])
-    plt.plot(nogoCorr['CumPercentCorrect'], 'g^', ms=10)
+    ax.plot(nogoCorr['CumPercentCorrect'], 'g^', ms=10)
     
     for nogo, x, direction in zip(no_gos, nogoMiss.index, nogoMiss['CumPercentCorrect']):
         if nogo > 0:
             plt.plot(x, direction, 'gv', ms=10, markerfacecoloralt='red', fillstyle='left')  # set marker face fill style to reflect direction turned (e.g. half red)
         elif nogo < 0:
             plt.plot(x, direction, 'gv', ms=10)
-    
+
+for mask,i,corr in zip(df['mask'], df.index, df['CumPercentCorrect']):
+    if mask>0:
+        print(mask, i, corr)
+        plt.axvline(x=i, ymin=-100, ymax=300, c='k', ls='--', alpha=.5)
+        ax.annotate(str(mask), xy=(i,corr), xytext=(0, 20), textcoords='offset points', fontsize=8)
+        
     
 plt.title(f.split('_')[-3:-1])
 plt.show()
