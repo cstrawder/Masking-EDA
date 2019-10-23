@@ -39,7 +39,7 @@ def session(data, ignoreRepeats=True, printValues=True):
         
     if ignoreRepeats == True:
 
-        trialResponseOG = d['trialResponse'][:]
+        trialResponseOG = trialResponse
         if 'trialRepeat' in d.keys():
             prevTrialIncorrect = d['trialRepeat'][:len(trialResponse)]
         else:

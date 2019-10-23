@@ -11,7 +11,7 @@ and we want to see their performance plotted against 'no mask' trials
 """
 
 import fileIO
-import h5py, os
+import h5py
 import numpy as np
 import matplotlib
 from matplotlib import pyplot as plt
@@ -30,8 +30,8 @@ trialMaskOnset = d['trialMaskOnset'][:len(trialResponse)]
 trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]       
 maskContrast = d['trialMaskContrast'][:len(trialResponse)]     
 
-noMaskVal = maskOnset[-1] + np.mean(np.diff(maskOnset))
-maskOnset = np.append(maskOnset, noMaskVal)  # makes final value the no-mask condition
+noMaskVal = maskOnset[-1] + round(np.mean(np.diff(maskOnset)))  # assigns noMask condition an evenly-spaced value from soas
+maskOnset = np.append(maskOnset, noMaskVal)              # makes final value the no-mask condition
 
 
 # 30 doesnt do well for soft coding but makes the conditional plotting statement easier (bottom)200
@@ -39,7 +39,6 @@ maskOnset = np.append(maskOnset, noMaskVal)  # makes final value the no-mask con
 for i, (mask, trial) in enumerate(zip(trialMaskOnset, trialTargetFrames)):   # filters target-Only trials 
     if trial>0 and mask==0:
         trialMaskOnset[i]=noMaskVal
- 
 
 # [turn R] , [turn L]
 hits = [[],[]]
@@ -60,9 +59,8 @@ respOnly = hits+misses
 
 maskTotal = len(trialResponse[(maskContrast>0)])
 
-nogoTurnDir = nogo_turn(d, ignoreRepeats=False, returnArray=True)   #set false for masking
-nogoMove = len(nogoTurnDir) 
 maskOnlyTotal = len(trialResponse[(maskContrast>0) & (trialTargetFrames==0)])   # rotation task 'mask only' trials can't be 'correct'
+maskOnlyCorr = len(trialResponse[(maskContrast>0) & (trialResponse==1) & (trialTargetFrames==0)])
 
 stimStart = d['trialStimStartFrame'][:len(trialResponse)]
 trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)]
@@ -70,18 +68,17 @@ trialRespFrames = d['trialResponseFrame'][:]
 deltaWheel = d['deltaWheelPos'][:]
 
 stimStart = stimStart[(trialTargetFrames==0)]             
-#trialRespFrames = trialRespFrames[(trialTargetFrames==0)]
+trialRespFrames = trialRespFrames[(trialTargetFrames==0)]
+maskContrast = maskContrast[(trialTargetFrames==0)]
 
-# [[nogo], [maskOnly]]
 startWheelPos = []
 endWheelPos = []
 
 # we want to see which direction they moved the wheel on mask-only trials 
 for i, (start, end, mask) in enumerate(zip(stimStart, trialRespFrames, maskContrast)):   
-    if (mask==1):  #nogo
+    if (mask==1):  #maskOnly
         endWheelPos.append(deltaWheel[end])
         startWheelPos.append(deltaWheel[start])
-
 
 maskEnd = np.array(endWheelPos)
 maskStart = np.array(startWheelPos)
@@ -94,14 +91,19 @@ for j in maskWheelPos:
         maskOnlyTurnDir.append(1)
     else:
         maskOnlyTurnDir.append(-1)
-
-nogoTurnDir = np.array(nogoTurnDir)
+ 
 maskOnlyTurnDir = np.array(maskOnlyTurnDir)
+maskOnlyR = sum(maskOnlyTurnDir==1)
+maskOnlyL = sum(maskOnlyTurnDir==-1)   
+
+    
+nogoTurnDir = nogo_turn(d, ignoreRepeats=False, returnArray=True)   #set false for masking
+nogoMove = len(nogoTurnDir) 
+nogoTurnDir = np.array(nogoTurnDir)
 
 nogoR = sum(nogoTurnDir==1)
 nogoL = sum(nogoTurnDir==-1)
-maskOnlyR = sum(maskOnlyTurnDir==1)
-maskOnlyL = sum(maskOnlyTurnDir==-1)
+
 
 
 for num, denom, title in zip(
@@ -122,6 +124,7 @@ for num, denom, title in zip(
     if 0 in trialTargetFrames:
         ax.plot(0, (maskOnlyR/maskOnlyTotal), 'r>', ms=8)   #plot the side that was turned in no-go with an arrow in that direction
         ax.plot(0, (maskOnlyL/maskOnlyTotal), 'b<', ms=8)
+        ax.plot(0, (1-(maskOnlyCorr/maskOnlyTotal)), 'ko')
         ax.annotate(str(maskOnlyR), xy=(1,maskOnlyR/maskOnlyTotal), xytext=(0, 0), textcoords='offset points')
         ax.annotate(str(maskOnlyL), xy=(1,maskOnlyL/maskOnlyTotal), xytext=(0, 0), textcoords='offset points')
     
