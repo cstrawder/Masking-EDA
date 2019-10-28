@@ -167,10 +167,11 @@ for median, title, time in zip([Rmed, Lmed], ['Left', 'Right'], [Rtimes, Ltimes]
 
 
 fig, ax = plt.subplots(2,2,sharex='col', sharey='row')
-ax.set_title('KDE for Response Times ' + '-'.join(f.split('_')[-3:-1])) 
+#ax.set_title('KDE for Response Times ' + '-'.join(f.split('_')[-3:-1])) 
 for i, s in enumerate(maskOnset):
     plt.subplot(2,2,i+1)
     sns.kdeplot(times[i+1])
+    plt.axvline(np.median(times[i+1]), ls='--', alpha=.3)
     plt.title('SOA {}'.format(s))    
 plt.tight_layout()
 
