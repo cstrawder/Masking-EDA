@@ -105,9 +105,9 @@ for i, (time, mask, rew, resp, soa) in enumerate(zip(cumRespTimes, df['mask'], d
 times = []
 for onset in np.unique(trialMaskOnset):
     lst = []
-    for time, soa, resp,mask in zip(df['reactionTime'], df['soa'], df['resp'], df['mask']):
+    for i, (time, soa, resp,mask) in enumerate(zip(df['reactionTime'], df['soa'], df['resp'], df['mask'])):
         if soa==onset and resp!=0:
-            if mask==True:
+            if mask==True and i not in ignoreTrials:
                 lst.append(time)
     times.append(lst)
 
@@ -117,7 +117,7 @@ means = [np.mean(x) for x in times]
 fig, ax = plt.subplots()
 ax.plot(np.unique(trialMaskOnset), med, label='Median', alpha=.4)
 ax.plot(np.unique(trialMaskOnset), means, label='Mean', alpha=.4)
-ax.title('Response Time by SOA')
+plt.title('Response Time by SOA')
 ax.set_xticks(np.unique(trialMaskOnset))
 ax.legend()
 
@@ -154,7 +154,13 @@ for median, mean, title, time in zip([Rmed, Lmed], [Rmeans, Lmeans], ['Left', 'R
     ax.set_xticks(np.unique(trialMaskOnset))
     ax.legend()
 
-
+#alternatively:
+fig, ax = plt.subplots() 
+for median, title, time in zip([Rmed, Lmed], ['Left', 'Right'], [Rtimes, Ltimes]):
+    ax.plot(np.unique(trialMaskOnset), median, label=title, alpha=.5)
+    plt.title('Meidan Response Time by SOA'.format(title))
+    ax.set_xticks(np.unique(trialMaskOnset))
+    ax.legend()
 
 
 
