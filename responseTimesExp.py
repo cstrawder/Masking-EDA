@@ -39,6 +39,7 @@ trialEndFrame = d['trialEndFrame'][:end]
 deltaWheel = d['deltaWheelPos'][:]                      # has wheel movement for every frame of session
 maxResp = d['maxResponseWaitFrames'][()]   
 maskContrast = d['trialMaskContrast'][:end]==1
+maskOnset = d['maskOnset'][()]
 
 
 for i, trial in enumerate(trialTargetFrames):
@@ -107,7 +108,7 @@ for onset in np.unique(trialMaskOnset):
     lst = []
     for i, (time, soa, resp,mask) in enumerate(zip(df['reactionTime'], df['soa'], df['resp'], df['mask'])):
         if soa==onset and resp!=0:
-            if mask==True and i not in ignoreTrials:
+            if mask==True and i not in ignoreTrials:  # only masked trials and no obvious guessing trials included 
                 lst.append(time)
     times.append(lst)
 
@@ -162,15 +163,18 @@ for median, title, time in zip([Rmed, Lmed], ['Left', 'Right'], [Rtimes, Ltimes]
     ax.set_xticks(np.unique(trialMaskOnset))
     ax.legend()
 
+## the above plots, by side, don't include the mask-only trials whose rewDir==0
 
 
+fig, ax = plt.subplots(2,2,sharex='col', sharey='row')
+ax.set_title('KDE for Response Times ' + '-'.join(f.split('_')[-3:-1])) 
+for i, s in enumerate(maskOnset):
+    plt.subplot(2,2,i+1)
+    sns.kdeplot(times[i+1])
+    plt.title('SOA {}'.format(s))    
+plt.tight_layout()
 
-
-
-
-
-
-
+  
 
 
 
