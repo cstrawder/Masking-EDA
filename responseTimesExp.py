@@ -67,9 +67,9 @@ for i, time2 in enumerate(cumRespTimes):
     t = len(time2) - val
     rxnTimes.append(t)
     
-    
-    np.argmax(abs(time2)>50)   #this is in pixels, calculated from Monitor norm and quiescent move threshold (.025)
-    rxnTimes.append(val)
+#    
+#    np.argmax(abs(time2)>50)   #this is in pixels, calculated from Monitor norm and quiescent move threshold (.025)
+#    rxnTimes.append(val)
     
     #THEN trialresplength - rxnTimes
 
@@ -105,10 +105,82 @@ for i, (time, mask, rew, resp, soa) in enumerate(zip(cumRespTimes, df['mask'], d
 times = []
 for onset in np.unique(trialMaskOnset):
     lst = []
-    for time, soa, resp in zip(df['reactionTime'], df['soa'], df['resp']):
+    for time, soa, resp,mask in zip(df['reactionTime'], df['soa'], df['resp'], df['mask']):
         if soa==onset and resp!=0:
-            lst.append(time)
+            if mask==True:
+                lst.append(time)
     times.append(lst)
+
+med = [np.median(x) for x in times]
+means = [np.mean(x) for x in times]
+
+fig, ax = plt.subplots()
+ax.plot(np.unique(trialMaskOnset), med, label='Median', alpha=.4)
+ax.plot(np.unique(trialMaskOnset), means, label='Mean', alpha=.4)
+ax.title('Response Time by SOA')
+ax.set_xticks(np.unique(trialMaskOnset))
+ax.legend()
+
+# then also plot the median no-mask trial response time
+
+
+
+Rtimes = []
+Ltimes = []
+for onset in np.unique(trialMaskOnset):
+    Rlst = []
+    Llst = []
+    for time, soa, resp,mask,direc in zip(df['reactionTime'], df['soa'], df['resp'], df['mask'], df['rewDir']):
+        if soa==onset and resp!=0:
+            if mask==True:
+                if direc==1:    
+                    Rlst.append(time)
+                elif direc==-1:
+                    Llst.append(time)
+    Rtimes.append(Rlst)
+    Ltimes.append(Llst)
+
+Rmed = [np.median(x) for x in Rtimes]
+Rmeans = [np.mean(x) for x in Rtimes]
+Lmed = [np.median(x) for x in Ltimes]
+Lmeans = [np.mean(x) for x in Ltimes]
+
+for median, mean, title, time in zip([Rmed, Lmed], [Rmeans, Lmeans], ['Left', 'Right'], [Rtimes, Ltimes]):
+    
+    fig, ax = plt.subplots()
+    ax.plot(np.unique(trialMaskOnset), median, label='Median', alpha=.4)
+    ax.plot(np.unique(trialMaskOnset), mean, label='Mean', alpha=.4)
+    plt.title('{}-turning Response Time by SOA'.format(title))
+    ax.set_xticks(np.unique(trialMaskOnset))
+    ax.legend()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
