@@ -32,6 +32,7 @@ trialTargetFrames = d['trialTargetFrames'][:end]
 trialStimStartFrame = d['trialStimStartFrame'][:]
 trialResponseFrame = d['trialResponseFrame'][:end]    #if they don't respond, then nothing is recorded here - this limits df to length of this variable
 trialOpenLoopFrames = d['trialOpenLoopFrames'][:end]
+trialMaskOnset = d['trialMaskOnset'][:end]
 openLoop = d['openLoopFramesFixed'][()]
 quiescentMoveFrames = d['quiescentMoveFrames'][:]
 trialEndFrame = d['trialEndFrame'][:end]
@@ -60,19 +61,28 @@ for i, time in enumerate(trialTimes):
 
 rxnTimes = []
 for i, time2 in enumerate(cumRespTimes):
-    val = np.argmax(abs(time2)>46)   #this is in pixels, calculated from Monitor norm and quiescent move threshold (.025)
+    time2 = time2[::-1]
+    mask = (time2[:]<10)
+    val = np.argmax(abs(time2)<10)
+    t = len(time2) - val
+    rxnTimes.append(t)
+    
+    
+    np.argmax(abs(time2)>50)   #this is in pixels, calculated from Monitor norm and quiescent move threshold (.025)
     rxnTimes.append(val)
+    
+    #THEN trialresplength - rxnTimes
 
-data = list(zip(trialRewardDirection, trialResponse, trialStimStartFrame, trialResponseFrame, maskContrast))
+data = list(zip(trialRewardDirection, trialResponse, trialStimStartFrame, trialResponseFrame, maskContrast, trialMaskOnset))
 index = range(len(trialResponse))
 
-df = pd.DataFrame(data, index=index, columns=['rewDir', 'resp', 'stimStart', 'respFrame', 'mask'])
+df = pd.DataFrame(data, index=index, columns=['rewDir', 'resp', 'stimStart', 'respFrame', 'mask', 'soa'])
 df['trialLength'] = [len(t) for t in trialTimes]
 df['reactionTime'] = rxnTimes
 
 ignoreTrials = []
-for i, t in enumerate(df['reactionTime']):     # 18 frames = 150 ms 
-    if 0<t<18:
+for i, t in enumerate(df['reactionTime']):     # 15 frames = 125 ms 
+    if 0<t<10:
         ignoreTrials.append(i)
 # return ignoreTrials and use in WheelPlot/behaviorAnalusis
 
@@ -81,15 +91,24 @@ plt.axvline(np.mean(df['reactionTime']), c='r', ls='--', alpha=.5)  #plots mena 
 
 # correct nogos have a rxn time of 0
 
-for i, (time, mask, rew, resp) in enumerate(zip(cumRespTimes, df['mask'], df['rewDir'], df['reactionTime'])):
-    #if mask==False and rew!=0:
-       if i in ignoreTrials[:]:
-            plt.figure()
-            plt.plot(time)
-            plt.plot(0, len(time))
-            plt.axvline(x=openLoop, ymin=0, ymax=1, c='k', ls='--', alpha=.5)
-            plt.axvline(x=18, ymin=0, ymax=1, c='c', ls='--', alpha=.8)
-            plt.title('-'.join(f.split('_')[-3:-1] + [str(i)] + [' nogo']))
+for i, (time, mask, rew, resp, soa) in enumerate(zip(cumRespTimes, df['mask'], df['rewDir'], df['reactionTime'], df['soa'])):
+    if mask==True and rew!=0:
+       #if i in ignoreTrials[:]:
+        plt.figure()
+        plt.plot(time)
+        plt.plot(0, len(time))
+        plt.axvline(x=openLoop, ymin=0, ymax=1, c='k', ls='--', alpha=.5)
+        plt.axvline(x=15, ymin=0, ymax=1, c='c', ls='--', alpha=.8)
+        plt.title('-'.join(f.split('_')[-3:-1] + [str(i)] + [str(soa)]))
+        
+
+times = []
+for onset in np.unique(trialMaskOnset):
+    lst = []
+    for time, soa, resp in zip(df['reactionTime'], df['soa'], df['resp']):
+        if soa==onset and resp!=0:
+            lst.append(time)
+    times.append(lst)
 
 
 
