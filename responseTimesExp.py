@@ -63,7 +63,7 @@ rxnTimes = []
 for i, time2 in enumerate(cumRespTimes):
     time2 = time2[::-1]
     mask = (time2[:]<10)
-    val = np.argmax(abs(time2)<10)
+    val = np.argmax(mask)
     t = len(time2) - val
     rxnTimes.append(t)
     
