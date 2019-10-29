@@ -165,18 +165,16 @@ for median, title, time in zip([Rmed, Lmed], ['Left', 'Right'], [Rtimes, Ltimes]
 
 ## the above plots, by side, don't include the mask-only trials whose rewDir==0
 
-
-fig, ax = plt.subplots(2,2,sharex='col', sharey='row')
+fig = plt.figure()
+axes = fig.subplots(2,2,sharex='col', sharey='row')
 #ax.set_title('KDE for Response Times ' + '-'.join(f.split('_')[-3:-1])) 
-for i, s in enumerate(maskOnset):
-    plt.subplot(2,2,i+1)
+for i, (s,ax) in enumerate(zip(maskOnset,axes)):
     sns.kdeplot(times[i+1])
-    plt.axvline(np.median(times[i+1]), ls='--', alpha=.3)
-    plt.title('SOA {}'.format(s))    
+    ax.axvline(np.median(times[i+1]), ls='--', alpha=.3)
+    ax.set(title='SOA {}'.format(s), xlabel='Frames', ylabel='Dist')    
 plt.tight_layout()
 
   
-
 
 
 
