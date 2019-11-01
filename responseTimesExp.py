@@ -5,8 +5,9 @@ Created on Thu Aug 22 12:56:20 2019
 @author: chelsea.strawder
 
 Creats dataframe of response times per trial, by side, and plots distributions - 
-including quiescent period violations 
+
 (how quickly they turn after stim onset and/or goTone)
+
 
 """
 
@@ -42,7 +43,7 @@ maskContrast = d['trialMaskContrast'][:end]==1
 maskOnset = d['maskOnset'][()]
 
 
-for i, trial in enumerate(trialTargetFrames):
+for i, trial in enumerate(trialTargetFrames):  # this is needed for older files nogos are randomly assigned a dir
     if trial==0:
         trialRewardDirection[i] = 0
 
@@ -58,28 +59,30 @@ for i, (start, resp) in enumerate(zip(trialStimStartFrame, trialResponseFrame)):
 cumRespTimes = []   
 for i, time in enumerate(trialTimes):
     time = np.cumsum(time)
-    cumRespTimes.append((time))
+    smoothed = scipy.signal.medfilt(time, kernel_size=5)
+    cumRespTimes.append(smoothed)
 
 rxnTimes = []
-for i, time2 in enumerate(cumRespTimes):
-    time2 = time2[::-1]
-    mask = (time2[:]<10)
+for i, times in enumerate(cumRespTimes):
+   # time2 = time2[::-1]
+    mask = (abs(times[:])>10)
     val = np.argmax(mask)
-    t = len(time2) - val
-    rxnTimes.append(t)
-    
-#    
+   # t = len(time2) - val
+    rxnTimes.append(val)
+       
 #    np.argmax(abs(time2)>50)   #this is in pixels, calculated from Monitor norm and quiescent move threshold (.025)
-#    rxnTimes.append(val)
-    
-    #THEN trialresplength - rxnTimes
 
-data = list(zip(trialRewardDirection, trialResponse, trialStimStartFrame, trialResponseFrame, maskContrast, trialMaskOnset))
+
+data = list(zip(trialRewardDirection, trialResponse, trialStimStartFrame, trialResponseFrame))
 index = range(len(trialResponse))
 
-df = pd.DataFrame(data, index=index, columns=['rewDir', 'resp', 'stimStart', 'respFrame', 'mask', 'soa'])
+df = pd.DataFrame(data, index=index, columns=['rewDir', 'resp', 'stimStart', 'respFrame'])
 df['trialLength'] = [len(t) for t in trialTimes]
 df['reactionTime'] = rxnTimes
+if len(maskOnset)>0:
+    df['mask'] = maskContrast
+    df['soa'] = trialMaskOnset
+
 
 ignoreTrials = []
 for i, t in enumerate(df['reactionTime']):     # 15 frames = 125 ms 
@@ -87,20 +90,19 @@ for i, t in enumerate(df['reactionTime']):     # 15 frames = 125 ms
         ignoreTrials.append(i)
 # return ignoreTrials and use in WheelPlot/behaviorAnalusis
 
-plt.axvline(np.mean(df['reactionTime']), c='r', ls='--', alpha=.5)  #plots mena of rxn time - refine furhter by using by side and resp
-
 
 # correct nogos have a rxn time of 0
 
-for i, (time, mask, rew, resp, soa) in enumerate(zip(cumRespTimes, df['mask'], df['rewDir'], df['reactionTime'], df['soa'])):
-    if mask==True and rew!=0:
-       #if i in ignoreTrials[:]:
+for i, (time, rew, resp) in enumerate(zip(cumRespTimes, df['rewDir'], df['reactionTime'])):
+   # if mask==True and rew!=0:
+   #if i in ignoreTrials[:]:
+   if i<20:
         plt.figure()
         plt.plot(time)
         plt.plot(0, len(time))
         plt.axvline(x=openLoop, ymin=0, ymax=1, c='k', ls='--', alpha=.5)
         plt.axvline(x=15, ymin=0, ymax=1, c='c', ls='--', alpha=.8)
-        plt.title('-'.join(f.split('_')[-3:-1] + [str(i)] + [str(soa)]))
+        plt.title('-'.join(f.split('_')[-3:-1] + [str(i)]))
         
 
 times = []
@@ -118,7 +120,7 @@ means = [np.mean(x) for x in times]
 fig, ax = plt.subplots()
 ax.plot(np.unique(trialMaskOnset), med, label='Median', alpha=.4)
 ax.plot(np.unique(trialMaskOnset), means, label='Mean', alpha=.4)
-plt.title('Response Time by SOA')
+ax.set(title='Response Time by SOA')
 ax.set_xticks(np.unique(trialMaskOnset))
 ax.legend()
 
@@ -131,9 +133,10 @@ Ltimes = []
 for onset in np.unique(trialMaskOnset):
     Rlst = []
     Llst = []
-    for time, soa, resp,mask,direc in zip(df['reactionTime'], df['soa'], df['resp'], df['mask'], df['rewDir']):
+    for i, (time, soa, resp,mask,direc) in enumerate(zip(df['reactionTime'], df['soa'], 
+           df['resp'], df['mask'], df['rewDir'])):
         if soa==onset and resp!=0:
-            if mask==True:
+            if mask==True and i not in ignoreTrials:
                 if direc==1:    
                     Rlst.append(time)
                 elif direc==-1:
@@ -151,7 +154,7 @@ for median, mean, title, time in zip([Rmed, Lmed], [Rmeans, Lmeans], ['Left', 'R
     fig, ax = plt.subplots()
     ax.plot(np.unique(trialMaskOnset), median, label='Median', alpha=.4)
     ax.plot(np.unique(trialMaskOnset), mean, label='Mean', alpha=.4)
-    plt.title('{}-turning Response Time by SOA'.format(title))
+    ax.set(title='{}-turning Response Time by SOA'.format(title), xlabel='SOA', ylabel='Response Time (frames, 120/sec)')
     ax.set_xticks(np.unique(trialMaskOnset))
     ax.legend()
 
@@ -165,13 +168,13 @@ for median, title, time in zip([Rmed, Lmed], ['Left', 'Right'], [Rtimes, Ltimes]
 
 ## the above plots, by side, don't include the mask-only trials whose rewDir==0
 
-fig = plt.figure()
-axes = fig.subplots(2,2,sharex='col', sharey='row')
+fig, ax = plt.subplots(2,2,sharex='col', sharey='row')
 #ax.set_title('KDE for Response Times ' + '-'.join(f.split('_')[-3:-1])) 
-for i, (s,ax) in enumerate(zip(maskOnset,axes)):
-    sns.kdeplot(times[i+1])
-    ax.axvline(np.median(times[i+1]), ls='--', alpha=.3)
-    ax.set(title='SOA {}'.format(s), xlabel='Frames', ylabel='Dist')    
+for i, s in enumerate(maskOnset):
+    plt.subplot(2,2,i+1)
+    sns.distplot(Rtimes[i+1], color='r', bins=15)
+    plt.axvline(np.median(Rtimes[i+1]), ls='--', alpha=.3)
+    plt.title('SOA {}'.format(s))  #, xlabel='Frames', ylabel='Dist')    
 plt.tight_layout()
 
   
@@ -377,25 +380,4 @@ sns.distplot(totalArray, color='r')
 
 # use gaussian KDE
 
- 
-
-'''want:
-rew Dir so we know what trial type it was (L or R)
-trial target frames so we know which trials were nogos
-trialResponse so we know if they answered correctly 
-stimstart so we know when the stim came on screen
-trialResponseFrames so we know when they responded
-deltaWheel bc we want to know WHEN they started moving the wheel and how quickly they moved it to center - tis is the response time
-stimStart and Resp create a window within which deltawheal matters 
-
-want to plot a distribution of both trial types and estimate parameters for each side 
-for response time, it would be great to know time from moving wheel to hitting normRew
-
-qperiod:
-trialstartframes, openloop, quiescentframes (scalar), quiescent moveframes 
-(frames in which movement ended/restarted q period) ** think about this one more
-why do we want this plot?
-
-nogos:
-distance and direction turned for nogo, as well as responsetime'''
 
