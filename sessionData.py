@@ -13,6 +13,7 @@ Can be used for either task, based on turning direction
 import numpy as np
 import matplotlib.pyplot as plt 
 from nogoTurn import nogo_turn
+from rxnTimesFunc import ignore_trials
 
 # still need to remove trials where they definitely guessed (moved before 180 ms)
 # and apply priors to determine what % of trials would be guesses 
@@ -56,6 +57,19 @@ def session(data, ignoreRepeats=True, printValues=True):
         print('Trials: ' + (str(len(trialResponse))))
     else:
         pass
+    
+    ignoreTrials = ignore_trials(d)
+    
+    ignoreMask = np.zeros(len(trialResponse), dtype=bool)
+    for i, m in enumerate(ignoreMask):
+        if i in ignoreTrials:
+            ignoreMask[i]=True
+            
+    trialResponse = trialResponse[ignoreMask==False]     # potentially poor wording, but this is using the boolean mask
+    trialRewardDirection = trialRewardDirection[ignoreMask==False]
+    trialTargetFrames = trialTargetFrames[ignoreMask==False]
+        #how to use this indexing
+            
     
     
     rightTurnTotal = sum((trialRewardDirection==1) & (trialTargetFrames!=0))   #left stim

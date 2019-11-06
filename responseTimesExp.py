@@ -143,6 +143,7 @@ for onset in np.unique(trialMaskOnset):
                     Llst.append(time)
     Rtimes.append(Rlst)
     Ltimes.append(Llst)
+    
 
 Rmed = [np.median(x) for x in Rtimes]
 Rmeans = [np.mean(x) for x in Rtimes]
@@ -168,14 +169,17 @@ for median, title, time in zip([Rmed, Lmed], ['Left', 'Right'], [Rtimes, Ltimes]
 
 ## the above plots, by side, don't include the mask-only trials whose rewDir==0
 
-fig, ax = plt.subplots(2,2,sharex='col', sharey='row')
-#ax.set_title('KDE for Response Times ' + '-'.join(f.split('_')[-3:-1])) 
-for i, s in enumerate(maskOnset):
-    plt.subplot(2,2,i+1)
-    sns.distplot(Rtimes[i+1], color='r', bins=15)
-    plt.axvline(np.median(Rtimes[i+1]), ls='--', alpha=.3)
-    plt.title('SOA {}'.format(s))  #, xlabel='Frames', ylabel='Dist')    
-plt.tight_layout()
+for side in (Rtimes, Ltimes):
+    fig, ax = plt.subplots(sharex='col', sharey='row')
+    #ax.set_title('KDE for Response Times ' + '-'.join(f.split('_')[-3:-1])) 
+    for i, s in enumerate(maskOnset):
+        if i<4:
+            plt.subplot(2,2,i+1)
+            sns.distplot(side[i+1],  bins=(freedman_diaconis(side[i+1], returnas="bins")), color='r')
+            #ax.text()
+            plt.axvline(np.median(side[i+1]), ls='--', alpha=.3)
+            plt.title('SOA {}'.format(s))  #, xlabel='Frames', ylabel='Dist')    
+    plt.tight_layout()
 
   
 
