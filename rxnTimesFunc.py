@@ -12,7 +12,6 @@ Creats dataframe of response times per trial, by side, and plots distributions -
 """
 
 import fileIO, h5py
-import math
 import numpy as np
 import scipy.signal
 
