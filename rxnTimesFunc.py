@@ -54,12 +54,11 @@ def ignore_trials(d):
     rxnTimes = []
     for i, times in enumerate(cumRespTimes):
        # time2 = time2[::-1]
-        mask = (abs(times[:])>10)
-        val = np.argmax(mask)
+        booleanMask = (abs(times[:])>10)
+        val = np.argmax(booleanMask)
        # t = len(time2) - val
         rxnTimes.append(val)
-           
-    #    np.argmax(abs(time2)>50)   #this is in pixels, calculated from Monitor norm and quiescent move threshold (.025)
+            #this is in pixels, calculated from Monitor norm and quiescent move threshold (.025)
     
     
     ignoreTrials = []
