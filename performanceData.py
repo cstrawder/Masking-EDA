@@ -13,6 +13,7 @@ import fileIO
 import numpy as np
 import matplotlib.pyplot as plt
 from behaviorAnalysis import get_files, formatFigure
+import statsmodels.api as sm
 
 
 def performance_data(mouse, ignoreRepeats=True):
@@ -130,6 +131,7 @@ def performance_data(mouse, ignoreRepeats=True):
     xaxis = range(len(files))
     ax.plot(xaxis, rightCorr, 'ro-')
     ax.plot(xaxis, leftCorr, 'bo-')
+   # ax.plot(xaxis, np.mean(rightCorr+leftCorr), 'k--')
     formatFigure(fig, ax, xLabel='Session number', yLabel='Percent Correct', title='Performance over time,  ' + mouse, xTickLabels=range(len(files)))  
     
     
