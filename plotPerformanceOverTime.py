@@ -22,4 +22,4 @@ from performanceData import performance_data
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
 d = h5py.File(f)
 
-performance_data(mouse='460312', ignoreRepeats=True)
+performance_data(mouse='477210', ignoreRepeats=True)
