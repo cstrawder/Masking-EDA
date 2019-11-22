@@ -76,7 +76,7 @@ endWheelPos = []
 
 # we want to see which direction they moved the wheel on mask-only trials 
 for i, (start, end, mask) in enumerate(zip(stimStart, trialRespFrames, maskContrast)):   
-    if (mask==1):  #maskOnly
+    if (mask>0):  #maskOnly
         endWheelPos.append(deltaWheel[end])
         startWheelPos.append(deltaWheel[start])
 

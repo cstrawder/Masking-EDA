@@ -62,6 +62,10 @@ for i, time in enumerate(trialTimes):
     smoothed = scipy.signal.medfilt(time, kernel_size=5)
     cumRespTimes.append(smoothed)
 
+trialResponseTimes = []
+for i in cumRespTimes:
+    trialResponseTimes.append(len(i))
+
 rxnTimes = []
 for i, times in enumerate(cumRespTimes):
    # time2 = time2[::-1]
@@ -163,7 +167,7 @@ for median, mean, title, time in zip([Rmed, Lmed], [Rmeans, Lmeans], ['Left', 'R
 fig, ax = plt.subplots() 
 for median, title, time in zip([Rmed, Lmed], ['Left', 'Right'], [Rtimes, Ltimes]):
     ax.plot(np.unique(trialMaskOnset), median, label=title, alpha=.5)
-    plt.title('Meidan Response Time by SOA'.format(title))
+    plt.title('Median Response Time by SOA'.format(title))
     ax.set_xticks(np.unique(trialMaskOnset))
     ax.legend()
 
@@ -183,9 +187,19 @@ for side in (Rtimes, Ltimes):
 
   
 
+df['responseTimes'] = trialResponseTimes
 
+times = []
+for onset in np.unique(trialMaskOnset):
+    lst = []
+    for i, (time, soa, resp,mask) in enumerate(zip(df['responseTimes'], df['soa'], df['resp'], df['mask'])):
+        if soa==onset and resp!=0:
+            if mask==True and i not in ignoreTrials:  # only masked trials and no obvious guessing trials included 
+                lst.append(time-soa)
+    times.append(lst)
 
-
+med = [np.median(x) for x in times]
+means = [np.mean(x) for x in times]
 
 
 
