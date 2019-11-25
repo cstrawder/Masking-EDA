@@ -32,7 +32,7 @@ else:
     prevTrialIncorrect = np.concatenate(([False],trialResponse[:-1]<1))         # array of boolean values about whethe the trial before was incorr
 trialResponse2 = trialResponse[(prevTrialIncorrect==False)]                    # false = not a repeat, true = repeat
 trialRewardDirection = trialRewardDirection[prevTrialIncorrect==False]      # use this to filter out repeated trials 
-trialTargetFrames = trialTargetFrames[prevTrialIncorrect==False]
+trialTargetContrast = trialTargetContrast[prevTrialIncorrect==False]
 
 
 # [R stim] , [L stim]
@@ -108,10 +108,10 @@ for num, denom, title in zip([hits, hits, hits+misses],
     ax.plot(np.unique(targetContrast), num[0]/denom[0], 'bo-')  #here [0] is right trials and [1] is left
     ax.plot(np.unique(targetContrast), num[1]/denom[1], 'ro-')
    # ax.plot(np.unique(targetContrast), (num[0]+num[1])/(denom[0]+denom[1]), 'ko--', alpha=.3)  #plots the combined average 
-    y=(num[0]/denom[0])
+    y1=(num[0]/denom[0])
     y2=(num[1]/denom[1])
     for i, length in enumerate(np.unique(targetContrast)):
-        plt.annotate(str(denom[0][i]), xy=(length,y[i]), xytext=(5, -10), textcoords='offset points')  #adds total num of trials
+        plt.annotate(str(denom[0][i]), xy=(length,y1[i]), xytext=(5, -10), textcoords='offset points')  #adds total num of trials
         plt.annotate(str(denom[1][i]), xy=(length,y2[i]), xytext=(-10, 10), textcoords='offset points')
     
     if 0 in trialTargetFrames:
