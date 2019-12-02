@@ -70,11 +70,12 @@ if 0 in trialTargetFrames:
     nogoMiss = pd.DataFrame(nogoMiss['CumPercentCorrect'])
     ax.plot(nogoCorr['CumPercentCorrect'], 'g^', ms=10)
     
+    # set marker face fill style to reflect direction turned 
     for nogo, x, direction in zip(no_gos, nogoMiss.index, nogoMiss['CumPercentCorrect']):
         if nogo > 0:
-            plt.plot(x, direction, 'gv', ms=10, markerfacecoloralt='red', fillstyle='left')  # set marker face fill style to reflect direction turned (e.g. half red)
+            plt.plot(x, direction, 'gv', ms=10, markerfacecoloralt='red', fillstyle='left')  
         elif nogo < 0:
-            plt.plot(x, direction, 'gv', ms=10)
+            plt.plot(x, direction, 'gv', ms=10, markerfacecoloralt='blue', fillstyle='left')
 
 for mask,i,corr in zip(df['mask'], df.index, df['CumPercentCorrect']):
     if mask>0:
