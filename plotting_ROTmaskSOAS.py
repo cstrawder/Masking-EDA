@@ -139,7 +139,7 @@ for num, denom, title in zip(
             
   
     a = ax.get_xticks().tolist()
-    a = [int(i) for i in a]    
+    a = [int(i) for i in a]     
     a[-1]='no mask' 
     if maskOnlyTotal:
         a[0]='mask only'

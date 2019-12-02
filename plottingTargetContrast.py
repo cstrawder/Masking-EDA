@@ -115,7 +115,7 @@ for num, denom, title in zip([hits, hits, hits+misses],
         plt.annotate(str(denom[1][i]), xy=(length,y2[i]), xytext=(-10, 10), textcoords='offset points')
     
     if 0 in trialTargetFrames:
-        ax.plot(0, nogoCorrect/nogoTotal, 'go')
+        ax.plot(0, nogoCorrect/nogoTotal, 'go') 
         if title=='Total response rate':
             ax.plot(0, nogoR/nogoMove, 'g>')   #plot the side that was turned in no-go with an arrow in that direction
             ax.plot(0, nogoL/nogoMove, 'g<')  #add counts

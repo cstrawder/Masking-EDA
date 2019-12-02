@@ -39,7 +39,7 @@ quiescentMoveFrames = d['quiescentMoveFrames'][:]
 trialEndFrame = d['trialEndFrame'][:end]
 deltaWheel = d['deltaWheelPos'][:]                      # has wheel movement for every frame of session
 maxResp = d['maxResponseWaitFrames'][()]   
-maskContrast = d['trialMaskContrast'][:end]==1
+maskContrast = d['trialMaskContrast'][:end]>0
 maskOnset = d['maskOnset'][()]
 
 
