@@ -10,13 +10,13 @@ import matplotlib.pyplot as plt
 from behaviorAnalysis import formatFigure
 
 
-def plot_targetDuration(data, ignore_repeats=True):
+def plot_targetDuration(data, ignoreRepeats=True):
     
     d = data
-    trialRewardDirection = d['trialRewardDir'].value[:-1]
-    trialResponse = d['trialResponse'].value
-    targetLengths = d['targetFrames'].value   # does not include no-gos
-    trialTargetFrames = d['trialTargetFrames'][:-1]
+    trialResponse = d['trialResponse'][:]
+    trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]
+    targetLengths = d['targetFrames'][:]   # does not include no-gos
+    trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]
     
     # [R stim] , [L stim]
     hits = [[],[]]
@@ -43,10 +43,10 @@ def plot_targetDuration(data, ignore_repeats=True):
         
         no_goTurnDir = []
         
-        stimStart = d['trialStimStartFrame'].value[trialTargetFrames==0]
-        trialRespFrames = d['trialResponseFrame'].value[trialTargetFrames==0]
-        trialOpenLoop = d['trialOpenLoopFrames'].value[trialTargetFrames==0]
-        deltaWheel = d['deltaWheelPos'].value
+        stimStart = d['trialStimStartFrame'][:len(trialResponse)][trialTargetFrames==0]
+        trialRespFrames = d['trialResponseFrame'][:len(trialResponse)][trialTargetFrames==0]
+        trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)][trialTargetFrames==0]
+        deltaWheel = d['deltaWheelPos'][:]
         no_goResp = trialResponse[trialTargetFrames==0]
         
         stimStart += trialOpenLoop
