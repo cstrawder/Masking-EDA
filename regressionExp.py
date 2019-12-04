@@ -87,4 +87,15 @@ if len(maskOnset)>0:
     df['mask'] = maskContrast
     df['soa'] = trialMaskOnset
     
-#onehotencode the categorical variables (resp, dir)
+#onehotencode the categorical variables (resp, dir))
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+ 
+#List of (name, transformer, column(s)) tuples
+ct = ColumnTransformer(
+        [('encode1', OneHotEncoder(df), 'rewDir'), ('encode2', OneHotEncoder(df), 'resp')], remainder='passthrough')
+
+
+df_scaled = pd.DataFrame(ct.fit_transform(df), columns=[0,1])
+    
+    

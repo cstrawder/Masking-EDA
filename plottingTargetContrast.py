@@ -18,7 +18,7 @@ f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbet
 d = h5py.File(f)
 
 trialResponse = d['trialResponse'][:]
-trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]    # leave off last trial, ended session before answer                  # list of ind lengths, does not include no-gos (0)
+trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]    # leave off last trial, ended session before answer
 trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]
 trialTargetContrast = d['trialTargetContrast'][:len(trialResponse)]
 targetContrast = d['targetContrast'][:]
@@ -137,5 +137,3 @@ for num, denom, title in zip([hits, hits, hits+misses],
         #a = [int(i) for i in a]    
         a[0]='no-go' 
         ax.set_xticklabels(a)
-    
-    

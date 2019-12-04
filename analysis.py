@@ -60,17 +60,17 @@ def plot_targetDuration(data, ignoreRepeats=True):
             endWheelPos.append(deltaWheel[end])
             startWheelPos.append(deltaWheel[start])
         
-        endWheelPos = np.array(endWheelPos)
-        startWheelPos = np.array(startWheelPos)   
-        wheelPos = endWheelPos - startWheelPos
-        
-        for i in wheelPos:
-            if i >0:
-                no_goTurnDir.append(1)
-            else:
-                no_goTurnDir.append(-1)
-        
-        no_goTurnDir = np.array(no_goTurnDir)
+    endWheelPos = np.array(endWheelPos)
+    startWheelPos = np.array(startWheelPos)   
+    wheelPos = endWheelPos - startWheelPos
+    
+    for i in wheelPos:
+        if i >0:
+            no_goTurnDir.append(1)
+        else:
+            no_goTurnDir.append(-1)
+    
+    no_goTurnDir = np.array(no_goTurnDir)
     
     no_goR = sum(no_goTurnDir[no_goTurnDir==1])
     no_goL = sum(no_goTurnDir[no_goTurnDir==-1])*-1
@@ -85,7 +85,7 @@ def plot_targetDuration(data, ignoreRepeats=True):
         ax.plot(np.unique(targetLengths), num[1]/denom[1], 'ro-')
         ax.plot(0, no_goNum/no_goDen, 'go')
         if no_goNum == no_goMove:
-            ax.plot(0, no_goR/no_goMove, 'ro')
+            ax.axhline(no_goR/no_goMove, xmin=0, xmax=1, linestyle='--', color='r')
             ax.plot(0, no_goL/no_goMove, 'bo')
             
         
