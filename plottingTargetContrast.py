@@ -30,9 +30,10 @@ if 'trialRepeat' in d.keys():
     prevTrialIncorrect = d['trialRepeat'][:len(trialResponse)]  #recommended, since keeps track of how many repeats occurred 
 else:
     prevTrialIncorrect = np.concatenate(([False],trialResponse[:-1]<1))         # array of boolean values about whethe the trial before was incorr
-trialResponse2 = trialResponse[(prevTrialIncorrect==False)]                    # false = not a repeat, true = repeat
+trialResponse2 = trialResponse[prevTrialIncorrect==False]                    # false = not a repeat, true = repeat
 trialRewardDirection = trialRewardDirection[prevTrialIncorrect==False]      # use this to filter out repeated trials 
 trialTargetContrast = trialTargetContrast[prevTrialIncorrect==False]
+trialTargetFrames = trialTargetFrames[prevTrialIncorrect==False]
 
 
 # [R stim] , [L stim]
