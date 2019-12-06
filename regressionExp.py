@@ -6,6 +6,8 @@ Created on Mon Nov 18 11:15:05 2019
 
 This gives you a nice dataframe of the session data for an individual mouse
 
+Describe model, fit model, and summarize model
+
 
 """
 import fileIO, h5py
@@ -15,6 +17,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy 
+from patsy import dmatrices
 
 from rxnTimesFunc import ignore_trials
 from sessionData import session
@@ -40,6 +43,7 @@ deltaWheel = d['deltaWheelPos'][:]                      # has wheel movement for
 maxResp = d['maxResponseWaitFrames'][()]   
 maskContrast = d['trialMaskContrast'][:end]==1
 maskOnset = d['maskOnset'][()]
+prevTrialIncorrect = d['trialRepeat'][:end]  # this will be most useful for guessing 
 
 for i, trial in enumerate(trialTargetFrames):  # this is needed for older files nogos are randomly assigned a dir
     if trial==0:
@@ -86,6 +90,17 @@ df['reactionTime'] = rxnTimes
 if len(maskOnset)>0:
     df['mask'] = maskContrast
     df['soa'] = trialMaskOnset
+    
+df['prevTrial'] = prevTrialIncorrect
+
+
+
+
+
+
+
+
+
     
 #onehotencode the categorical variables (resp, dir))
 from sklearn.preprocessing import OneHotEncoder
