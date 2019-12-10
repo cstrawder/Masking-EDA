@@ -8,6 +8,8 @@ This gives you a nice dataframe of the session data for an individual mouse
 
 Describe model, fit model, and summarize model
 
+Look at prevResp, prevIncorrect, trial number (better at start/learning over time)
+
 
 """
 import fileIO, h5py
@@ -18,6 +20,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy 
 from patsy import dmatrices
+import statsmodels.api as sm
 
 from rxnTimesFunc import ignore_trials
 from sessionData import session
@@ -94,13 +97,13 @@ if len(maskOnset)>0:
 df['prevTrial'] = prevTrialIncorrect
 
 
+y, X = dmatrices('resp ~ rewDir + prevTrial + mask', data=df, return_type='dataframe')
 
+mod = sm.OLS(y,X)
 
+res = mod.fit()
 
-
-
-
-
+res.summary()
     
 #onehotencode the categorical variables (resp, dir))
 from sklearn.preprocessing import OneHotEncoder
