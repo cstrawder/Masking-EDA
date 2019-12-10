@@ -32,10 +32,7 @@ maskContrast = d['trialMaskContrast'][:len(trialResponse)]
 
 noMaskVal = maskOnset[-1] + round(np.mean(np.diff(maskOnset)))  # assigns noMask condition an evenly-spaced value from soas
 maskOnset = np.append(maskOnset, noMaskVal)              # makes final value the no-mask condition
-
-
-# 30 doesnt do well for soft coding but makes the conditional plotting statement easier (bottom)200
-     
+    
 for i, (mask, trial) in enumerate(zip(trialMaskOnset, trialTargetFrames)):   # filters target-Only trials 
     if trial>0 and mask==0:
         trialMaskOnset[i]=noMaskVal
