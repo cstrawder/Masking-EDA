@@ -7,14 +7,13 @@ Created on Tue Aug 13 11:20:20 2019
 
 import h5py
 import fileIO
-import numpy as np
 import pandas as pd 
 import matplotlib
 from matplotlib import pyplot as plt
 from nogoTurn import nogo_turn
 
 """
-plots the choices (in temporal order) over the length of a session
+plots the choices (in order) over the length of a session
 
 """
 
@@ -37,7 +36,6 @@ data = zip(trialRewardDirection, trialResponse, maskOnset)
 
 df = pd.DataFrame(data, index=trialResponseFrame, columns=['rewardDir', 'trialResp', 'mask'])
 df['CumPercentCorrect'] = df['trialResp'].cumsum()
-
 index = df.index
 values = df.values
 
