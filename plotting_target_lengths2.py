@@ -118,7 +118,7 @@ for num, denom, title in zip([hits, hits, hits+misses],
        
     formatFigure(fig, ax, xLabel='Target Length (frames)', yLabel='percent trials', 
                  title=title + " :  " + '-'.join(f.split('_')[-3:-1]))
-    ax.set_xlim([-.2, targetLengths[-1]+2])
+    ax.set_xlim([-.5, targetLengths[-1]+2])
     ax.set_ylim([0,1.05])
     ax.set_xticks(np.unique(trialTargetFrames))
     ax.spines['right'].set_visible(False)
