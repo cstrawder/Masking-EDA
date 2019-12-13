@@ -23,7 +23,7 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
 d = h5py.File(f)
 
-trialResponse = d['trialResponse'][:]
+trialResponse = d['trialResponse'][:225]
 trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]
 maskOnset = d['maskOnset'][()]                  
 trialMaskOnset = d['trialMaskOnset'][:len(trialResponse)]
@@ -61,7 +61,7 @@ maskOnlyCorr = len(trialResponse[(maskContrast>0) & (trialResponse==1) & (trialT
 
 stimStart = d['trialStimStartFrame'][:len(trialResponse)]
 trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)]
-trialRespFrames = d['trialResponseFrame'][:]
+trialRespFrames = d['trialResponseFrame'][:len(trialResponse)]
 deltaWheel = d['deltaWheelPos'][:]
 
 stimStart = stimStart[(trialTargetFrames==0)]             
