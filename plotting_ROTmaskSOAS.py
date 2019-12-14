@@ -23,7 +23,7 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
 d = h5py.File(f)
 
-trialResponse = d['trialResponse'][:225]
+trialResponse = d['trialResponse'][:]
 trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]
 maskOnset = d['maskOnset'][()]                  
 trialMaskOnset = d['trialMaskOnset'][:len(trialResponse)]
@@ -55,7 +55,6 @@ totalTrials = hits+misses+noResps
 respOnly = hits+misses
 
 maskTotal = len(trialResponse[(maskContrast>0)])
-
 maskOnlyTotal = len(trialResponse[(maskContrast>0) & (trialTargetFrames==0)])   # rotation task 'mask only' trials can't be 'correct'
 maskOnlyCorr = len(trialResponse[(maskContrast>0) & (trialResponse==1) & (trialTargetFrames==0)])
 
@@ -93,15 +92,38 @@ maskOnlyTurnDir = np.array(maskOnlyTurnDir)
 maskOnlyR = sum(maskOnlyTurnDir==1)
 maskOnlyL = sum(maskOnlyTurnDir==-1)   
 
+trialMaskContrast= d['trialMaskContrast'][:len(trialResponse)]
+nogoResp = trialResponse[(trialTargetFrames==0) & (trialMaskContrast==0)]
+nogoStartWheelPos = []
+nogoEndWheelPos = []
+
+# we want to see which direction they moved the wheel on an incorrect no-go
+for (start, end, resp) in zip(stimStart, trialRespFrames, nogoResp):   
+    if resp==-1:
+        endWheelPos.append(deltaWheel[end])
+        startWheelPos.append(deltaWheel[start])
     
-nogoTurnDir = nogo_turn(d, ignoreRepeats=False, returnArray=True)   #set false for masking
-nogoMove = len(nogoTurnDir) 
+endWheelPos = np.array(endWheelPos)
+startWheelPos = np.array(startWheelPos)   
+wheelPos = endWheelPos - startWheelPos
+
+nogoTurnDir = []
+
+for i in wheelPos:
+    if i >0:
+        nogoTurnDir.append(1)
+    else:
+        nogoTurnDir.append(-1)
+
 nogoTurnDir = np.array(nogoTurnDir)
 
-nogoR = sum(nogoTurnDir==1)
-nogoL = sum(nogoTurnDir==-1)
-
-
+nogoR = sum(nogoTurnDir[nogoTurnDir==1])
+nogoL = sum(nogoTurnDir[nogoTurnDir==-1])*-1
+ 
+nogoTotal = len(trialTargetFrames[trialTargetFrames==0])
+nogoCorrect = len(trialResponse[(trialResponse==1) & (trialTargetFrames==0)])
+nogoMove = len(nogoTurnDir) 
+nogoTurnDir = np.array(nogoTurnDir)
 
 for num, denom, title in zip(
         [hits, hits, respOnly],
@@ -124,6 +146,10 @@ for num, denom, title in zip(
         ax.plot(0, (1-(maskOnlyCorr/maskOnlyTotal)), 'ko')
         ax.annotate(str(maskOnlyR), xy=(1,maskOnlyR/maskOnlyTotal), xytext=(0, 0), textcoords='offset points')
         ax.annotate(str(maskOnlyL), xy=(1,maskOnlyL/maskOnlyTotal), xytext=(0, 0), textcoords='offset points')
+        
+        ax.plot(-1, nogoCorrect/nogoTotal, 'go')
+        ax.plot(-1, nogoR/nogoMove, 'g>')   #plot the side that was turned in no-go with an arrow in that direction
+        ax.plot(-1, nogoL/nogoMove, 'g<')
     
     formatFigure(fig, ax, xLabel='SOA (frames)', yLabel='percent trials', 
                  title=title + " :  " + '-'.join(f.split('_')[-3:-1]))

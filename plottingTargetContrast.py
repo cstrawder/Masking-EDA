@@ -17,7 +17,7 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
 d = h5py.File(f)
 
-trialResponse = d['trialResponse'][:]
+trialResponse = d['trialResponse'][:171]
 trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]    # leave off last trial, ended session before answer
 trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]
 trialTargetContrast = d['trialTargetContrast'][:len(trialResponse)]
@@ -29,8 +29,8 @@ repeats = d['incorrectTrialRepeats'][()]
 if 'trialRepeat' in d.keys():
     prevTrialIncorrect = d['trialRepeat'][:len(trialResponse)]  #recommended, since keeps track of how many repeats occurred 
 else:
-    prevTrialIncorrect = np.concatenate(([False],trialResponse[:-1]<1))         # array of boolean values about whethe the trial before was incorr
-trialResponse2 = trialResponse[prevTrialIncorrect==False]                    # false = not a repeat, true = repeat
+    prevTrialIncorrect = np.concatenate(([False],trialResponse[:-1]<1))     # array of boolean values, if trial before was incorr
+trialResponse2 = trialResponse[prevTrialIncorrect==False]                   # false = not a repeat, true = repeat
 trialRewardDirection = trialRewardDirection[prevTrialIncorrect==False]      # use this to filter out repeated trials 
 trialTargetContrast = trialTargetContrast[prevTrialIncorrect==False]
 trialTargetFrames = trialTargetFrames[prevTrialIncorrect==False]
@@ -42,7 +42,8 @@ misses = [[], []]
 noResps = [[],[]]
 
 for i, direction in enumerate([-1,1]):
-    directionResponses = [trialResponse2[(trialRewardDirection==direction) & (trialTargetContrast == tc)] for tc in np.unique(targetContrast)]
+    directionResponses = [trialResponse2[
+            (trialRewardDirection==direction) & (trialTargetContrast == tc)] for tc in np.unique(targetContrast)]
     hits[i].append([np.sum(drs==1) for drs in directionResponses])
     misses[i].append([np.sum(drs==-1) for drs in directionResponses])
     noResps[i].append([np.sum(drs==0) for drs in directionResponses])
@@ -112,7 +113,7 @@ for num, denom, title in zip([hits, hits, hits+misses],
     y1=(num[0]/denom[0])
     y2=(num[1]/denom[1])
     for i, length in enumerate(np.unique(targetContrast)):
-        plt.annotate(str(denom[0][i]), xy=(length,y1[i]), xytext=(5, -10), textcoords='offset points')  #adds total num of trials
+        plt.annotate(str(denom[0][i]), xy=(length,y1[i]), xytext=(5, -10), textcoords='offset points')  
         plt.annotate(str(denom[1][i]), xy=(length,y2[i]), xytext=(-10, 10), textcoords='offset points')
     
     if 0 in trialTargetFrames:
