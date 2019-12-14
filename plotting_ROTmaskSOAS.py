@@ -54,6 +54,7 @@ noResps = np.squeeze(np.array(noResps))
 totalTrials = hits+misses+noResps
 respOnly = hits+misses
 
+
 maskTotal = len(trialResponse[(maskContrast>0)])
 maskOnlyTotal = len(trialResponse[(maskContrast>0) & (trialTargetFrames==0)])   # rotation task 'mask only' trials can't be 'correct'
 maskOnlyCorr = len(trialResponse[(maskContrast>0) & (trialResponse==1) & (trialTargetFrames==0)])
@@ -93,19 +94,19 @@ maskOnlyR = sum(maskOnlyTurnDir==1)
 maskOnlyL = sum(maskOnlyTurnDir==-1)   
 
 trialMaskContrast= d['trialMaskContrast'][:len(trialResponse)]
-nogoResp = trialResponse[(trialTargetFrames==0) & (trialMaskContrast==0)]
+nogoTrials = trialResponse[(trialTargetFrames==0) & (trialMaskContrast==0)]
 nogoStartWheelPos = []
 nogoEndWheelPos = []
 
 # we want to see which direction they moved the wheel on an incorrect no-go
-for (start, end, resp) in zip(stimStart, trialRespFrames, nogoResp):   
+for (start, end, resp) in zip(stimStart, trialRespFrames, nogoTrials):   
     if resp==-1:
-        endWheelPos.append(deltaWheel[end])
-        startWheelPos.append(deltaWheel[start])
+        nogoEndWheelPos.append(deltaWheel[end])
+        nogoStartWheelPos.append(deltaWheel[start])
     
-endWheelPos = np.array(endWheelPos)
-startWheelPos = np.array(startWheelPos)   
-wheelPos = endWheelPos - startWheelPos
+nogoEndWheelPos = np.array(nogoEndWheelPos)
+nogoStartWheelPos = np.array(nogoStartWheelPos)   
+wheelPos = nogoEndWheelPos - nogoStartWheelPos
 
 nogoTurnDir = []
 
@@ -120,8 +121,8 @@ nogoTurnDir = np.array(nogoTurnDir)
 nogoR = sum(nogoTurnDir[nogoTurnDir==1])
 nogoL = sum(nogoTurnDir[nogoTurnDir==-1])*-1
  
-nogoTotal = len(trialTargetFrames[trialTargetFrames==0])
-nogoCorrect = len(trialResponse[(trialResponse==1) & (trialTargetFrames==0)])
+nogoTotal = len(nogoTrials)
+nogoCorrect = len(trialResponse[(trialResponse==1) & (trialTargetFrames==0) & (trialMaskContrast==0)])
 nogoMove = len(nogoTurnDir) 
 nogoTurnDir = np.array(nogoTurnDir)
 
@@ -143,7 +144,7 @@ for num, denom, title in zip(
     if 0 in trialTargetFrames:
         ax.plot(0, (maskOnlyR/maskOnlyTotal), 'r>', ms=8)   #plot the side that was turned in no-go with an arrow in that direction
         ax.plot(0, (maskOnlyL/maskOnlyTotal), 'b<', ms=8)
-        ax.plot(0, (1-(maskOnlyCorr/maskOnlyTotal)), 'ko')
+        ax.plot(0, (maskOnlyCorr/maskOnlyTotal), 'ko')
         ax.annotate(str(maskOnlyR), xy=(1,maskOnlyR/maskOnlyTotal), xytext=(0, 0), textcoords='offset points')
         ax.annotate(str(maskOnlyL), xy=(1,maskOnlyL/maskOnlyTotal), xytext=(0, 0), textcoords='offset points')
         
