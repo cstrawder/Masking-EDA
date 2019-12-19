@@ -17,7 +17,7 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
 d = h5py.File(f)
 
-trialResponse = d['trialResponse'][:171]
+trialResponse = d['trialResponse'][:]
 trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]    # leave off last trial, ended session before answer
 trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]
 trialTargetContrast = d['trialTargetContrast'][:len(trialResponse)]
