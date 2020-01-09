@@ -75,7 +75,7 @@ if 0 in trialTargetFrames:
         if nogo > 0:
             plt.plot(x, direction, 'gv', ms=10, markerfacecoloralt='red', fillstyle='left')  
         elif nogo < 0:
-            plt.plot(x, direction, 'gv', ms=10, markerfacecoloralt='blue', fillstyle='left')
+            plt.plot(x, direction, 'gv', ms=10, markerfacecoloralt='c', fillstyle='left')
 
 for mask,i,corr in zip(df['mask'], df.index, df['CumPercentCorrect']):
     if mask>0:
