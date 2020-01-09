@@ -48,9 +48,12 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True, x=0):
             trialResponse = d['trialResponse'].value
        
         # these are down here (rather than logical index above) for option to include/exclude repeats 
-       
+       # I am having an issue where the nogos and mask only trials are not being counted separately
+       # and thus when nogoTUrn is called, the maskOnly trials are not being plotted
+        
         stimStart = stimStart[(trialTargetFrames==0)]
-        no_goResp = trialResponse[(trialTargetFrames==0) & (maskContrast==0)]     #trial response
+        no_goResp = trialResponse[(trialTargetFrames==0)]     #trial response
+        maskOnly = trialResponse[(trialTargetFrames==0) & (maskContrast>0)]
         trialRespFrames = trialRespFrames[(trialTargetFrames==0) & (maskContrast==0)]
         trialOpenLoop = trialOpenLoop[(trialTargetFrames==0) & (maskContrast==0)]
         deltaWheel = d['deltaWheelPos'][()]      
