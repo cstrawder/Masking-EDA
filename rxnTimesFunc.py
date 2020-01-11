@@ -38,6 +38,7 @@ def ignore_trials(d):
     
     
     # length of time from start of stim to response (or no response) for each trial
+    # trialTimes is list of arrays, each array contains deltaWheel for each trial
     trialTimes = []   
     for i, (start, resp) in enumerate(zip(trialStimStartFrame, trialResponseFrame)):
             respTime = (deltaWheel[start:resp])
@@ -58,12 +59,11 @@ def ignore_trials(d):
         val = np.argmax(booleanMask)
        # t = len(time2) - val
         rxnTimes.append(val)
-            #this is in pixels, calculated from Monitor norm and quiescent move threshold (.025)
-    
+           
     
     ignoreTrials = []
     for i, t in enumerate(rxnTimes):     # 15 frames = 125 ms 
-        if 0<t<10:                                 # correct nogos have a rxn time of 0
+        if 1<t<10:                                 # correct nogos have a rxn time of 0
             ignoreTrials.append(i)
     return ignoreTrials
 
