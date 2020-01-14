@@ -8,6 +8,7 @@ Created on Tue Aug 20 15:47:02 2019
 import h5py
 import fileIO
 import numpy as np
+from ignoreTrials import ignore_trials
 
 
 def nogo_turn(data, ignoreRepeats=True, returnArray=True, x=0):
@@ -44,6 +45,7 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True, x=0):
             trialTargetFrames = trialTargetFrames[prevTrialIncorrect==False]
             trialRespFrames = trialRespFrames[prevTrialIncorrect==False]
             trialOpenLoop = trialOpenLoop[prevTrialIncorrect==False]
+            maskContrast = maskContrast[prevTrialIncorrect==False]
         elif ignoreRepeats==False:
             trialResponse = d['trialResponse'].value
        
