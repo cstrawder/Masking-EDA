@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import scipy.signal
 import seaborn as sns 
 from freedmanDiaconis import freedman_diaconis
+from nogoTurn import nogo_turn
 
 matplotlib.rcParams['pdf.fonttype'] = 42
 
@@ -33,13 +34,13 @@ trialTargetFrames = d['trialTargetFrames'][:end]
 trialStimStartFrame = d['trialStimStartFrame'][:]
 trialResponseFrame = d['trialResponseFrame'][:end]    #if they don't respond, then nothing is recorded here - this limits df to length of this variable
 trialOpenLoopFrames = d['trialOpenLoopFrames'][:end]
-trialMaskOnset = d['trialMaskOnset'][:end]
 openLoop = d['openLoopFramesFixed'][()]
 quiescentMoveFrames = d['quiescentMoveFrames'][:]
 trialEndFrame = d['trialEndFrame'][:end]
 deltaWheel = d['deltaWheelPos'][:]                      # has wheel movement for every frame of session
 maxResp = d['maxResponseWaitFrames'][()]   
-maskContrast = d['trialMaskContrast'][:end]>0
+trialMaskOnset = d['trialMaskOnset'][:end]
+trialMaskContrast = d['trialMaskContrast'][:end]
 maskOnset = d['maskOnset'][()]
 
 
@@ -51,7 +52,7 @@ for i, trial in enumerate(trialTargetFrames):  # this is needed for older files 
 # length of time from start of stim to response (or no response) for each trial
 trialTimes = []   
 for i, (start, resp) in enumerate(zip(trialStimStartFrame, trialResponseFrame)):
-        respTime = (deltaWheel[start:resp])
+        respTime = (deltaWheel[start:resp+1])
         trialTimes.append(respTime)
 
 #since deltawheel provides the difference in wheel mvmt from trial to trial
@@ -69,7 +70,7 @@ for i in cumRespTimes:
 rxnTimes = []
 for i, times in enumerate(cumRespTimes):
    # time2 = time2[::-1]
-    mask = (abs(times[:])>10)
+    mask = (abs(times[:])>5)
     val = np.argmax(mask)
    # t = len(time2) - val
     rxnTimes.append(val)
@@ -84,7 +85,7 @@ df = pd.DataFrame(data, index=index, columns=['rewDir', 'resp', 'stimStart', 're
 df['trialLength'] = [len(t) for t in trialTimes]
 df['reactionTime'] = rxnTimes
 if len(maskOnset)>0:
-    df['mask'] = maskContrast
+    df['mask'] = trialMaskContrast
     df['soa'] = trialMaskOnset
 
 
@@ -124,29 +125,41 @@ means = [np.mean(x) for x in times]
 fig, ax = plt.subplots()
 ax.plot(np.unique(trialMaskOnset), med, label='Median', alpha=.4)
 ax.plot(np.unique(trialMaskOnset), means, label='Mean', alpha=.4)
-ax.set(title='Response Time by SOA')
+ax.set(title='Response Time by SOA') 
 ax.set_xticks(np.unique(trialMaskOnset))
 ax.legend()
 
 # then also plot the median no-mask trial response time
 
+##  for the mask only, plot which side the mouse turns**
 
+x = nogo_turn(d)  # has 2 arrays: 1st is nogos, 2nd maskOnly
 
 Rtimes = []
 Ltimes = []
+maskOnly=[]
 for onset in np.unique(trialMaskOnset):
     Rlst = []
     Llst = []
-    for i, (time, soa, resp,mask,direc) in enumerate(zip(df['reactionTime'], df['soa'], 
-           df['resp'], df['mask'], df['rewDir'])):
+    Mlst = []
+    for i, (time, soa, resp, mask, direc) in enumerate(zip(
+            df['reactionTime'], df['soa'], df['resp'], df['mask'], df['rewDir'])):
         if soa==onset and resp!=0:
-            if mask==True and i not in ignoreTrials:
+            if i not in ignoreTrials:
                 if direc==1:    
                     Rlst.append(time)
                 elif direc==-1:
                     Llst.append(time)
+        if direc==0 and mask==1:
+            maskOnly.append(time)
+        elif direc==0 and mask==0:
+                    Mlst.append(time)
+#        elif soa==0:
+#                direc==0:
+#                    maskOnly.append(time)
     Rtimes.append(Rlst)
     Ltimes.append(Llst)
+
     
 
 Rmed = [np.median(x) for x in Rtimes]
@@ -159,7 +172,9 @@ for median, mean, title, time in zip([Rmed, Lmed], [Rmeans, Lmeans], ['Left', 'R
     fig, ax = plt.subplots()
     ax.plot(np.unique(trialMaskOnset), median, label='Median', alpha=.4)
     ax.plot(np.unique(trialMaskOnset), mean, label='Mean', alpha=.4)
-    ax.set(title='{}-turning Response Time by SOA'.format(title), xlabel='SOA', ylabel='Response Time (frames, 120/sec)')
+    ax.plot(0, np.mean(maskOnly), label='Mean MaskOnly', marker='o', c='b')
+    ax.plot(0, np.median(maskOnly), label='Median MaskOnly', marker='o', c='g')
+    ax.set(title='{}-turning Response Time by SOA'.format(title), xlabel='SOA', ylabel='Response Time (frames, 60/sec)')
     ax.set_xticks(np.unique(trialMaskOnset))
     ax.legend()
 
