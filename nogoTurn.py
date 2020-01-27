@@ -30,62 +30,78 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True):
         trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)] 
         stimStart = d['trialStimStartFrame'][:len(trialResponse)]
         deltaWheel = d['deltaWheelPos'][:]
-        
-        nogoTurnDir = []   #returns an array of values that show the direction turned for ALL no-go trials,
-    
-        noTargetTrials = trialTargetFrames[trialTargetFrames==0]
-        noTarget = trialTargetFrames==0
-        nogoTotal = len(trialTargetFrames[(trialTargetFrames==0) & (trialMaskContrast==0)])
-        nogoCorrect = len(trialResponse[(trialTargetFrames==0) & (trialMaskContrast==0) & (trialResponse==1)])  
+        repeats = d['incorrectTrialRepeats'][()]
+        timeout = d['incorrectTimeoutFrames'][()]
+        preStim = d['preStimFramesFixed'][()]
    
-        if ignoreRepeats == True: 
+        if ignoreRepeats == True and repeats>0: 
             trialResponseOG = d['trialResponse'][:]
             if 'trialRepeat' in d.keys():
                 prevTrialIncorrect = d['trialRepeat'][:len(trialResponseOG)]
             else:
                 prevTrialIncorrect = np.concatenate(([False],trialResponseOG[:-1]<1))
-            nogoTotal = len(trialTargetFrames[(prevTrialIncorrect==False) & (trialTargetFrames==0) & (trialMaskContrast==0)])
-            nogoCorrect = len(trialTargetFrames[(prevTrialIncorrect==False) & (trialResponse==1) & (trialTargetFrames==0) & (trialMaskContrast==0)])
-            trialStimStart = stimStart[(prevTrialIncorrect==False)]
+            
             trialResponse = trialResponseOG[prevTrialIncorrect==False]
             trialTargetFrames = trialTargetFrames[prevTrialIncorrect==False]
+            trialStimStart = stimStart[(prevTrialIncorrect==False)]
             trialRespFrames = trialRespFrames[prevTrialIncorrect==False]
             trialOpenLoop = trialOpenLoop[prevTrialIncorrect==False]
             trialMaskContrast = trialMaskContrast[prevTrialIncorrect==False]
+            
         elif ignoreRepeats==False:
             trialResponse = d['trialResponse'][:]
+        
+        
+        noTargetTrials = trialTargetFrames[trialTargetFrames==0]
+        noTarget = trialTargetFrames==0
+        nogoTotal = len(trialTargetFrames[(trialTargetFrames==0) & (trialMaskContrast==0)])
+        nogoCorrect = len(trialResponse[(trialTargetFrames==0) & (trialMaskContrast==0) & (trialResponse==1)]) 
         
         deltaWheel = d['deltaWheelPos'][:]    
         
         startWheelPos = [[],[]]  # first is nogo, 2nd maskOnly
         endWheelPos = [[],[]]
-        ind = [[],[]]
+        ind = [[],[]]   # index of trials
+
+        ## take nogo wheel trace from the start of the closed loop
+        ## extend wheel trace into the timeout period - in masked session no timeout, so use next trial prestim period
 
         for i, (start, end, resp, target, mask) in enumerate(
                 zip(trialStimStart, trialRespFrames, trialResponse, trialTargetFrames, trialMaskContrast)):
             if mask==0:
-                if target==0 and resp==-1:
-                      endWheelPos[0].append(deltaWheel[end])
+                if target==0 and resp==-1:  # nogos
+                      endWheelPos[0].append(deltaWheel[end+30])
                       startWheelPos[0].append(deltaWheel[start])
                       ind[0].append(i)
-            elif mask>0 and target==0 and resp==-1:
-                endWheelPos[1].append(deltaWheel[end])
+            elif mask>0 and target==0 and resp==-1:   # maskOnly
+                endWheelPos[1].append(deltaWheel[end+30])
                 startWheelPos[1].append(deltaWheel[start])
                 ind[1].append(i)
         
+        nogoWheel = []
+        maskOnlyWheel = []
+        
+        for arr in zip(endWheelPos, startWheelPos):
+            for i in (nogoWheel, maskOnlyWheel):
+                i.append(np.array(arr))
+            
+        
+        endWheelPos = np.array(endWheelPos)
+        startWheelPos = np.array(startWheelPos)   
+        wheelPos = endWheelPos - startWheelPos
+        
+        for i in wheelPos:
+            if i >0:
+                nogoTurnDir.append(1)
+            else:
+                nogoTurnDir.append(-1)
         
         
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
+        nogoTurnDir = []   #returns an array of values that show the direction turned for ALL no-go trials,
+    
         nogoStimStart = stimStart[(trialTargetFrames==0) & (trialMaskContrast==0)]
         nogoResp = trialResponse[(trialTargetFrames==0) & (trialMaskContrast==0)]
         nogoTrialRespFrames = trialRespFrames[(trialTargetFrames==0) & (trialMaskContrast==0)]
@@ -156,6 +172,8 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True):
 
     if returnArray==True:    
         return [nogoTurnDir, maskOnlyTurnDir]
+    
+    # when the function is called, this can be unzipped into 2 variables - but this returns a tuple; better to unpack later
 
          
      
