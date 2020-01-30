@@ -31,6 +31,7 @@ def session(data, ignoreRepeats=True, printValues=True):
     trialResponse = d['trialResponse'][:]
     trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]
     trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]
+    trialMaskContrast = d['trialMaskContrast'][:len(trialResponse)]
 
     trialRewards = 0    
     
@@ -48,42 +49,44 @@ def session(data, ignoreRepeats=True, printValues=True):
         trialResponse = trialResponseOG[prevTrialIncorrect==False]
         trialRewardDirection = trialRewardDirection[prevTrialIncorrect==False]
         trialTargetFrames = trialTargetFrames[prevTrialIncorrect==False]
+        trialMaskContrast = trialMaskContrast[prevTrialIncorrect==False]
         print('Repeats: ' + (str((len(trialResponseOG) - len(trialResponse)))) + '/' + str(len(trialResponseOG)))
         print((round(len(trialResponseOG)-len(trialResponse))/len(trialResponseOG)))
         
     elif ignoreRepeats == False:
         trialResponse = d['trialResponse'][:]
-        #nogo_turn(d, ignoreRepeats=False, returnArray=False)
+        #nogo_turn(d, ignoreRepeats=False, returnArray=False)[0]
         print('Trials: ' + (str(len(trialResponse))))
     else:
         pass
     
     ignoreTrials = ignore_trials(d)
     
-    ignoreMask = np.zeros(len(trialResponse), dtype=bool)
-    for i, m in enumerate(ignoreMask):
+    ignoreBooleanMask = np.zeros(len(trialResponse), dtype=bool)
+    for i, m in enumerate(ignoreBooleanMask):
         if i in ignoreTrials:
-            ignoreMask[i]=True
+            ignoreBooleanMask[i]=True
             
-    trialResponse = trialResponse[ignoreMask==False]     # potentially poor wording, but this is using the boolean mask
-    trialRewardDirection = trialRewardDirection[ignoreMask==False]
-    trialTargetFrames = trialTargetFrames[ignoreMask==False]
+    trialResponse = trialResponse[ignoreBooleanMask==False]     # potentially poor wording, but this is using the boolean mask
+    trialRewardDirection = trialRewardDirection[ignoreBooleanMask==False]
+    trialTargetFrames = trialTargetFrames[ignoreBooleanMask==False]
+    trialMaskContrast = trialMaskContrast[ignoreBooleanMask==False]
         #how to use this indexing
             
     
     
     rightTurnTotal = sum((trialRewardDirection==1) & (trialTargetFrames!=0))   #left stim
     leftTurnTotal = sum((trialRewardDirection==-1) & (trialTargetFrames!=0))   #right stim
-    nogoTotal = sum(trialTargetFrames==0)
+    nogoTotal = sum((trialTargetFrames==0) & (trialMaskContrast==0))
     
     # count(response, reward direction) where -1 is turn left 
     rightTurnCorr, leftTurnCorr = count(1,1), count(1,-1)
     rightTurnIncorrect, leftTurnIncorrect = count(-1,1), count(-1,-1)
     rightNoResp, leftNoResp = count(0,1), count(0,-1)
     
-    nogoCorr = sum((trialResponse==1) & (trialTargetFrames==0))
-    nogoMove = len(trialResponse[(trialTargetFrames==0) & (trialResponse==-1)])
-    respTotal = len(trialResponse[(trialResponse!=0) & (trialTargetFrames>0)])  # response of go trials 
+    nogoCorr = len(trialResponse[(trialResponse==1) & (trialTargetFrames==0) & (trialMaskContrast==0)])
+    nogoMove = len(trialResponse[(trialResponse==-1) & (trialTargetFrames==0)& (trialMaskContrast==0)])
+    respTotal = len(trialResponse[(trialResponse!=0) & (trialTargetFrames>0)])  # response of GO trials 
     totalCorrect = len(trialResponse[trialResponse==1])                         # this includes nogos 
     total = len(trialResponse)
     

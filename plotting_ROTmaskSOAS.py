@@ -28,7 +28,7 @@ trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]
 maskOnset = d['maskOnset'][()]                  
 trialMaskOnset = d['trialMaskOnset'][:len(trialResponse)]
 trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]       
-maskContrast = d['trialMaskContrast'][:len(trialResponse)]     
+trialMaskContrast = d['trialMaskContrast'][:len(trialResponse)]     
 
 noMaskVal = maskOnset[-1] + round(np.mean(np.diff(maskOnset)))  # assigns noMask condition an evenly-spaced value from soas
 maskOnset = np.append(maskOnset, noMaskVal)              # makes final value the no-mask condition
@@ -55,9 +55,9 @@ totalTrials = hits+misses+noResps
 respOnly = hits+misses
 
 
-maskTotal = len(trialResponse[(maskContrast>0)])
-maskOnlyTotal = len(trialResponse[(maskContrast>0) & (trialTargetFrames==0)])   # rotation task 'mask only' trials can't be 'correct'
-maskOnlyCorr = len(trialResponse[(maskContrast>0) & (trialResponse==1) & (trialTargetFrames==0)])
+maskTotal = len(trialResponse[(trialMaskContrast>0)])
+maskOnlyTotal = len(trialResponse[(trialMaskContrast>0) & (trialTargetFrames==0)])   # rotation task 'mask only' trials can't be 'correct'
+maskOnlyCorr = len(trialResponse[(trialMaskContrast>0) & (trialResponse==1) & (trialTargetFrames==0)])
 
 stimStart = d['trialStimStartFrame'][:len(trialResponse)]
 trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)]
@@ -66,13 +66,13 @@ deltaWheel = d['deltaWheelPos'][:]
 
 stimStart = stimStart[(trialTargetFrames==0)]             
 trialRespFrames = trialRespFrames[(trialTargetFrames==0)]
-maskContrast = maskContrast[(trialTargetFrames==0)]
+trialMaskContrast = trialMaskContrast[(trialTargetFrames==0)]
 
 startWheelPos = []
 endWheelPos = []
 
 # we want to see which direction they moved the wheel on mask-only trials 
-for i, (start, end, mask) in enumerate(zip(stimStart, trialRespFrames, maskContrast)):   
+for i, (start, end, mask) in enumerate(zip(stimStart, trialRespFrames, trialMaskContrast)):   
     if (mask>0):  #maskOnly
         endWheelPos.append(deltaWheel[end])
         startWheelPos.append(deltaWheel[start])

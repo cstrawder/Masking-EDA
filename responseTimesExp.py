@@ -9,6 +9,9 @@ Creats dataframe of response times per trial, by side, and plots distributions -
 (how quickly they turn after stim onset and/or goTone)
 
 
+*add a plot of rxn times from the start of mask (not stimStart) to see if there is
+dependence on mask presence
+
 """
 
 import fileIO, h5py
@@ -36,64 +39,128 @@ trialResponseFrame = d['trialResponseFrame'][:end]    #if they don't respond, th
 trialOpenLoopFrames = d['trialOpenLoopFrames'][:end]
 openLoop = d['openLoopFramesFixed'][()]
 quiescentMoveFrames = d['quiescentMoveFrames'][:]
+maxQuiescentMove = d['maxQuiescentNormMoveDist'][()]
 trialEndFrame = d['trialEndFrame'][:end]
 deltaWheel = d['deltaWheelPos'][:]                      # has wheel movement for every frame of session
 maxResp = d['maxResponseWaitFrames'][()]   
 trialMaskOnset = d['trialMaskOnset'][:end]
 trialMaskContrast = d['trialMaskContrast'][:end]
 maskOnset = d['maskOnset'][()]
+fi = d['frameIntervals'][:]
+framerate = 1/np.median(fi)
 
 
 for i, trial in enumerate(trialTargetFrames):  # this is needed for older files nogos are randomly assigned a dir
     if trial==0:
         trialRewardDirection[i] = 0
 
+nogos = []
+for i, (rew, mask) in enumerate(zip(trialRewardDirection, trialMaskContrast)):
+    if rew==0 and mask==0:
+        nogos.append(i) 
+        
+nogoMiss = nogo_turn(d)[2][0]   #indices of nogoMiss trials
 
-# length of time from start of stim to response (or no response) for each trial
-trialTimes = []   
-for i, (start, resp) in enumerate(zip(trialStimStartFrame, trialResponseFrame)):
-        respTime = (deltaWheel[start:resp+1])
-        trialTimes.append(respTime)
+# deltaWheel from start of stim to response (or no response) for each trial
+trialWheel = []  
+nogoWheelFromCL = [] 
+for i, (start, resp, mask) in enumerate(zip(trialStimStartFrame, trialResponseFrame, trialMaskContrast)):
+    if trialRewardDirection[i]==0:
+        wheel = (deltaWheel[start:resp+4])
+        trialWheel.append(wheel)
+        if mask==0:  # nogo trials
+            wheel = (deltaWheel[start+openLoop:resp+4])   #from start of closedLoop
+            nogoWheelFromCL.append(wheel)
+            print(deltaWheel[resp+1]-deltaWheel[start+openLoop])
+    else:
+        wheel = (deltaWheel[start:resp])
+        trialWheel.append(wheel)
 
 #since deltawheel provides the difference in wheel mvmt from trial to trial
 #taking the cumulative sum gives the actual wheel mvmt and plots as a smooth curve
-cumRespTimes = []   
-for i, time in enumerate(trialTimes):
-    time = np.cumsum(time)
-    smoothed = scipy.signal.medfilt(time, kernel_size=5)
-    cumRespTimes.append(smoothed)
-
-trialResponseTimes = []
-for i in cumRespTimes:
-    trialResponseTimes.append(len(i))
-
+cumWheel = []   
+for mvmt in trialWheel:
+    time = np.cumsum(mvmt)
+    #smoothed = scipy.signal.medfilt(time, kernel_size=5)
+    #cumRespTimes.append(smoothed)
+    cumWheel.append(time)
+    
+    
+# time from stimStart to moving the wheel
 rxnTimes = []
-for i, times in enumerate(cumRespTimes):
-   # time2 = time2[::-1]
+for times in cumWheel:
     mask = (abs(times[:])>5)
-    val = np.argmax(mask)
-   # t = len(time2) - val
+    val = np.argmax(mask) - 1    # the index of the frame right before the difference exceeds threshold (i.e. when they START moving)
     rxnTimes.append(val)
-       
-#    np.argmax(abs(time2)>50)   #this is in pixels, calculated from Monitor norm and quiescent move threshold (.025)
+ 
+    
+timeToOutcome = []    # time to outcome is time from rxnTime (1st wheel mvmt) to respFrame
+for i,j in zip(cumWheel, rxnTimes):    
+    timeToOutcome.append(len(i)-j)    
 
+
+nogoCumWheelFromCL = []         # this is cum wheel mvmt from goTone to wheelMvmt (past threshold) 
+for time in nogoWheelFromCL:
+    time = np.cumsum(time)
+    nogoCumWheelFromCL.append(time)
+
+nogoRxnTimes = []               # num of frames from goTone to mvmt or reward
+for times in nogoCumWheelFromCL:
+    nogoRxnTimes.append(len(times)-4)
+       
+nogoTurn = nogo_turn(d)
+
+nogoMove = np.zeros(len(trialResponse)).astype(int)
+for i in range(len(trialResponse)):
+    for (ind, turn) in zip(nogoTurn[2][0], nogoTurn[0]):
+        if i==ind:
+            nogoMove[i] = turn
 
 data = list(zip(trialRewardDirection, trialResponse, trialStimStartFrame, trialResponseFrame))
 index = range(len(trialResponse))
 
 df = pd.DataFrame(data, index=index, columns=['rewDir', 'resp', 'stimStart', 'respFrame'])
-df['trialLength'] = [len(t) for t in trialTimes]
+df['trialLength'] = [len(t) for t in trialWheel]
 df['reactionTime'] = rxnTimes
+df['timeToOutcome'] = timeToOutcome
 if len(maskOnset)>0:
     df['mask'] = trialMaskContrast
     df['soa'] = trialMaskOnset
+df['nogoMove'] = nogoMove
 
+for (ind, time) in zip(nogoTurn[2][0], nogoRxnTimes):
+    df.loc[ind,'reactionTime'] = time
 
 ignoreTrials = []
 for i, t in enumerate(df['reactionTime']):     # 15 frames = 125 ms 
     if 0<t<10:
         ignoreTrials.append(i)
-# return ignoreTrials and use in WheelPlot/behaviorAnalusis
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # correct nogos have a rxn time of 0
@@ -101,9 +168,10 @@ for i, t in enumerate(df['reactionTime']):     # 15 frames = 125 ms
 for i, (time, rew, resp) in enumerate(zip(cumRespTimes, df['rewDir'], df['reactionTime'])):
    # if mask==True and rew!=0:
    #if i in ignoreTrials[:]:
-   if i<20:
+   #if i<30 and rew==0:
+   if i in nogos:
         plt.figure()
-        plt.plot(time)
+        plt.plot(time, lw=2)
         plt.plot(0, len(time))
         plt.axvline(x=openLoop, ymin=0, ymax=1, c='k', ls='--', alpha=.5)
         plt.axvline(x=15, ymin=0, ymax=1, c='c', ls='--', alpha=.8)
@@ -115,7 +183,7 @@ for onset in np.unique(trialMaskOnset):
     lst = []
     for i, (time, soa, resp,mask) in enumerate(zip(df['reactionTime'], df['soa'], df['resp'], df['mask'])):
         if soa==onset and resp!=0:
-            if mask==True and i not in ignoreTrials:  # only masked trials and no obvious guessing trials included 
+            if mask==True: #and i not in ignoreTrials:  # only masked trials and no obvious guessing trials included 
                 lst.append(time)
     times.append(lst)
 
@@ -145,11 +213,11 @@ for onset in np.unique(trialMaskOnset):
     for i, (time, soa, resp, mask, direc) in enumerate(zip(
             df['reactionTime'], df['soa'], df['resp'], df['mask'], df['rewDir'])):
         if soa==onset and resp!=0:
-            if i not in ignoreTrials:
-                if direc==1:    
-                    Rlst.append(time)
-                elif direc==-1:
-                    Llst.append(time)
+            #if i not in ignoreTrials:
+            if direc==1:    
+                Rlst.append(time)
+            elif direc==-1:
+                Llst.append(time)
         if direc==0 and mask==1:
             maskOnly.append(time)
         elif direc==0 and mask==0:

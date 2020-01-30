@@ -28,7 +28,7 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True):
 
         trialRespFrames = d['trialResponseFrame'][:]
         trialOpenLoop = d['trialOpenLoopFrames'][:len(trialResponse)] 
-        stimStart = d['trialStimStartFrame'][:len(trialResponse)]
+        trialStimStart = d['trialStimStartFrame'][:len(trialResponse)]
         deltaWheel = d['deltaWheelPos'][:]
         repeats = d['incorrectTrialRepeats'][()]
         timeout = d['incorrectTimeoutFrames'][()]
@@ -50,13 +50,7 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True):
             
         elif ignoreRepeats==False:
             trialResponse = d['trialResponse'][:]
-        
-        
-        noTargetTrials = trialTargetFrames[trialTargetFrames==0]
-        noTarget = trialTargetFrames==0
-        nogoTotal = len(trialTargetFrames[(trialTargetFrames==0) & (trialMaskContrast==0)])
-        nogoCorrect = len(trialResponse[(trialTargetFrames==0) & (trialMaskContrast==0) & (trialResponse==1)]) 
-        
+
         deltaWheel = d['deltaWheelPos'][:]    
         
         startWheelPos = [[],[]]  # first is nogo, 2nd maskOnly
@@ -78,120 +72,26 @@ def nogo_turn(data, ignoreRepeats=True, returnArray=True):
                 startWheelPos[1].append(deltaWheel[start])
                 ind[1].append(i)
         
-        nogoWheel = []
-        maskOnlyWheel = []
-        
-        for arr in zip(endWheelPos, startWheelPos):
-            for i in (nogoWheel, maskOnlyWheel):
-                i.append(np.array(arr))
-            
-        
-        endWheelPos = np.array(endWheelPos)
-        startWheelPos = np.array(startWheelPos)   
-        wheelPos = endWheelPos - startWheelPos
-        
-        for i in wheelPos:
-            if i >0:
-                nogoTurnDir.append(1)
-            else:
-                nogoTurnDir.append(-1)
-        
-        
-        
-        
+        nogoWheel = (np.array(endWheelPos[0])) - (np.array(startWheelPos[0]))
+        maskOnlyWheel = (np.array(endWheelPos[1])) - (np.array(startWheelPos[1]))
         
         nogoTurnDir = []   #returns an array of values that show the direction turned for ALL no-go trials,
-    
-        nogoStimStart = stimStart[(trialTargetFrames==0) & (trialMaskContrast==0)]
-        nogoResp = trialResponse[(trialTargetFrames==0) & (trialMaskContrast==0)]
-        nogoTrialRespFrames = trialRespFrames[(trialTargetFrames==0) & (trialMaskContrast==0)]
-        trialOpenLoop = trialOpenLoop[(trialTargetFrames==0) & (trialMaskContrast==0)]
-   
+        maskOnlyTurnDir = []
         
-        startWheelPos = []
-        endWheelPos = []
-        
-        for (start, end, resp) in zip(nogoStimStart, nogoTrialRespFrames, nogoResp):
-            if resp==-1:
-                endWheelPos.append(deltaWheel[end])
-                startWheelPos.append(deltaWheel[start])
-            
-        endWheelPos = np.array(endWheelPos)
-        startWheelPos = np.array(startWheelPos)   
-        wheelPos = endWheelPos - startWheelPos
-        
-        for i in wheelPos:
+        for i in nogoWheel:
             if i >0:
                 nogoTurnDir.append(1)
             else:
                 nogoTurnDir.append(-1)
         
-        nogoTurnDir = np.array(nogoTurnDir)
-        
-        
-    print('No-go Correct:  ' + str(round(nogoCorrect/nogoTotal, 2)) + ' of ' + str(nogoTotal))
-    print('no-go turn R:  ' + str(sum(nogoTurnDir==1)))
-    print('no-go turn L:  ' + str(sum(nogoTurnDir==-1)))    
-        
-    if 1 in trialMaskContrast:
-        maskTotal = len(trialResponse[(trialMaskContrast>0)])
-        maskOnlyTotal = len(trialResponse[(trialMaskContrast>0) & (trialTargetFrames==0)])   # rotation task 'mask only' trials can't be 'correct'
-        #maskOnlyCorr = len(trialResponse[(trialMaskContrast>0) & (trialResponse==1) & (trialTargetFrames==0)])
-          
-        maskStimStart = stimStart[(trialTargetFrames==0) & (trialMaskContrast>0)]             
-        maskTrialRespFrames = trialRespFrames[(trialTargetFrames==0) & (trialMaskContrast>0)]
-        
-        startWheelPos = []
-        endWheelPos = []
-        
-        # we want to see which direction they moved the wheel on mask-only trials 
-        for i, (start, end) in enumerate(zip(maskStimStart, maskTrialRespFrames)):    #maskOnly
-            endWheelPos.append(deltaWheel[end])
-            startWheelPos.append(deltaWheel[start])
-        
-        maskEnd = np.array(endWheelPos)
-        maskStart = np.array(startWheelPos)
-        maskWheelPos = maskEnd - maskStart
-        
-        maskOnlyTurnDir = []
-        
-        for j in maskWheelPos:
-            if j>0:
+        for f in maskOnlyWheel:
+            if f>0:
                 maskOnlyTurnDir.append(1)
             else:
                 maskOnlyTurnDir.append(-1)
-         
+        
+        nogoTurnDir = np.array(nogoTurnDir) 
         maskOnlyTurnDir = np.array(maskOnlyTurnDir)
-        maskOnlyR = sum(maskOnlyTurnDir==1)
-        maskOnlyL = sum(maskOnlyTurnDir==-1)   
-
-    print('Mask Only Trials: ' + str(maskOnlyTotal))
-    print('Mask only turn R: ' + str(maskOnlyR))
-    print('Mask only turn L: ' + str(maskOnlyL))
-    
-
+        
     if returnArray==True:    
-        return [nogoTurnDir, maskOnlyTurnDir]
-    
-    # when the function is called, this can be unzipped into 2 variables - but this returns a tuple; better to unpack later
-
-         
-     
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-
-        
+        return [nogoTurnDir, maskOnlyTurnDir, ind]
