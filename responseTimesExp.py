@@ -21,6 +21,7 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 import scipy.signal
+import scipy.stats
 import seaborn as sns 
 from freedmanDiaconis import freedman_diaconis
 from nogoTurn import nogo_turn
@@ -59,7 +60,6 @@ for i, (rew, mask) in enumerate(zip(trialRewardDirection, trialMaskContrast)):
     if rew==0 and mask==0:
         nogos.append(i) 
         
-nogoMiss = nogo_turn(d)[2][0]   #indices of nogoMiss trials
 
 # deltaWheel from start of stim to response (or no response) for each trial
 trialWheel = []  
@@ -76,6 +76,7 @@ for i, (start, resp, mask) in enumerate(zip(trialStimStartFrame, trialResponseFr
         wheel = (deltaWheel[start:resp])
         trialWheel.append(wheel)
 
+
 #since deltawheel provides the difference in wheel mvmt from trial to trial
 #taking the cumulative sum gives the actual wheel mvmt and plots as a smooth curve
 cumWheel = []   
@@ -87,20 +88,25 @@ for mvmt in trialWheel:
     
     
 # time from stimStart to moving the wheel
+    # this is not right - we want to find the frame the wheel moves above 5 pix and then continues onto past 42
+    # sam suggests linear interpolation on wheel trace
 rxnTimes = []
 for times in cumWheel:
-    mask = (abs(times[:])>5)
-    val = np.argmax(mask) - 1    # the index of the frame right before the difference exceeds threshold (i.e. when they START moving)
+    f = lambda times: np.round(times)
+    mvmt = f(times)
+    threshold = maxQuiescentMove*d['monSizePix'][0]   #threshold for nogo qperiod/mvmt
+    mask = (abs(mvmt[:])>threshold)  # before this was 5
+    val = np.argmax(mask)    # the index of the frame right before the difference exceeds threshold (i.e. when they START moving)
     rxnTimes.append(val)
  
     
 timeToOutcome = []    # time to outcome is time from rxnTime (1st wheel mvmt) to respFrame
 for i,j in zip(cumWheel, rxnTimes):    
-    timeToOutcome.append(len(i)-j)    
+    timeToOutcome.append(len(i)-j)    # ends up just being the diff btwn trialLength and rxnTime
 
 
 nogoCumWheelFromCL = []         # this is cum wheel mvmt from goTone to wheelMvmt (past threshold) 
-for time in nogoWheelFromCL:
+for time in nogoWheelFromCL:    # for nogo trials
     time = np.cumsum(time)
     nogoCumWheelFromCL.append(time)
 
@@ -108,8 +114,9 @@ nogoRxnTimes = []               # num of frames from goTone to mvmt or reward
 for times in nogoCumWheelFromCL:
     nogoRxnTimes.append(len(times)-4)
        
-nogoTurn = nogo_turn(d)
-
+nogoTurn = nogo_turn(d)   # returns 3 arrays; [0] is nogoTurn dir, [1] is maskOnly, and 2
+                            # is 2 lists of indices of those nogoMove trials
+                            
 nogoMove = np.zeros(len(trialResponse)).astype(int)
 for i in range(len(trialResponse)):
     for (ind, turn) in zip(nogoTurn[2][0], nogoTurn[0]):
@@ -136,6 +143,8 @@ for i, t in enumerate(df['reactionTime']):     # 15 frames = 125 ms
     if 0<t<10:
         ignoreTrials.append(i)
 
+for i in ignoreTrials:
+    df.loc[i,'ignoreTrial'] = True
 
 
 
@@ -147,29 +156,19 @@ for i, t in enumerate(df['reactionTime']):     # 15 frames = 125 ms
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+plt.figure()
+sns.distplot(scipy.stats.zscore(rxnTimes))
 
 
 
 # correct nogos have a rxn time of 0
 
-for i, (time, rew, resp) in enumerate(zip(cumRespTimes, df['rewDir'], df['reactionTime'])):
+for i, (time, rew, resp) in enumerate(zip(cumWheel, df['rewDir'], df['reactionTime'])):
    # if mask==True and rew!=0:
    #if i in ignoreTrials[:]:
    #if i<30 and rew==0:
-   if i in nogos:
+   #if i in nogos:
+   if i < 20:
         plt.figure()
         plt.plot(time, lw=2)
         plt.plot(0, len(time))
@@ -197,8 +196,8 @@ ax.set(title='Response Time by SOA')
 ax.set_xticks(np.unique(trialMaskOnset))
 ax.legend()
 
-# then also plot the median no-mask trial response time
 
+# then also plot the median no-mask trial response time
 ##  for the mask only, plot which side the mouse turns**
 
 x = nogo_turn(d)  # has 2 arrays: 1st is nogos, 2nd maskOnly
@@ -270,12 +269,12 @@ for side in (Rtimes, Ltimes):
 
   
 
-df['responseTimes'] = trialResponseTimes
+
 
 times = []
 for onset in np.unique(trialMaskOnset):
     lst = []
-    for i, (time, soa, resp,mask) in enumerate(zip(df['responseTimes'], df['soa'], df['resp'], df['mask'])):
+    for i, (time, soa, resp,mask) in enumerate(zip(df['timeToOutcome'], df['soa'], df['resp'], df['mask'])):
         if soa==onset and resp!=0:
             if mask==True and i not in ignoreTrials:  # only masked trials and no obvious guessing trials included 
                 lst.append(time-soa)
@@ -301,7 +300,7 @@ means = [np.mean(x) for x in times]
 
 
 rightCorrectWheelMvmt = []
-for i, (time, resp, rew) in enumerate(zip(cumRespTimes, trialResponse, trialRewardDirection)):
+for i, (time, resp, rew) in enumerate(zip(cumWheel, trialResponse, trialRewardDirection)):
         for t in time:
             if (resp==1) and (rew==1):
                 rightCorrectWheelMvmt.append((i, t))
@@ -332,26 +331,6 @@ plt.tight_layout()
 
 
 
-
-
-    
-df['cumRespTime'] = cumRespTimes
-
-# here we calculate when the first wheel mvmt occured that passes the nogo threshold 
-# which tells us when they reacted (i.e. first started moving to respond)
-
-rxnTimes=[]         
-for resp, time in zip(trialResponse, cumRespTimes):
-    rxntime = []
-    threshold=abs(2)
-    for x in time:
-        if abs(x)<threshold:
-            rxntime.append(x)
-    rxnTimes.append(rxntime)   
-
-
-
-
 plt.hist(df['reactionTime'], bins=30)
 plt.style.use('seaborn-darkgrid')
 
@@ -367,8 +346,8 @@ rightCorrect = rightTrials[rightTrials['resp']==1]
 leftTrials = df[df['rewDir']==-1]
 leftCorrect = leftTrials[leftTrials['resp']==1]    #need to take delta wheel into account, to know when they started moving the wheel 
 
-rightArray = np.array(rightCorrect['responseTime'])
-leftArray = np.array(leftCorrect['responseTime'])
+rightArray = np.array(rightCorrect['reactionTime'])
+leftArray = np.array(leftCorrect['reactionTime'])
 
 correctGo = df[(df['rewDir']!=0) & (df['resp']==1)]   # for correct go trials 
 ##########################################################
@@ -386,18 +365,10 @@ plt.tightlayout()
 
 
 
-for i, (time, resp) in enumerate(zip(cumRespTimes, df['resp'])):
-    if i<20:
-        plt.figure()
-        plt.plot(time)
-        plt.plot(0, len(time))
-        plt.axvline(x=24, ymin=0, ymax=1, c='k', ls='--', alpha=.5)
-        plt.title('-'.join(f.split('_')[-3:-1] + [str(i)]))
-            
-     
+
     
 
-response = np.where()
+
    
 response = np.where(respTime<respTime[0]-1)
 respTime+=len(respTime[respTime>1])
