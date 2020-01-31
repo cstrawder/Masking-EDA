@@ -91,13 +91,19 @@ for mvmt in trialWheel:
     # this is not right - we want to find the frame the wheel moves above 5 pix and then continues onto past 42
     # sam suggests linear interpolation on wheel trace
 rxnTimes = []
-for times in cumWheel:
-    f = lambda times: np.round(times)
-    mvmt = f(times)
+ignoreTrials = []
+for i, times in enumerate(cumWheel):
+    x = lambda times: np.round(times)
+    mvmt = x(times)
     threshold = maxQuiescentMove*d['monSizePix'][0]   #threshold for nogo qperiod/mvmt
     mask = (abs(mvmt[:])>threshold)  # before this was 5
     val = np.argmax(mask)    # the index of the frame right before the difference exceeds threshold (i.e. when they START moving)
-    rxnTimes.append(val)
+    if 0 < val < 12:
+        ignoreTrials.append(i)
+        rxnTimes.append(0)
+    else:
+        rxnTimes.append(val)
+    
  
     
 timeToOutcome = []    # time to outcome is time from rxnTime (1st wheel mvmt) to respFrame
@@ -138,10 +144,6 @@ df['nogoMove'] = nogoMove
 for (ind, time) in zip(nogoTurn[2][0], nogoRxnTimes):
     df.loc[ind,'reactionTime'] = time
 
-ignoreTrials = []
-for i, t in enumerate(df['reactionTime']):     # 15 frames = 125 ms 
-    if 0<t<10:
-        ignoreTrials.append(i)
 
 for i in ignoreTrials:
     df.loc[i,'ignoreTrial'] = True
@@ -165,10 +167,10 @@ sns.distplot(scipy.stats.zscore(rxnTimes))
 
 for i, (time, rew, resp) in enumerate(zip(cumWheel, df['rewDir'], df['reactionTime'])):
    # if mask==True and rew!=0:
-   #if i in ignoreTrials[:]:
+   if i in ignoreTrials[:]:
    #if i<30 and rew==0:
    #if i in nogos:
-   if i < 20:
+   #if i <20:
         plt.figure()
         plt.plot(time, lw=2)
         plt.plot(0, len(time))
@@ -200,7 +202,7 @@ ax.legend()
 # then also plot the median no-mask trial response time
 ##  for the mask only, plot which side the mouse turns**
 
-x = nogo_turn(d)  # has 2 arrays: 1st is nogos, 2nd maskOnly
+nogoTurn = nogo_turn(d)  # has 2 arrays: 1st is nogos, 2nd maskOnly
 
 Rtimes = []
 Ltimes = []
