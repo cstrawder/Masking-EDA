@@ -6,19 +6,20 @@ Created on Wed Aug 14 13:46:52 2019
 """
 
 import h5py
+import fileIO
 import numpy as np
 import psignifit as ps
-
-import h5py as h5
-import numpy as np
+import psigniplot
+import ignoreTrials
 
 '''
 First, we need to pull the data from the file (session) we want to analyze
 Then we need the data in the format (x | nCorrect | total)
 '''
 
-f = h5.File('Z:/Masking/457229/training_to_analyze/MaskingTask_457229_20190814_114415.hdf5')   #file object
-d = f
+
+f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
+d = h5py.File(f)
 
 #this returns an integer of how many trials fulfilled the criteria (i.e correct right response, incorrect left response)
 # these ints are later used to calculate the percent of the total
@@ -51,6 +52,9 @@ else:
     print('Please type yes or no')
     ignore = input('Ignore repeats?  ')
        
+# ADD IN THE IGNORE TRIALS FUNCTION to elimiate guesses
+    ## can also use those trials to train MLA??
+
 
 rightTurnTotal = sum((trialRewardDirection==1) & (trialTargetFrames!=0))
 leftTurnTotal = sum((trialRewardDirection==-1) & (trialTargetFrames!=0))
@@ -85,4 +89,8 @@ options = dict()
 
 res = ps.psignifit(data, options)
 
-ps.psigniplot.plotPsych(res)
+psigniplot.plotPsych(res)
+
+'''
+How can we also characterize the bias that is most likely for an animal model?
+'''
