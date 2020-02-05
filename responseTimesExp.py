@@ -31,6 +31,9 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
 d = h5py.File(f)
 
+fi = d['frameIntervals'][:]
+framerate = int(np.round(1/np.median(fi)))
+
 trialResponse = d['trialResponse'][()]
 end = len(trialResponse)
 trialRewardDirection = d['trialRewardDir'][:end]
@@ -45,13 +48,11 @@ trialEndFrame = d['trialEndFrame'][:end]
 deltaWheel = d['deltaWheelPos'][:]                      # has wheel movement for every frame of session
 maxResp = d['maxResponseWaitFrames'][()]   
 trialMaskContrast = d['trialMaskContrast'][:end]
-fi = d['frameIntervals'][:]
-framerate = int(np.round(1/np.median(fi)))
+
 maskOnset = np.round(d['maskOnset'][()] * 1000/framerate).astype(int)
 trialMaskOnset = np.round(d['trialMaskOnset'][:end] * 1000/framerate).astype(int)
-maskLength = d['maskFrames'][()]
-targetLength = d['targetFrames'][()]
-
+maskLength = np.round(d['maskFrames'][()] * 1000/framerate).astype(int)
+targetLength = np.round(d['targetFrames'][()] * 1000/framerate).astype(int)
 
 for i, target in enumerate(trialTargetFrames):  # this is needed for older files nogos are randomly assigned a dir
     if target==0:
@@ -161,7 +162,8 @@ np.where(n<5)[-1]
  
 timeToOutcome = []    # time to outcome is time from rxnTime (1st wheel mvmt) to respFrame
 for i,j in zip(cumWheel, rxnTimes):    
-    timeToOutcome.append(len(i)-j)    # ends up just being the diff btwn trialLength and rxnTime
+    i = np.round(len(i)*1000/framerate)
+    timeToOutcome.append(i-j)    # ends up just being the diff btwn trialLength and rxnTime
 
 
 nogoCumWheelFromCL = []         # this is cum wheel mvmt from goTone to wheelMvmt (past threshold) 
@@ -186,7 +188,7 @@ data = list(zip(trialRewardDirection, trialResponse, trialStimStartFrame, trialR
 index = range(len(trialResponse))
 
 df = pd.DataFrame(data, index=index, columns=['rewDir', 'resp', 'stimStart', 'respFrame'])
-df['trialLength'] = [len(t) for t in trialWheel]
+df['trialLength'] = [np.round(len(t)*1000/framerate) for t in trialWheel]
 df['reactionTime'] = rxnTimes
 df['timeToOutcome'] = timeToOutcome
 if len(maskOnset)>0:
@@ -274,13 +276,13 @@ for onset in np.unique(trialMaskOnset):
     for i, (time, soa, resp, mask, direc) in enumerate(zip(
             df['reactionTime'], df['soa'], df['resp'], df['mask'], df['rewDir'])):
         if soa==onset and resp!=0:   # not no resp
-            #if i not in ignoreTrials:
-            if direc==1:    
-                Rlst.append(time)
-            elif direc==-1:
-                Llst.append(time)
-            elif direc==0 and mask==0:
-                Mlst.append(time)
+            if i not in ignoreTrials:
+                if direc==1:    
+                    Rlst.append(time)
+                elif direc==-1:
+                    Llst.append(time)
+                elif direc==0 and mask==0:
+                    Mlst.append(time)
     Rtimes.append(Rlst)
     Ltimes.append(Llst)
 
