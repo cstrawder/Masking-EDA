@@ -44,11 +44,11 @@ maxQuiescentMove = d['maxQuiescentNormMoveDist'][()]
 trialEndFrame = d['trialEndFrame'][:end]
 deltaWheel = d['deltaWheelPos'][:]                      # has wheel movement for every frame of session
 maxResp = d['maxResponseWaitFrames'][()]   
-trialMaskOnset = d['trialMaskOnset'][:end]
 trialMaskContrast = d['trialMaskContrast'][:end]
-maskOnset = d['maskOnset'][()]
 fi = d['frameIntervals'][:]
-framerate = 1/np.median(fi)
+framerate = int(np.round(1/np.median(fi)))
+maskOnset = np.round(d['maskOnset'][()] * 1000/framerate).astype(int)
+trialMaskOnset = np.round(d['trialMaskOnset'][:end] * 1000/framerate).astype(int)
 maskLength = d['maskFrames'][()]
 targetLength = d['targetFrames'][()]
 
@@ -92,24 +92,71 @@ for mvmt in trialWheel:
     
 
 #FIGURE OUT how to get the right times for all trial types - and have as one collection of times
+'''
+Possible cases:
+    nogo no move 
+    nogo resp (cross threshold)
+    maskOnly no move
+    maskOnly resp (cross threshold)
+    go trial no resp = doesn't cross threshold (ends at end of maxResp)
+    go trial no resp = crosses Q threshold but not trial threshold (normRewDist)
+        will have 'rxnTime' but doesn't really mean anything
+    go trial resp
     
+Seems like we should only be looking at 'rxn' times for correct go trials and maskOnly?
+SOA rxn time plot is all trial with mask, but not including no resp trials (or ignore trials?)
+- what about maskOnly trials where they start moving before 100 ms?  Is that possible? physiologically
+'''
+
+#do not include nogo trials (no matter what, ==0; their wheel traces prior to gotone mess up rxn times)
 # time from stimStart to moving the wheel
-    # this is not right - we want to find the frame the wheel moves above 5 pix and then continues onto past 42
-    # sam suggests linear interpolation on wheel trace
+
+count = 0
 rxnTimes = []
 ignoreTrials = []
 for i, times in enumerate(cumWheel):
-    x = lambda times: np.round(times, decimals=1)
-    mvmt = x(times)
-    threshold = maxQuiescentMove*d['monSizePix'][0]   #threshold for nogo qperiod/mvmt
-    mask = (abs(mvmt[:])>threshold)
-    mask2 = (abs(mvmt[:])>5)# before this was 5
-    val = np.argmax(mask)    # the index of the frame right before the difference exceeds threshold (i.e. when they START moving)
-    if 0 < val < 12:
-        ignoreTrials.append(i)
+    if i in nogos:
         rxnTimes.append(0)
     else:
-        rxnTimes.append(val)
+        
+        fp = times
+        xp = np.arange(0, len(fp))*1/framerate
+        x = np.arange(0, xp[-1], .001)
+        interp = np.interp(x,xp,fp)
+        threshold = maxQuiescentMove*d['monSizePix'][0] 
+        val = np.argmax(abs(interp)>5)
+        count+=1
+#        t = np.argmax(abs(interp)>threshold)
+#        a = np.argmax(abs(interp[0:t])>5)
+#        if abs(t-a) < (10*1000/framerate):
+#            rxnTimes.append(a)
+#        else:
+#            t = np.argmax(abs(interp[t::])>threshold)
+#            rxnTimes.append(t)
+        if 0 < val < 100:
+            ignoreTrials.append(i)
+            rxnTimes.append(0)
+        else:
+            rxnTimes.append(val)
+        
+
+
+# np.argmax(abs(cumWheel[i])>5)   old way 
+
+
+
+n = start:threshold
+np.where(n<5)[-1]
+    
+
+
+
+
+# velocities  - inst=delta(x)/delta(t) - avg (slope of linear regression) 
+
+
+
+
     
  
 timeToOutcome = []    # time to outcome is time from rxnTime (1st wheel mvmt) to respFrame
@@ -158,11 +205,14 @@ for i in ignoreTrials:
 
 
 ## Time to move wheel from start of wheel mvmt - will be (-) in some trials 
+    # only for trials with target
 
-rxn = [i for i in rxnTimes if 0 < i < 85]
+rxn = [i for i in rxnTimes if 0 < i < maxResp]
 plt.figure()
 sns.distplot(scipy.stats.zscore(rxn))
 np.mean(rxnTimes)
+times = [j for j in timeToOutcome if 0<j<maxResp]
+sns.distplot(scipy.stats.zscore(times))
 
 
 
@@ -173,12 +223,13 @@ for i, (time, rew, resp, soa) in enumerate(zip(cumWheel, df['rewDir'], df['react
    #if i in ignoreTrials[:]:
    #if i<30 and rew==0:
    #if i in nogos:
-   if i <10:
+   if i <371 and i>346:
         plt.figure()
+        ax = plt.axes()
         plt.plot(time, lw=2)
-        plt.plot(0, len(time))
         plt.axvline(x=openLoop, ymin=0, ymax=1, c='k', ls='--', alpha=.5)
         plt.axvline(x=15, ymin=0, ymax=1, c='c', ls='--', alpha=.8)
+        #ax.set_xticklabels(xp)
         if trialMaskContrast[i]>0:
             plt.axvline(x=int(soa), ymin=0, ymax=1, c='m', ls='--', alpha=.7)
             plt.axvline(x=int(soa)+maskLength[0], ymin=0, ymax=1, c='m', ls='--', alpha=.7)
@@ -222,19 +273,14 @@ for onset in np.unique(trialMaskOnset):
     Mlst = []
     for i, (time, soa, resp, mask, direc) in enumerate(zip(
             df['reactionTime'], df['soa'], df['resp'], df['mask'], df['rewDir'])):
-        if soa==onset and resp!=0:
+        if soa==onset and resp!=0:   # not no resp
             #if i not in ignoreTrials:
             if direc==1:    
                 Rlst.append(time)
             elif direc==-1:
                 Llst.append(time)
-        if direc==0 and mask==1:
-            maskOnly.append(time)
-        elif direc==0 and mask==0:
-                    Mlst.append(time)
-#        elif soa==0:
-#                direc==0:
-#                    maskOnly.append(time)
+            elif direc==0 and mask==0:
+                Mlst.append(time)
     Rtimes.append(Rlst)
     Ltimes.append(Llst)
 
