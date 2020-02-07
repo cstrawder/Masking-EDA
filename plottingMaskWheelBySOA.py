@@ -4,7 +4,8 @@ Created on Thu Jan 16 14:36:15 2020
 
 @author: svc_ccg
 
-Plotting wheel traces as a function of SOA, idependent spatial locations
+Plotting wheel traces as a function of SOA, independent target spatial locations
+this combines masking trials for a single mouse (consc masking days)
 """
 
 import numpy as np

@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 import scipy.signal
 import scipy.stats
 import seaborn as sns 
-from freedmanDiaconis import freedman_diaconis
+
 from nogoData import nogo_turn
 
 matplotlib.rcParams['pdf.fonttype'] = 42
@@ -41,18 +41,19 @@ trialTargetFrames = d['trialTargetFrames'][:end]
 trialStimStartFrame = d['trialStimStartFrame'][:]
 trialResponseFrame = d['trialResponseFrame'][:end]    #if they don't respond, then nothing is recorded here - this limits df to length of this variable
 trialOpenLoopFrames = d['trialOpenLoopFrames'][:end]
-openLoop = d['openLoopFramesFixed'][()]
+openLoopFrames = d['openLoopFramesFixed'][()]
 quiescentMoveFrames = d['quiescentMoveFrames'][:]
 maxQuiescentMove = d['maxQuiescentNormMoveDist'][()]
 trialEndFrame = d['trialEndFrame'][:end]
 deltaWheel = d['deltaWheelPos'][:]                      # has wheel movement for every frame of session
-maxResp = d['maxResponseWaitFrames'][()]   
 trialMaskContrast = d['trialMaskContrast'][:end]
 
 maskOnset = np.round(d['maskOnset'][()] * 1000/framerate).astype(int)
 trialMaskOnset = np.round(d['trialMaskOnset'][:end] * 1000/framerate).astype(int)
 maskLength = np.round(d['maskFrames'][()] * 1000/framerate).astype(int)
 targetLength = np.round(d['targetFrames'][()] * 1000/framerate).astype(int)
+maxResp = np.round(d['maxResponseWaitFrames'][()] * 1000/framerate).astype(int) 
+
 
 for i, target in enumerate(trialTargetFrames):  # this is needed for older files nogos are randomly assigned a dir
     if target==0:
@@ -62,22 +63,30 @@ nogos = []   #not including maskOnly trials
 for i, (rew, con) in enumerate(zip(trialRewardDirection, trialMaskContrast)):
     if rew==0 and con==0:
         nogos.append(i) 
-        
+
+nogoTurn, maskOnlyTurn, ndx = nogo_turn(d)
+ 
+noMaskVal = maskOnset[-1] + round(np.mean(np.diff(maskOnset)))  # assigns noMask condition an evenly-spaced value from soas
+maskOnset = np.append(maskOnset, noMaskVal)              # makes final value the no-mask condition
+    
+for i, (mask, trial) in enumerate(zip(trialMaskOnset, trialTargetFrames)):   # filters target-Only trials 
+    if trial>0 and mask==0:
+        trialMaskOnset[i]=noMaskVal       
 
 # deltaWheel from start of stim to response (or no response) for each trial
 # deltaWheel from start of closedLoop to response for nogos
+# nogos are sliced from trialStart to resp, and also go-tone to end.  Predictive turning.  ask sam.
 trialWheel = []  
 nogoWheelFromCL = [] 
 for i, (start, resp, mask) in enumerate(zip(trialStimStartFrame, trialResponseFrame, trialMaskContrast)):
     if trialRewardDirection[i]==0:
         if mask==0:  # nogo trials
-            wheel = (deltaWheel[start+openLoop:resp+5])   #from start of closedLoop
+            wheel = (deltaWheel[start+openLoopFrames:resp+5])   #from start of closedLoop
             nogoWheelFromCL.append(wheel)
             wheel2 = (deltaWheel[start:resp])
             trialWheel.append(wheel2)
-            print(deltaWheel[resp+1]-deltaWheel[start+openLoop])
         elif mask>0:   # maskOnly
-            wheel = (deltaWheel[start:resp])
+            wheel = (deltaWheel[start:resp+1])
             trialWheel.append(wheel)
     else:
         wheel = (deltaWheel[start:resp])
@@ -91,75 +100,42 @@ for mvmt in trialWheel:
     time = np.cumsum(mvmt)
     cumWheel.append(time)  # not using scipy.median.filter bc flattens final frames
     
-
-#FIGURE OUT how to get the right times for all trial types - and have as one collection of times
-'''
-Possible cases:
-    nogo no move 
-    nogo resp (cross threshold)
-    maskOnly no move
-    maskOnly resp (cross threshold)
-    go trial no resp = doesn't cross threshold (ends at end of maxResp)
-    go trial no resp = crosses Q threshold but not trial threshold (normRewDist)
-        will have 'rxnTime' but doesn't really mean anything
-    go trial resp
-    
-Seems like we should only be looking at 'rxn' times for correct go trials and maskOnly?
-SOA rxn time plot is all trial with mask, but not including no resp trials (or ignore trials?)
-- what about maskOnly trials where they start moving before 100 ms?  Is that possible? physiologically
-'''
-
-#do not include nogo trials (no matter what, ==0; their wheel traces prior to gotone mess up rxn times)
+#do not include nogo trials (==0); their wheel traces prior to gotone mess up rxn times)
 # time from stimStart to moving the wheel
-
-count = 0
+interpWheel = []
 rxnTimes = []
 ignoreTrials = []
 for i, times in enumerate(cumWheel):
-    if i in nogos:
+    if i in nogos:   # excluding nogos from rxnTime analysis
         rxnTimes.append(0)
+        interpWheel.append(0)
+        pass
     else:
-        
         fp = times
         xp = np.arange(0, len(fp))*1/framerate
         x = np.arange(0, xp[-1], .001)
         interp = np.interp(x,xp,fp)
+        interpWheel.append(interp)
         threshold = maxQuiescentMove*d['monSizePix'][0] 
-        val = np.argmax(abs(interp)>5)
-        count+=1
-#        t = np.argmax(abs(interp)>threshold)
-#        a = np.argmax(abs(interp[0:t])>5)
-#        if abs(t-a) < (10*1000/framerate):
-#            rxnTimes.append(a)
-#        else:
-#            t = np.argmax(abs(interp[t::])>threshold)
-#            rxnTimes.append(t)
-        if 0 < val < 100:
-            ignoreTrials.append(i)
-            rxnTimes.append(0)
+        t = np.argmax(abs(interp[100::])>threshold) + 100  # starting at the guessing threshold
+        if t==0:
+            rxnTimes.append(0)   # no resp
         else:
-            rxnTimes.append(val)
-        
-
-
+            a = np.argmax(abs(interp[0:t])>5)
+            if abs(t-a) < (10*1000/framerate):
+                rxnTimes.append(a)
+            else:
+                b = np.argmax(abs(np.round(np.diff(interp[100::])))>0)
+                rxnTimes.append(b+100)
+    if 0 < a < 100:
+        ignoreTrials.append(i)    # ask sam about ignoring trials, including nogos 
+        rxnTimes.append(0)
+               
 # np.argmax(abs(cumWheel[i])>5)   old way 
 
-
-
-n = start:threshold
-np.where(n<5)[-1]
-    
-
-
-
-
 # velocities  - inst=delta(x)/delta(t) - avg (slope of linear regression) 
+#abs(cumWheel(end) - cumWheel(start)) / len(timeToOutcome)
 
-
-
-
-    
- 
 timeToOutcome = []    # time to outcome is time from rxnTime (1st wheel mvmt) to respFrame
 for i,j in zip(cumWheel, rxnTimes):    
     i = np.round(len(i)*1000/framerate)
@@ -194,7 +170,7 @@ df['timeToOutcome'] = timeToOutcome
 if len(maskOnset)>0:
     df['mask'] = trialMaskContrast
     df['soa'] = trialMaskOnset
-df['nogoMove'] = nogoMove
+df['nogoMove'] = nogoMove  # turning direction of nogo trial
 
 for (ind, time) in zip(nogoTurn[2][0], nogoRxnTimes):
     df.loc[ind,'reactionTime'] = time
@@ -209,44 +185,23 @@ for i in ignoreTrials:
 ## Time to move wheel from start of wheel mvmt - will be (-) in some trials 
     # only for trials with target
 
-rxn = [i for i in rxnTimes if 0 < i < maxResp]
+rxn = [i for e, i in enumerate(rxnTimes) if (0 < i < maxResp) & (e not in ignoreTrials)]
 plt.figure()
 sns.distplot(scipy.stats.zscore(rxn))
 np.mean(rxnTimes)
-times = [j for j in timeToOutcome if 0<j<maxResp]
+times = [j for e, j in enumerate(timeToOutcome) if (0<j<maxResp) & (e not in ignoreTrials)]
 sns.distplot(scipy.stats.zscore(times))
 
 
-
-# correct nogos have a rxn time of 0
-
-for i, (time, rew, resp, soa) in enumerate(zip(cumWheel, df['rewDir'], df['reactionTime'], df['soa'])):
-   #if mask==1 and rew!=0:
-   #if i in ignoreTrials[:]:
-   #if i<30 and rew==0:
-   #if i in nogos:
-   if i <371 and i>346:
-        plt.figure()
-        ax = plt.axes()
-        plt.plot(time, lw=2)
-        plt.axvline(x=openLoop, ymin=0, ymax=1, c='k', ls='--', alpha=.5)
-        plt.axvline(x=15, ymin=0, ymax=1, c='c', ls='--', alpha=.8)
-        #ax.set_xticklabels(xp)
-        if trialMaskContrast[i]>0:
-            plt.axvline(x=int(soa), ymin=0, ymax=1, c='m', ls='--', alpha=.7)
-            plt.axvline(x=int(soa)+maskLength[0], ymin=0, ymax=1, c='m', ls='--', alpha=.7)
-
-        plt.title('-'.join(f.split('_')[-3:-1] + [str(i)]))
-     
         
-        
-# returns single plot of avg rxn times for each SOA (time from stim start to resp)
+   # returns single plot of avg rxn times for each SOA (time from stim start to resp)
 times = []
 for onset in np.unique(trialMaskOnset):
     lst = []
     for i, (time, soa, resp,mask) in enumerate(zip(df['reactionTime'], df['soa'], df['resp'], df['mask'])):
         if soa==onset and resp!=0:
-            if mask==True: #and i not in ignoreTrials:  # only masked trials and no obvious guessing trials included 
+            #if mask==True: 
+            if i not in ignoreTrials and time!=0:  # only masked trials and no obvious guessing trials included 
                 lst.append(time)
     times.append(lst)
 
@@ -256,259 +211,61 @@ means = [np.mean(x) for x in times]
 fig, ax = plt.subplots()
 ax.plot(np.unique(trialMaskOnset), med, label='Median', alpha=.4, lw=3)
 ax.plot(np.unique(trialMaskOnset), means, label='Mean', alpha=.4, lw=3)
-ax.set(title='Response Time by SOA:  ' + str(f.split('_')[-3:-1]))
+plt.plot()
+ax.set(title='Reaction Time (from Stim start) by SOA:  ' + str(f.split('_')[-3:-1]))
 ax.set_xticks(np.unique(trialMaskOnset))
 ax.legend()
 
 
 # then also plot the median no-mask trial response time
 ##  for the mask only, plot which side the mouse turns**
-
-nogoTurn = nogo_turn(d)  # has 2 arrays: 1st is nogos, 2nd maskOnly
+nogoTurn, maskOnlyTurn, inds = nogo_turn(d)  # has 2 arrays: 1st is nogos, 2nd maskOnly
 
 Rtimes = []
 Ltimes = []
-maskOnly=[]
+maskOnlyTimes = []
 for onset in np.unique(trialMaskOnset):
     Rlst = []
     Llst = []
-    Mlst = []
     for i, (time, soa, resp, mask, direc) in enumerate(zip(
             df['reactionTime'], df['soa'], df['resp'], df['mask'], df['rewDir'])):
         if soa==onset and resp!=0:   # not no resp
             if i not in ignoreTrials:
-                if direc==1:    
-                    Rlst.append(time)
-                elif direc==-1:
-                    Llst.append(time)
-                elif direc==0 and mask==0:
-                    Mlst.append(time)
+                if time != 0:
+                    if direc==1:        # soa=0 is targetOnly, R turning
+                        Rlst.append(time)
+                    elif direc==-1:   # soa=0 is targetOnly, L turning
+                        Llst.append(time)
+                    elif direc==0 and mask!=0:
+                        maskOnly.append(time)
     Rtimes.append(Rlst)
     Ltimes.append(Llst)
 
-    
 
 Rmed = [np.median(x) for x in Rtimes]
 Rmeans = [np.mean(x) for x in Rtimes]
 Lmed = [np.median(x) for x in Ltimes]
 Lmeans = [np.mean(x) for x in Ltimes]
 
+max = np.max(np.mean(Rmed+Lmed))
+
 for median, mean, title, time in zip([Rmed, Lmed], [Rmeans, Lmeans], ['Left', 'Right'], [Rtimes, Ltimes]):
     
     fig, ax = plt.subplots()
-    ax.plot(np.unique(trialMaskOnset), median, label='Median', alpha=.4, lw=3)
-    ax.plot(np.unique(trialMaskOnset), mean, label='Mean', alpha=.4, lw=3)
+    ax.plot(np.unique(trialMaskOnset), median, 'o-', label='Median', alpha=.4, lw=3)
+    ax.plot(np.unique(trialMaskOnset), mean, 'o-', label='Mean', alpha=.4, lw=3)
     ax.plot(0, np.mean(maskOnly), label='Mean MaskOnly', marker='o', c='b')
     ax.plot(0, np.median(maskOnly), label='Median MaskOnly', marker='o', c='g')
-    ax.set(title='{}-turning Response Time by SOA'.format(title), xlabel='SOA', ylabel='Response Time (frames, 60/sec)')
+    ax.set(title='{}-turning Reaction Time From StimStart, by SOA'.format(title), xlabel='SOA', ylabel='Response Time (frames, 60/sec)')
+    #ax.set_ylim([np.max()])
     ax.set_xticks(np.unique(trialMaskOnset))
+    a = ax.get_xticks().tolist()
+    a = [int(i) for i in a]     
+    a[-1]='targetOnly' 
+    a[0] = 'MaskOnly'
+    ax.set_xticklabels(a)
     ax.legend()
 
-#alternatively:
-fig, ax = plt.subplots() 
-for median, title, time in zip([Rmed, Lmed], ['Left', 'Right'], [Rtimes, Ltimes]):
-    ax.plot(np.unique(trialMaskOnset), median, label=title, alpha=.5)
-    plt.title('Median Response Time by SOA'.format(title))
-    ax.set_xticks(np.unique(trialMaskOnset))
-    ax.legend()
 
-## the above plots, by side, don't include the mask-only trials whose rewDir==0
-
-for side in (Rtimes, Ltimes):
-    fig, ax = plt.subplots(sharex='col', sharey='row')
-    #ax.set_title('KDE for Response Times ' + '-'.join(f.split('_')[-3:-1])) 
-    for i, s in enumerate(maskOnset):
-        if i<4:
-            plt.subplot(2,2,i+1)
-            sns.distplot(side[i+1],  bins=(freedman_diaconis(side[i+1], returnas="bins")), color='r')
-            #ax.text()
-            plt.axvline(np.median(side[i+1]), ls='--', alpha=.3)
-            plt.title('SOA {}'.format(s))  #, xlabel='Frames', ylabel='Dist')    
-    plt.tight_layout()
-
-  
-
-
-
-times = []
-for onset in np.unique(trialMaskOnset):
-    lst = []
-    for i, (time, soa, resp,mask) in enumerate(zip(df['timeToOutcome'], df['soa'], df['resp'], df['mask'])):
-        if soa==onset and resp!=0:
-            if mask==True and i not in ignoreTrials:  # only masked trials and no obvious guessing trials included 
-                lst.append(time-soa)
-    times.append(lst)
-
-med = [np.median(x) for x in times]
-means = [np.mean(x) for x in times]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-rightCorrectWheelMvmt = []
-for i, (time, resp, rew) in enumerate(zip(cumWheel, trialResponse, trialRewardDirection)):
-        for t in time:
-            if (resp==1) and (rew==1):
-                rightCorrectWheelMvmt.append((i, t))
-            
-df2 = pd.DataFrame(rightCorrectWheelMvmt, index=range(len(rightCorrectWheelMvmt)), columns=['trial', 'wheel mvmt'])
-    
-rightTrials = len(trialResponse[(trialResponse==1) & (trialRewardDirection==1)])
-totalRows = math.ceil(rightTrials/10)
-fig, axes = plt.subplots(nrows=totalRows, ncols=10, sharex=True, sharey=True)
-axes_list = [item for sublist in axes for item in sublist]
-
-for trial, wheelMvmt in df2.groupby('trial'):
-    ax = axes_list.pop(0)
-    wheelMvmt.plot(x=range(maxResp), y='wheel mvmt', label=trial, ax=ax)
-    ax.set_title(trial)
-    ax.tick_params(which='both',
-                   bottom='off',
-                   left='off', 
-                   right='off',
-                   top='off')
-    
-for ax in axes_list:
-    ax.remove()
-plt.tight_layout()
-
-
-
-
-
-
-plt.hist(df['reactionTime'], bins=30)
-plt.style.use('seaborn-darkgrid')
-
-# create a loop that creates small multiples of wheel plots 
-numGraphs = len(df.groupby('stimStart'))                  #choose stimStart bc it doesnt repeat, gives you all the trials 
-#corrResps = len(trialResponse[trialResponse==1])          # for only plotting correct trials 
-#incorrectResps = len(trialResponse[trialResponse==-1])    #for only plotting incorrect trials 
-totalRows = math.ceil(numGraphs/10)
-
-rightTrials = df[df['rewDir']==1]
-rightCorrect = rightTrials[rightTrials['resp']==1]
-
-leftTrials = df[df['rewDir']==-1]
-leftCorrect = leftTrials[leftTrials['resp']==1]    #need to take delta wheel into account, to know when they started moving the wheel 
-
-rightArray = np.array(rightCorrect['reactionTime'])
-leftArray = np.array(leftCorrect['reactionTime'])
-
-correctGo = df[(df['rewDir']!=0) & (df['resp']==1)]   # for correct go trials 
-##########################################################
-
-numGraphs = len(df.groupby('stimStart'))  
-totalRows = math.ceil(numGraphs/10)
-fig, axes = plt.subplots(nrows=totalRows, ncols=10, sharex=True, sharey=True)
-axes_list = [item for sublist in axes for item in sublist]
-grouped = df['cumRespTime'].groupedby('stimStart')
-
-
-
-plt.tightlayout() 
-
-
-
-
-
-    
-
-
-   
-response = np.where(respTime<respTime[0]-1)
-respTime+=len(respTime[respTime>1])
-
-
-
-df['trialLength'] = (trialResponseFrame-trialStimStartFrame)
-
-df['respTime'] = [len(i) for i in responseTime[i>1] if len(i)>0]
-
-newTimes=[] 
-rxnTimes=[]         
-for resp, time in zip(trialResponse, responseTime):
-    newtime = []
-    rxntime = []
-    if resp==1:
-        for x in time:
-            if abs(x)>abs(3):
-                newtime.append(x)
-            else:
-                rxntime.append(x)
-                
-    newTimes.append(newtime)
-    rxnTimes.append(rxntime)
-    
-df['newTimes'] = [len(m) for m in newTimes]
-df['reactionTime'] = [len(n) for n in rxnTimes]
-
-
-           
-#encoderAngle = d['rotaryEncoderRadians'][:]
-reactionThresh = 0.1
-reactionTime = np.full(trialResponse.size,np.nan)
-
-for trial,(start,end) in enumerate(zip(trialStimStartFrame,trialEndFrame)):
-    r = np.where(np.absolute(deltaWheel[start:end])>reactionThresh)[0]
-    if any(r):
-        reactionTime[trial] = r[0]/120
-
-
-rightTrials = df[df['rewDir']==1]
-rightCorrect = rightTrials[rightTrials['resp']==1]
-
-leftTrials = df[df['rewDir']==-1]
-leftCorrect = leftTrials[leftTrials['resp']==1]    #need to take delta wheel into account, to know when they started moving the wheel 
-
-rightArray = np.array(rightCorrect['responseTime'])
-leftArray = np.array(leftCorrect['responseTime'])
-
-rBins = freedman_diaconis(rightArray, returnas='bins')
-lBins = freedman_diaconis(leftArray, returnas='bins')
-
-totalTrials = df[df['resp']==1]
-totalTrials = totalTrials[totalTrials['rewDir']!=0]
-totalArray = np.array(totalTrials['responseTime'])
-
- 
-rightArray = np.array(rightCorrect['newTimes'])
-leftArray = np.array(leftCorrect['newTimes'])
-
-rBins = freedman_diaconis(rightArray, returnas='bins')
-lBins = freedman_diaconis(leftArray, returnas='bins')
-
-totalTrials = df[df['resp']==1]
-totalTrials = totalTrials[totalTrials['rewDir']!=0]
-totalArray = np.array(totalTrials['newTimes'])
-
-
-#fig, ax = plt.subplots()
-#plt.hist(rightCorrect['responseTime'], bins=rBins, rwidth=4.1, color='r', alpha=.5)   # choose bin-width based on freedman-diaconis
-#plt.hist(leftCorrect['responseTime'], bins=lBins, color='b', alpha=.5)
-#plt.axvline(np.median(leftCorrect['responseTime']), c='b', ls='--')
-#plt.axvline(np.mean(rightCorrect['responseTime']), c='r', ls='--')    # mean or median?
-
-plt.figure()
-sns.distplot(rightArray)
-sns.distplot(leftArray)
-plt.title('Distribution of response times by side:  ' + '-'.join(f.split('_')[-3:-1]))
-plt.figure()
-sns.distplot(totalArray, color='r')
-
-# use gaussian KDE
 
 
