@@ -5,6 +5,12 @@ Created on Thu Feb  6 17:28:53 2020
 @author: svc_ccg
 """
 
+plt.figure()
+for onset in np.unique(trialMaskOnset):
+    for i, (v, soa, resp,mask) in enumerate(zip(velo, df['soa'], df['resp'], df['mask'])):
+        if soa==onset and resp!=0:
+            plt.scatter(soa, v)
+
 
    # returns single plot of avg rxn times for each SOA (time from stim start to resp)
 Rtimes = [[],[]]   # hit, miss
@@ -47,23 +53,22 @@ for a, b in zip(inds[1], maskOnly):
         maskOnlyTimes[0].append(rxnTimes[a])  #maskonly turned R
     elif b==-1:
         maskOnlyTimes[1].append(rxnTimes[a])  # maskOnly turned L
-
-for onset in np.unique(trialMaskOnset):
-
-    for i, (time, soa, resp, mask, direc) in enumerate(zip(
-            df['reactionTime'], df['soa'], df['resp'], df['mask'], df['rewDir'])):
-        if soa==onset and resp!=0:   # not no resp
-            if i not in ignoreTrials and time!=0:
-                if direc==1:       # soa=0 is targetOnly, R turning
-                    if resp==1:
-                        Rhit.append(time)  #hit
-                    else:
-                        Rmiss.append(time)  #miss
-                elif direc==-1:   # soa=0 is targetOnly, L turning
-                    if resp==1:
-                        Lhit.append(time)  #hit
-                    else:
-                        Lmiss.append(time)
+for i, direction in enumerate(1,-1): 
+    for onset in np.unique(trialMaskOnset):
+        for j, (time, soa, resp, mask, direc) in enumerate(zip(
+                df['reactionTime'], df['soa'], df['resp'], df['mask'], df['rewDir'])):
+            if soa==onset and resp!=0:   # not no resp
+                if j not in ignoreTrials and time!=0:
+                    if direc==1:       # soa=0 is targetOnly, R turning
+                        if resp==1:
+                            Rhit.append(time)  #hit
+                        else:
+                            Rmiss.append(time)  #miss
+                    elif direc==-1:   # soa=0 is targetOnly, L turning
+                        if resp==1:
+                            Lhit.append(time)  #hit
+                        else:
+                            Lmiss.append(time)
        
              
     Rtimes[0].append(Rhit)
