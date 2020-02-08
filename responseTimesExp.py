@@ -26,6 +26,9 @@ import seaborn as sns
 
 from nogoData import nogo_turn
 
+
+## SETUP  
+
 matplotlib.rcParams['pdf.fonttype'] = 42
 
 f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
@@ -116,22 +119,32 @@ for i, times in enumerate(cumWheel):
         interp = np.interp(x,xp,fp)
         interpWheel.append(interp)
         threshold = maxQuiescentMove*d['monSizePix'][0] 
-        t = np.argmax(abs(interp[100::])>threshold) + 100  # starting at the guessing threshold
-        if t==100:
-            rxnTimes.append(0)   # no resp
+        t = np.argmax(abs(interp)>threshold)
+        if t <= 100:
+            ignoreTrials.append(i)
+            rxnTimes.append(t)
+        elif t==0:
+            rxnTimes.append(0)   # no resp, or moving 
         else:
+            t = np.argmax(abs(interp[100::])>threshold) + 100
             a = np.argmax(abs(interp[0:t])>5)
             if 0 < a < 100:
                 ignoreTrials.append(i)    # ask sam about ignoring trials, including nogos 
                 rxnTimes.append(0)
-            elif abs(t-a) < (10*1000/framerate):
+            elif abs(t-a) < (150):
                 rxnTimes.append(a)
             else:
-                b = np.argmax(abs(np.round(np.diff(interp[100::])))>0)
-                rxnTimes.append(b+100)
+                b = np.argmax(abs(np.round(np.diff(interp[100::])))>0) + 100
+                if abs(t-b) < (200):
+                    rxnTimes.append(b)
+                else:
+                    c = np.argmax(abs(np.round(np.diff(interp[100::])))>1) + 100
+                    if c!=100:
+                        rxnTimes.append(c)
+                    else:
+                        rxnTimes.append(b)
+    
 
-               
-# np.argmax(abs(cumWheel[i])>5)   old way 
 
 # velocities  - inst=delta(x)/delta(t) - avg (slope of linear regression) 
 #abs(cumWheel(end) - cumWheel(start)) / len(timeToOutcome)
@@ -141,6 +154,14 @@ for i,j in zip(cumWheel, rxnTimes):
     i = np.round(len(i)*1000/framerate)
     timeToOutcome.append(i-j)    # ends up just being the diff btwn trialLength and rxnTime
 
+velo = []           
+for i, time in enumerate(interpWheel):
+    if type(time) is int:
+        velo.append(0)
+    else:
+        q = int(rxnTimes[i])   # rxn time of the trial, in ms
+        v = abs(time[-1] - time[q]) / timeToOutcome[i]   # dist moved over time
+        velo.append(v)
 
 nogoCumWheelFromCL = []         # this is cum wheel mvmt from goTone to wheelMvmt (past threshold) 
 for time in nogoWheelFromCL:    # for nogo trials
@@ -179,9 +200,9 @@ for (ind, time) in zip(nogoTurn[2][0], nogoRxnTimes):
 for i in ignoreTrials:
     df.loc[i,'ignoreTrial'] = True
 
-
-
-
+##############################################################################################
+##PLOTTING
+    
 ## Time to move wheel from start of wheel mvmt - will be (-) in some trials 
     # only for trials with target
 
@@ -217,8 +238,7 @@ ax.set_xticks(np.unique(trialMaskOnset))
 ax.legend()
 
 
-# then also plot the median no-mask trial response time
-##  for the mask only, plot which side the mouse turns**
+
 nogoTurn, maskOnlyTurn, inds = nogo_turn(d)  # has 2 arrays: 1st is nogos, 2nd maskOnly
 
 Rtimes = []
@@ -237,7 +257,7 @@ for onset in np.unique(trialMaskOnset):
                     elif direc==-1:   # soa=0 is targetOnly, L turning
                         Llst.append(time)
                     elif direc==0 and mask!=0:
-                        maskOnly.append(time)
+                        maskOnlyTimes.append(time)
     Rtimes.append(Rlst)
     Ltimes.append(Llst)
 
@@ -254,8 +274,8 @@ for median, mean, title, time in zip([Rmed, Lmed], [Rmeans, Lmeans], ['Left', 'R
     fig, ax = plt.subplots()
     ax.plot(np.unique(trialMaskOnset), median, 'o-', label='Median', alpha=.4, lw=3)
     ax.plot(np.unique(trialMaskOnset), mean, 'o-', label='Mean', alpha=.4, lw=3)
-    ax.plot(0, np.mean(maskOnly), label='Mean MaskOnly', marker='o', c='b')
-    ax.plot(0, np.median(maskOnly), label='Median MaskOnly', marker='o', c='g')
+    ax.plot(0, np.mean(maskOnlyTimes), label='Mean MaskOnly', marker='o', c='b')
+    ax.plot(0, np.median(maskOnlyTimes), label='Median MaskOnly', marker='o', c='g')
     ax.set(title='{}-turning Reaction Time From StimStart, by SOA'.format(title), xlabel='SOA', ylabel='Response Time (frames, 60/sec)')
     #ax.set_ylim([np.max()])
     ax.set_xticks(np.unique(trialMaskOnset))
