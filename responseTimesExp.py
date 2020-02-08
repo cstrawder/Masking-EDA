@@ -109,7 +109,6 @@ for i, times in enumerate(cumWheel):
     if i in nogos:   # excluding nogos from rxnTime analysis
         rxnTimes.append(0)
         interpWheel.append(0)
-        pass
     else:
         fp = times
         xp = np.arange(0, len(fp))*1/framerate
@@ -118,18 +117,19 @@ for i, times in enumerate(cumWheel):
         interpWheel.append(interp)
         threshold = maxQuiescentMove*d['monSizePix'][0] 
         t = np.argmax(abs(interp[100::])>threshold) + 100  # starting at the guessing threshold
-        if t==0:
+        if t==100:
             rxnTimes.append(0)   # no resp
         else:
             a = np.argmax(abs(interp[0:t])>5)
-            if abs(t-a) < (10*1000/framerate):
+            if 0 < a < 100:
+                ignoreTrials.append(i)    # ask sam about ignoring trials, including nogos 
+                rxnTimes.append(0)
+            elif abs(t-a) < (10*1000/framerate):
                 rxnTimes.append(a)
             else:
                 b = np.argmax(abs(np.round(np.diff(interp[100::])))>0)
                 rxnTimes.append(b+100)
-    if 0 < a < 100:
-        ignoreTrials.append(i)    # ask sam about ignoring trials, including nogos 
-        rxnTimes.append(0)
+
                
 # np.argmax(abs(cumWheel[i])>5)   old way 
 
