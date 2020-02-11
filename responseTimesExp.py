@@ -155,13 +155,14 @@ for i,j in zip(cumWheel, rxnTimes):
     timeToOutcome.append(i-j)    # ends up just being the diff btwn trialLength and rxnTime
 
 velo = []           
-for i, time in enumerate(interpWheel):
+for i, time in enumerate(interpWheel):   #time is array of wheel mvmt
     if type(time) is int:
-        velo.append(0)
+        velo.append(0)          # no wheel mvmt is 0, an int
     else:
-        q = int(rxnTimes[i])   # rxn time of the trial, in ms
-        v = abs(time[-1] - time[q]) / timeToOutcome[i]   # dist moved over time
+        q = int(rxnTimes[i])   # rxn time of the trial, in ms, used as index of interpWheel
+        v = abs(time[-1] - time[q]) / timeToOutcome[i]   # dist (in pix??) moved over time/time
         velo.append(v)
+        # in pix/ms?
 
 nogoCumWheelFromCL = []         # this is cum wheel mvmt from goTone to wheelMvmt (past threshold) 
 for time in nogoWheelFromCL:    # for nogo trials
@@ -193,8 +194,8 @@ if len(maskOnset)>0:
     df['soa'] = trialMaskOnset
 df['nogoMove'] = nogoMove  # turning direction of nogo trial
 
-for (ind, time) in zip(nogoTurn[2][0], nogoRxnTimes):
-    df.loc[ind,'reactionTime'] = time
+#for (ind, time) in zip(nogoTurn[2][0], nogoRxnTimes):    #adds rxnTimes to nogos; need to look at separately
+#    df.loc[ind,'reactionTime'] = time
 
 
 for i in ignoreTrials:
@@ -214,78 +215,123 @@ times = [j for e, j in enumerate(timeToOutcome) if (0<j<maxResp) & (e not in ign
 sns.distplot(scipy.stats.zscore(times))
 
 
+
+velocities=[]
+for onset in np.unique(trialMaskOnset):
+    vel = []
+    for i, (v, soa, resp,mask) in enumerate(zip(velo, df['soa'], df['resp'], df['mask'])):
+        if soa==onset and resp!=0:
+            if v!=0:
+                vel.append(v)
+    velocities.append(vel)
+   
+err = [np.std(vel) for vel in velocities]
+
+fig, ax = plt.subplots()
+for i, (v,e) in enumerate(zip(velocities, err)):
+    ax.errorbar(np.unique(trialMaskOnset)[i], np.mean(v), yerr=e, fmt='-o')
+ax.set(title='Mean velocity (from start of wheel mvmt) by SOA:  ' + str(f.split('_')[-3:-1]))
+ax.set_xticks(np.unique(trialMaskOnset))
+
+
+# can be used with ['timeToOutcome'], ['trialLength'], ['reactionTime']
+nonzeroRxns = df[(df['reactionTime']!=0) & (df['ignoreTrial']!=True)]
+corrNonzero = nonzeroRxns[nonzeroRxns['resp']==1]
+
+plt.figure()
+sns.violinplot(x=nonzeroRxns['soa'], y=nonzeroRxns['reactionTime'])
+plt.title('Dist of reaction times by SOA:  ' + str(f.split('_')[-3:-1]))
+
         
-   # returns single plot of avg rxn times for each SOA (time from stim start to resp)
+   # returns single plot of avg rxn times for hits each SOA (time from stim start to resp)
+   # L and R turning combined
 times = []
 for onset in np.unique(trialMaskOnset):
     lst = []
     for i, (time, soa, resp,mask) in enumerate(zip(df['reactionTime'], df['soa'], df['resp'], df['mask'])):
-        if soa==onset and resp!=0:
+        if soa==onset and resp==1:
             #if mask==True: 
             if i not in ignoreTrials and time!=0:  # only masked trials and no obvious guessing trials included 
                 lst.append(time)
     times.append(lst)
 
 med = [np.median(x) for x in times]
-means = [np.mean(x) for x in times]
+#means = [np.mean(x) for x in times]
 
 fig, ax = plt.subplots()
 ax.plot(np.unique(trialMaskOnset), med, label='Median', alpha=.4, lw=3)
-ax.plot(np.unique(trialMaskOnset), means, label='Mean', alpha=.4, lw=3)
+#ax.plot(np.unique(trialMaskOnset), means, label='Mean', alpha=.4, lw=3)
 plt.plot()
 ax.set(title='Reaction Time (from Stim start) by SOA:  ' + str(f.split('_')[-3:-1]))
 ax.set_xticks(np.unique(trialMaskOnset))
+a = ax.get_xticks().tolist()
+a = [int(i) for i in a]     
+a[-1]='targetOnly' 
+#a[0] = 'MaskOnly'
+ax.set_xticklabels(a)
 ax.legend()
 
 
 
-nogoTurn, maskOnlyTurn, inds = nogo_turn(d)  # has 2 arrays: 1st is nogos, 2nd maskOnly
+nogoTurn, maskOnly, inds = nogo_turn(d)  # has 2 arrays: 1st is nogos, 2nd maskOnly
 
-Rtimes = []
-Ltimes = []
-maskOnlyTimes = []
+hits = [[],[]]  #R, L
+misses = [[],[]]
+maskOnlyTimes = [[],[]]  #R, L
+
+for a, b in zip(inds[1], maskOnly):    # inds is index of maskOnly turning trials
+    if b==1:
+        maskOnlyTimes[0].append(rxnTimes[a])  #maskonly turned R
+    elif b==-1:
+        maskOnlyTimes[1].append(rxnTimes[a])  # maskOnly turned L
+
 for onset in np.unique(trialMaskOnset):
-    Rlst = []
-    Llst = []
-    for i, (time, soa, resp, mask, direc) in enumerate(zip(
+    hitVal = [[],[]]
+    missVal = [[],[]]
+    for j, (time, soa, resp, mask, direc) in enumerate(zip(
             df['reactionTime'], df['soa'], df['resp'], df['mask'], df['rewDir'])):
         if soa==onset and resp!=0:   # not no resp
-            if i not in ignoreTrials:
-                if time != 0:
-                    if direc==1:        # soa=0 is targetOnly, R turning
-                        Rlst.append(time)
-                    elif direc==-1:   # soa=0 is targetOnly, L turning
-                        Llst.append(time)
-                    elif direc==0 and mask!=0:
-                        maskOnlyTimes.append(time)
-    Rtimes.append(Rlst)
-    Ltimes.append(Llst)
+            if j not in ignoreTrials and time!=0:
+                if direc==1:       # soa=0 is targetOnly, R turning
+                    if resp==1:
+                        hitVal[0].append(time)  #hit
+                    else:
+                        missVal[0].append(time)  #miss
+                elif direc==-1:   # soa=0 is targetOnly, L turning
+                    if resp==1:
+                        hitVal[1].append(time)  #hit
+                    else:
+                        missVal[1].append(time)
+       
+    for i in (0,1):         
+        hits[i].append(hitVal[i])
+        misses[i].append(missVal[i])
 
 
-Rmed = [np.median(x) for x in Rtimes]
-Rmeans = [np.mean(x) for x in Rtimes]
-Lmed = [np.median(x) for x in Ltimes]
-Lmeans = [np.mean(x) for x in Ltimes]
+Rmed = [np.median(x) for x in hits[0]]
+Lmed = [np.median(x) for x in hits[1]]
+RmissMed = [np.median(x) for x in misses[0]]
+LmissMed = [np.median(x) for x in misses[1]]
 
-max = np.max(np.mean(Rmed+Lmed))
+Rmean = [np.mean(x) for x in hits[0]]
+Lmean = [np.mean(x) for x in hits[1]]
+RmissMean = [np.mean(x) for x in misses[0]]
+LmissMean = [np.mean(x) for x in misses[1]]
 
-for median, mean, title, time in zip([Rmed, Lmed], [Rmeans, Lmeans], ['Left', 'Right'], [Rtimes, Ltimes]):
-    
-    fig, ax = plt.subplots()
-    ax.plot(np.unique(trialMaskOnset), median, 'o-', label='Median', alpha=.4, lw=3)
-    ax.plot(np.unique(trialMaskOnset), mean, 'o-', label='Mean', alpha=.4, lw=3)
-    ax.plot(0, np.mean(maskOnlyTimes), label='Mean MaskOnly', marker='o', c='b')
-    ax.plot(0, np.median(maskOnlyTimes), label='Median MaskOnly', marker='o', c='g')
-    ax.set(title='{}-turning Reaction Time From StimStart, by SOA'.format(title), xlabel='SOA', ylabel='Response Time (frames, 60/sec)')
-    #ax.set_ylim([np.max()])
-    ax.set_xticks(np.unique(trialMaskOnset))
-    a = ax.get_xticks().tolist()
-    a = [int(i) for i in a]     
-    a[-1]='targetOnly' 
-    a[0] = 'MaskOnly'
-    ax.set_xticklabels(a)
-    ax.legend()
-
-
-
-
+#max = np.max(np.mean(Rmed+Lmed))
+fig, ax = plt.subplots()
+ax.plot(np.unique(trialMaskOnset[:-2]), Rmed, 'ro-', label='Rhit',  alpha=.6, lw=3)
+ax.plot(np.unique(trialMaskOnset[:-2]), RmissMed, 'ro-', label='R miss', ls='--', alpha=.3, lw=2)
+ax.plot(np.unique(trialMaskOnset[:-2]), Lmed, 'bo-', label='L hit', alpha=.6, lw=3)
+ax.plot(np.unique(trialMaskOnset[:-2]), LmissMed, 'bo-', label='L miss', ls='--', alpha=.3, lw=2)
+ax.plot(0, np.median(maskOnly), marker='o', c='k')
+ax.set(title='Turning Reaction Time From StimStart, by SOA', xlabel='SOA', ylabel='Response Time (frames, 60/sec)')
+plt.suptitle(str(f.split('_')[-3:-1]))
+#ax.set_ylim([np.max()])
+ax.set_xticks(np.unique(trialMaskOnset))
+a = ax.get_xticks().tolist()
+a = [int(i) for i in a]     
+a[-1]='targetOnly' 
+a[0] = 'MaskOnly'
+ax.set_xticklabels(a)
+ax.legend()
