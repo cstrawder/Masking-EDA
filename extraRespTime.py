@@ -17,6 +17,75 @@ p = [3,10,13,17,42,54,63,64,73,83,87,111,123,140,144. 154,155,160,182,190,229,23
 
 # correct nogos have a rxn time of 0
 
+nogoTurn, maskOnlyTurn, inds = nogo_turn(d)  # has 2 arrays: 1st is nogos, 2nd maskOnly
+
+Rtimes = []
+Ltimes = []
+maskOnlyTimes = []
+for onset in np.unique(trialMaskOnset):
+    Rlst = []
+    Llst = []
+    for i, (time, soa, resp, mask, direc) in enumerate(zip(
+            df['reactionTime'], df['soa'], df['resp'], df['mask'], df['rewDir'])):
+        if soa==onset and resp!=0:   # not no resp
+            if i not in ignoreTrials:
+                if time != 0:
+                    if direc==1:        # soa=0 is targetOnly, R turning
+                        Rlst.append(time)
+                    elif direc==-1:   # soa=0 is targetOnly, L turning
+                        Llst.append(time)
+                    elif direc==0 and mask!=0:
+                        maskOnlyTimes.append(time)
+    Rtimes.append(Rlst)
+    Ltimes.append(Llst)
+
+
+Rmed = [np.median(x) for x in Rtimes]
+Rmeans = [np.mean(x) for x in Rtimes]
+Lmed = [np.median(x) for x in Ltimes]
+Lmeans = [np.mean(x) for x in Ltimes]
+
+max = np.max(np.mean(Rmed+Lmed))
+
+for median, mean, title, time in zip([Rmed, Lmed], [Rmeans, Lmeans], ['Left', 'Right'], [Rtimes, Ltimes]):
+    
+    fig, ax = plt.subplots()
+    ax.plot(np.unique(trialMaskOnset), median, 'o-', label='Median', alpha=.4, lw=3)
+    ax.plot(np.unique(trialMaskOnset), mean, 'o-', label='Mean', alpha=.4, lw=3)
+    ax.plot(0, np.mean(maskOnlyTimes), label='Mean MaskOnly', marker='o', c='b')
+    ax.plot(0, np.median(maskOnlyTimes), label='Median MaskOnly', marker='o', c='g')
+    ax.set(title='{}-turning Reaction Time From StimStart, by SOA'.format(title), xlabel='SOA', ylabel='Response Time (frames, 60/sec)')
+    #ax.set_ylim([np.max()])
+    ax.set_xticks(np.unique(trialMaskOnset))
+    a = ax.get_xticks().tolist()
+    a = [int(i) for i in a]     
+    a[-1]='targetOnly' 
+    a[0] = 'MaskOnly'
+    ax.set_xticklabels(a)
+    ax.legend()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 for i, (time, rew, resp, soa) in enumerate(zip(cumWheel, df['rewDir'], df['reactionTime'], df['soa'])):
    #if mask==1 and rew!=0:
    #if i in ignoreTrials[:]:
