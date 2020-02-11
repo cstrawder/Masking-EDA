@@ -241,7 +241,12 @@ corrNonzero = nonzeroRxns[nonzeroRxns['resp']==1]
 plt.figure()
 sns.violinplot(x=nonzeroRxns['soa'], y=nonzeroRxns['reactionTime'])
 plt.title('Dist of reaction times by SOA:  ' + str(f.split('_')[-3:-1]))
-
+#ax.set_xticks(np.unique(trialMaskOnset))
+#a = ax.get_xticks().tolist()
+#a = [int(i) for i in a]     
+#a[-1]='targetOnly' 
+#ax.set_xticklabels(a)
+## this isn't working - maybe bc seaborn?? Need to rethink
         
    # returns single plot of avg rxn times for hits each SOA (time from stim start to resp)
    # L and R turning combined
