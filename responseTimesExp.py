@@ -41,7 +41,7 @@ end = len(trialResponse)
 trialRewardDirection = d['trialRewardDir'][:end]
 trialTargetFrames = d['trialTargetFrames'][:end]
 trialStimStartFrame = d['trialStimStartFrame'][:]
-trialResponseFrame = d['trialResponseFrame'][:end]    #if they don't respond, then nothing is recorded here - this limits df to length of this variable
+trialResponseFrame = d['trialResponseFrame'][:end]    
 trialOpenLoopFrames = d['trialOpenLoopFrames'][:end]
 openLoopFrames = d['openLoopFramesFixed'][()]
 quiescentMoveFrames = d['quiescentMoveFrames'][:]
@@ -83,7 +83,7 @@ nogoWheelFromCL = []
 for i, (start, resp, mask) in enumerate(zip(trialStimStartFrame, trialResponseFrame, trialMaskContrast)):
     if trialRewardDirection[i]==0:
         if mask==0:  # nogo trials
-            wheel = (deltaWheel[start+openLoopFrames:resp+5])   #from start of closedLoop
+            wheel = (deltaWheel[start+openLoopFrames:(start+openLoopFrames+60)])   #from start of closedLoop, len of go trial
             nogoWheelFromCL.append(wheel)
             wheel2 = (deltaWheel[start:resp])
             trialWheel.append(wheel2)
@@ -94,7 +94,11 @@ for i, (start, resp, mask) in enumerate(zip(trialStimStartFrame, trialResponseFr
         wheel = (deltaWheel[start:resp])
         trialWheel.append(wheel)
 
-
+nogoCumWheelFromCL = []         # this is cum wheel mvmt from goTone to wheelMvmt (past threshold) 
+for time in nogoWheelFromCL:    # for nogo trials
+    time = np.cumsum(time)
+    nogoCumWheelFromCL.append(time)
+    
 #since deltawheel provides the difference in wheel mvmt from trial to trial
 #taking the cumulative sum gives the actual wheel mvmt and plots as a smooth curve
 cumWheel = []   
@@ -125,7 +129,7 @@ for i, (times, resp) in enumerate(zip(cumWheel, trialResponse)):
         elif t==0:
             rxnTimes.append(0)   # no resp, or moving 
         else:
-            t = np.argmax(abs(interp[100::])>threshold) + 100
+            t = np.argmax(abs(interp[100::])>threshold) + 100  #100 is limit of ignore trial
             a = np.argmax(abs(np.round(np.diff(interp[100::])))>0) + 100
             if 0 < a < 100:
                 ignoreTrials.append(i)    # ask sam about ignoring trials, including nogos 
@@ -144,10 +148,6 @@ for i, (times, resp) in enumerate(zip(cumWheel, trialResponse)):
                         rxnTimes.append(b)
     
 
-
-# velocities  - inst=delta(x)/delta(t) - avg (slope of linear regression) 
-#abs(cumWheel(end) - cumWheel(start)) / len(timeToOutcome)
-
 timeToOutcome = []    # time to outcome is time from rxnTime (1st wheel mvmt) to respFrame
 for i,j in zip(cumWheel, rxnTimes):    
     i = np.round(len(i)*1000/framerate)
@@ -163,17 +163,11 @@ for i, time in enumerate(interpWheel):   #time is array of wheel mvmt
         velo.append(v)
         # in pix/ms?
 
-nogoCumWheelFromCL = []         # this is cum wheel mvmt from goTone to wheelMvmt (past threshold) 
-for time in nogoWheelFromCL:    # for nogo trials
-    time = np.cumsum(time)
-    nogoCumWheelFromCL.append(time)
-
 nogoRxnTimes = []               # num of frames from goTone to mvmt or reward
 for times in nogoCumWheelFromCL:
     nogoRxnTimes.append(len(times)-4)
        
-nogoTurn = nogo_turn(d)   # returns 3 arrays; [0] is nogoTurn dir, [1] is maskOnly, and 2
-                            # is 2 lists of indices of those nogoMove trials
+nogoTurn, maskOnly, inds = nogo_turn(d)  # 1st 2 arrays are turned direction, 3rd is indices of 1st 2                       
                             
 nogoMove = np.zeros(len(trialResponse)).astype(int)
 for i in range(len(trialResponse)):
@@ -240,12 +234,8 @@ corrNonzero = nonzeroRxns[nonzeroRxns['resp']==1]
 plt.figure()
 sns.violinplot(x=nonzeroRxns['soa'], y=nonzeroRxns['reactionTime'])
 plt.title('Dist of reaction times by SOA:  ' + str(f.split('_')[-3:-1]))
-#ax.set_xticks(np.unique(trialMaskOnset))
-#a = ax.get_xticks().tolist()
-#a = [int(i) for i in a]     
-#a[-1]='targetOnly' 
-#ax.set_xticklabels(a)
-## this isn't working - maybe bc seaborn?? Need to rethink
+
+## not sure how to change axis labels- maybe bc seaborn?? Need to rethink
         
    # returns single plot of avg rxn times for hits each SOA (time from stim start to resp)
    # L and R turning combined
@@ -276,8 +266,6 @@ ax.set_xticklabels(a)
 ax.legend()
 
 
-
-nogoTurn, maskOnly, inds = nogo_turn(d)  # has 2 arrays: 1st is nogos, 2nd maskOnly
 
 hits = [[],[]]  #R, L
 misses = [[],[]]
