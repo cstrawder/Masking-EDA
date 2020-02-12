@@ -15,7 +15,6 @@ dependence on mask presence
 """
 
 import fileIO, h5py
-import math
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -108,10 +107,10 @@ for mvmt in trialWheel:
 interpWheel = []
 rxnTimes = []
 ignoreTrials = []
-for i, times in enumerate(cumWheel):
-    if i in nogos:   # excluding nogos from rxnTime analysis
+for i, (times, resp) in enumerate(zip(cumWheel, trialResponse)):
+    if i in nogos or resp==0:   # excluding nogos from rxnTime analysis
         rxnTimes.append(0)
-        interpWheel.append(0)
+        interpWheel.append(0)    
     else:
         fp = times
         xp = np.arange(0, len(fp))*1/framerate
@@ -127,19 +126,19 @@ for i, times in enumerate(cumWheel):
             rxnTimes.append(0)   # no resp, or moving 
         else:
             t = np.argmax(abs(interp[100::])>threshold) + 100
-            a = np.argmax(abs(interp[0:t])>5)
+            a = np.argmax(abs(np.round(np.diff(interp[100::])))>0) + 100
             if 0 < a < 100:
                 ignoreTrials.append(i)    # ask sam about ignoring trials, including nogos 
                 rxnTimes.append(0)
             elif abs(t-a) < (150):
                 rxnTimes.append(a)
             else:
-                b = np.argmax(abs(np.round(np.diff(interp[100::])))>0) + 100
+                b = np.argmax(abs(np.round(np.diff(interp[a::])))>0) + a
                 if abs(t-b) < (200):
                     rxnTimes.append(b)
                 else:
-                    c = np.argmax(abs(np.round(np.diff(interp[100::])))>1) + 100
-                    if c!=100:
+                    c = np.argmax(abs(np.round(np.diff(interp[b::])))>1) + b
+                    if c!=b:
                         rxnTimes.append(c)
                     else:
                         rxnTimes.append(b)
@@ -261,11 +260,11 @@ for onset in np.unique(trialMaskOnset):
     times.append(lst)
 
 med = [np.median(x) for x in times]
-#means = [np.mean(x) for x in times]
+means = [np.mean(x) for x in times]
 
 fig, ax = plt.subplots()
 ax.plot(np.unique(trialMaskOnset), med, label='Median', alpha=.4, lw=3)
-#ax.plot(np.unique(trialMaskOnset), means, label='Mean', alpha=.4, lw=3)
+ax.plot(np.unique(trialMaskOnset), means, label='Mean', alpha=.4, lw=3)
 plt.plot()
 ax.set(title='Median Reaction Time (from Stim start) by SOA:  ' + str(f.split('_')[-3:-1]))
 ax.set_xticks(np.unique(trialMaskOnset))
@@ -329,7 +328,9 @@ ax.plot(np.unique(trialMaskOnset[:-2]), Rmed, 'ro-', label='Rhit',  alpha=.6, lw
 ax.plot(np.unique(trialMaskOnset[:-2]), RmissMed, 'ro-', label='R miss', ls='--', alpha=.3, lw=2)
 ax.plot(np.unique(trialMaskOnset[:-2]), Lmed, 'bo-', label='L hit', alpha=.6, lw=3)
 ax.plot(np.unique(trialMaskOnset[:-2]), LmissMed, 'bo-', label='L miss', ls='--', alpha=.3, lw=2)
-ax.plot(0, np.median(maskOnly), marker='o', c='k')
+#ax.plot(0, np.median(maskOnly), marker='o', c='k')
+ax.plot(0, np.median(maskOnlyTimes[0]), 'r>')
+ax.plot(0, np.median(maskOnlyTimes[1]), 'b<')
 ax.set(title='Median Reaction Time From StimStart, by SOA', xlabel='SOA', ylabel='Reaction Time (ms)')
 plt.suptitle(str(f.split('_')[-3:-1]))
 #ax.set_ylim([np.max()])
