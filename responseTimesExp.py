@@ -50,6 +50,7 @@ trialEndFrame = d['trialEndFrame'][:end]
 deltaWheel = d['deltaWheelPos'][:]                      # has wheel movement for every frame of session
 trialMaskContrast = d['trialMaskContrast'][:end]
 
+#below in ms
 maskOnset = np.round(d['maskOnset'][()] * 1000/framerate).astype(int)
 trialMaskOnset = np.round(d['trialMaskOnset'][:end] * 1000/framerate).astype(int)
 maskLength = np.round(d['maskFrames'][()] * 1000/framerate).astype(int)
@@ -171,7 +172,7 @@ nogoTurn, maskOnly, inds = nogo_turn(d)  # 1st 2 arrays are turned direction, 3r
                             
 nogoMove = np.zeros(len(trialResponse)).astype(int)
 for i in range(len(trialResponse)):
-    for (ind, turn) in zip(nogoTurn[2][0], nogoTurn[0]):
+    for (ind, turn) in zip(inds[0], nogoTurn):
         if i==ind:
             nogoMove[i] = turn
 
@@ -193,6 +194,9 @@ df['nogoMove'] = nogoMove  # turning direction of nogo trial
 
 for i in ignoreTrials:
     df.loc[i,'ignoreTrial'] = True
+
+s = df.soa
+onsetIndex = s[(s!=128) & (s!=0)]   # indeices of trials that are masked (T and M)
 
 ##############################################################################################
 ##PLOTTING
