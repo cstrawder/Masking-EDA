@@ -179,7 +179,4 @@ def create_df(d):
     for i in ignoreTrials:
         df.loc[i,'ignoreTrial'] = True
     
-    s = df.soa
-    onsetIndex = s[(s!=128) & (s!=0)]   # indeices of trials that are masked (T and M)
-    
     return df

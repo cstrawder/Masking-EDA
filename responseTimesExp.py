@@ -84,7 +84,7 @@ nogoWheelFromCL = []
 for i, (start, resp, mask) in enumerate(zip(trialStimStartFrame, trialResponseFrame, trialMaskContrast)):
     if trialRewardDirection[i]==0:
         if mask==0:  # nogo trials
-            wheel = (deltaWheel[start+openLoopFrames:(start+openLoopFrames+60)])   #from start of closedLoop, len of go trial
+            wheel = (deltaWheel[start+openLoopFrames:(start+openLoopFrames+d['maxResponseWaitFrames'][()])])   #from start of closedLoop, len of go trial
             nogoWheelFromCL.append(wheel)
             wheel2 = (deltaWheel[start:resp])
             trialWheel.append(wheel2)
@@ -212,7 +212,7 @@ times = [j for e, j in enumerate(timeToOutcome) if (0<j<maxResp) & (e not in ign
 sns.distplot(scipy.stats.zscore(times))
 
 
-
+# plot average wheel velocity based on soa 
 velocities=[]
 for onset in np.unique(trialMaskOnset):
     vel = []
@@ -230,7 +230,7 @@ for i, (v,e) in enumerate(zip(velocities, err)):
 ax.set(title='Mean velocity (from start of wheel mvmt) by SOA:  ' + str(f.split('_')[-3:-1]))
 ax.set_xticks(np.unique(trialMaskOnset))
 
-
+# filter only trials where they responded, then only corr resps
 # can be used with ['timeToOutcome'], ['trialLength'], ['reactionTime']
 nonzeroRxns = df[(df['reactionTime']!=0) & (df['ignoreTrial']!=True)]
 corrNonzero = nonzeroRxns[nonzeroRxns['resp']==1]
