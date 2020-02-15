@@ -171,6 +171,7 @@ def create_df(d):
         df['mask'] = trialMaskContrast
         df['soa'] = trialMaskOnset
     df['nogoMove'] = nogoMove  # turning direction of nogo trial
+    df['interpWheel'] = interpWheel
     
     #for (ind, time) in zip(nogoTurn[2][0], nogoRxnTimes):    #adds rxnTimes to nogos; need to look at separately
     #    df.loc[ind,'reactionTime'] = time

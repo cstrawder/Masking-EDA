@@ -79,6 +79,7 @@ for i, (mask, trial) in enumerate(zip(trialMaskOnset, trialTargetFrames)):   # f
 # deltaWheel from start of stim to response (or no response) for each trial
 # deltaWheel from start of closedLoop to response for nogos
 # nogos are sliced from trialStart to resp, and also go-tone to end.  Predictive turning.  ask sam.
+        ### change respFrame to trialEndFrame??  and create all slices the same length? like behAnalysis
 trialWheel = []  
 nogoWheelFromCL = [] 
 for i, (start, resp, mask) in enumerate(zip(trialStimStartFrame, trialResponseFrame, trialMaskContrast)):

@@ -98,3 +98,36 @@ a = [int(i) for i in a]
 a[0] = 'MaskOnly'
 ax.set_xticklabels(a)
 ax.legend()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+plt.figure()
+for i,j,k,m in zip(nonzeroRxns.rewDir, nonzeroRxns.resp, nonzeroRxns.interpWheel, nonzeroRxns.soa):
+    if i==1:
+        if m==17:
+            plt.plot(k, alpha=.2, color='m')
+        elif m==33:
+            plt.plot(k, alpha=.2, color='g')
+        elif m==25:
+            plt.plot(k, alpha=.2, color='k')
+        elif m==50:
+            plt.plot(k, alpha=.2, color='c')
+        elif m==100:
+            plt.plot(k, alpha=.2, color='b')
+        
+    elif i==1 and j==-1:
+        plt.plot(k, alpha=.1, color='k')
+    
+    
+    
