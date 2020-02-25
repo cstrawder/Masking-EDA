@@ -112,7 +112,7 @@ def create_df(d):
                 ignoreTrials.append(i)
                 rxnTimes.append(t)
             elif t==0:
-                rxnTimes.append(0)   # no resp, or moving 
+                rxnTimes.append(0)   # no resp, or moving at start of trial
             else:
                 t = np.argmax(abs(interp[100::])>threshold) + 100  #100 is limit of ignore trial
                 a = np.argmax(abs(np.round(np.diff(interp[100::])))>0) + 100
