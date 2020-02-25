@@ -116,7 +116,7 @@ def create_df(d):
             else:
                 t = np.argmax(abs(interp[100::])>threshold) + 100  #100 is limit of ignore trial
                 a = np.argmax(abs(np.round(np.diff(interp[100::])))>0) + 100
-                if 0 < a < 100:
+                if 0 < a < 200:
                     ignoreTrials.append(i)    # ask sam about ignoring trials, including nogos 
                     rxnTimes.append(0)
                 elif abs(t-a) < (150):
