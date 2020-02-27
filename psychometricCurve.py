@@ -72,4 +72,5 @@ y-axis is %correct GIVEN right turning
 
 given it was a left turning trial, did they turn left?  if so, 0% rightward
 '''
+ax, fig = plt.subplots()
 

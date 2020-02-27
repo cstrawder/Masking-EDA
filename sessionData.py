@@ -13,7 +13,7 @@ Can be used for either task, based on turning direction
 import numpy as np
 import matplotlib.pyplot as plt 
 from nogoData import nogo_turn
-from rxnTimesFunc import ignore_trials
+from ignoreTrials import ignore_trials
 
 # still need to remove trials where they definitely guessed (moved before 180 ms)
 # and apply priors to determine what % of trials would be guesses 
