@@ -2,11 +2,9 @@
 """
 Created on Thu Feb 13 11:56:13 2020
 
-pulls recent masking session files and creates dataframes for each day
-then combines the data frames (usu 3)
-analyzes the combined data frames and plots avg performance
-
-
+pulls 3 most recent masking session files and creates dataframes for each day
+then combines the data frames and analyzes the combined data frames
+plots avg performance (reaction time, response time, response latency)
 
 @author: svc_ccg
 """
@@ -29,12 +27,15 @@ files = get_files(mouse,'masking_to_analyze')
 dn = {}
 
 for i, f in enumerate(files[-3:]):
-    d = h5py.File(f)
-    dn['df_%01d' % i] = create_df(d)
-
+    d = h5py.File(f) 
+    dn['df_{}'.format(i)] = create_df(d)   #creates keys in dict dn with format df_#
+   
+#this is the best way I could think to iterate through and create simliar dataframe variables for each set of data 
+#dataframes already have reaction time calculated
 dictget = lambda x, *k: [x[i] for i in k]
-df1, df2, df3 = dictget(dn, 'df_0', 'df_1', 'df_2')
+df1, df2, df3 = dictget(dn, 'df_0', 'df_1', 'df_2')    # assigns each dataframe to a new variable - essentially unpacks dict dn
 #var1, var2, var3 = (lambda df_0, df_1, df_2: (df_0, df_1, df_2))(**dn)
+
 dfall = df1.append(df2.append(df3))
 
 nonzeroRxns = dfall[(dfall['reactionTime']!=0) & (dfall['ignoreTrial']!=True) & (dfall['resp']!=0)]

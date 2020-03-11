@@ -2,6 +2,9 @@
 """
 Created on Thu Feb 13 12:00:25 2020
 
+Needs to assume same edits as responseTimesExp
+
+
 @author: svc_ccg
 """
 

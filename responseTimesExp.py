@@ -36,29 +36,40 @@ d = h5py.File(f)
 fi = d['frameIntervals'][:]
 framerate = int(np.round(1/np.median(fi)))
 
-trialResponse = d['trialResponse'][()]
+#in frames
+trialResponse = d['trialResponse'][:]
 end = len(trialResponse)
 trialRewardDirection = d['trialRewardDir'][:end]
 trialTargetFrames = d['trialTargetFrames'][:end]
+trialStartFrame = d['trialStartFrame'][:]               # to look at correlations btwn len of prestim and trial outcome
 trialStimStartFrame = d['trialStimStartFrame'][:]
 trialResponseFrame = d['trialResponseFrame'][:end]    
 trialOpenLoopFrames = d['trialOpenLoopFrames'][:end]
 openLoopFrames = d['openLoopFramesFixed'][()]
+openLoopVar = d['openLoopFramesVariableMean'][()]
+openLoopMax = d['openLoopFramesMax'][()]
+trialOpenLoopFrames = d['trialOpenLoopFrames'][:end]
 quiescentMoveFrames = d['quiescentMoveFrames'][:]
 maxQuiescentMove = d['maxQuiescentNormMoveDist'][()]
 trialEndFrame = d['trialEndFrame'][:end]
 deltaWheel = d['deltaWheelPos'][:]                      # has wheel movement for every frame of session
 trialMaskContrast = d['trialMaskContrast'][:end]
+preStimFrames = d['preStimFramesFixed'][()]
+preStimVar = d['preStimFramesVariableMean'][()]
+nogoWait = d['nogoWaitFrames'][()]
 
-#below in ms
-maskOnset = np.round(d['maskOnset'][()] * 1000/framerate).astype(int)
-trialMaskOnset = np.round(d['trialMaskOnset'][:end] * 1000/framerate).astype(int)
-maskLength = np.round(d['maskFrames'][()] * 1000/framerate).astype(int)
-targetLength = np.round(d['targetFrames'][()] * 1000/framerate).astype(int)
-maxResp = np.round(d['maxResponseWaitFrames'][()] * 1000/framerate).astype(int) 
+def convert_to_ms(value):
+    return np.round(value * 1000/framerate).astype(int)
+
+#in ms
+maskOnset = convert_to_ms(d['maskOnset'][()])
+trialMaskOnset = convert_to_ms(d['trialMaskOnset'][:end])
+maskLength = convert_to_ms(d['maskFrames'][0])
+targetLength = convert_to_ms(d['targetFrames'][0])
+maxResp = convert_to_ms(d['maxResponseWaitFrames'][()])
 
 
-for i, target in enumerate(trialTargetFrames):  # this is needed for older files nogos are randomly assigned a dir
+for i, target in enumerate(trialTargetFrames):  # this is needed for older files where nogos are randomly assigned a dir
     if target==0:
         trialRewardDirection[i] = 0
 
@@ -67,39 +78,49 @@ for i, (rew, con) in enumerate(zip(trialRewardDirection, trialMaskContrast)):
     if rew==0 and con==0:
         nogos.append(i) 
 
-nogoTurn, maskOnlyTurn, ndx = nogo_turn(d)
+nogoTurn, maskOnlyTurn, ndx = nogo_turn(d)  #returns array of turning directions, 3rd is list of indices
  
-noMaskVal = maskOnset[-1] + round(np.mean(np.diff(maskOnset)))  # assigns noMask condition an evenly-spaced value from soas
-maskOnset = np.append(maskOnset, noMaskVal)              # makes final value the no-mask condition
+noMaskVal = maskOnset[-1] + round(np.mean(np.diff(maskOnset)))  # creates an evenly-spaced value from soas for targetOnly condition 
+maskOnset = np.append(maskOnset, noMaskVal)                     # makes final value the no-mask condition in maskOnset
     
-for i, (mask, trial) in enumerate(zip(trialMaskOnset, trialTargetFrames)):   # filters target-Only trials 
+for i, (mask, trial) in enumerate(zip(trialMaskOnset, trialTargetFrames)):   # filters target-Only trials and applies value from above
     if trial>0 and mask==0:
         trialMaskOnset[i]=noMaskVal       
 
-# deltaWheel from start of stim to response (or no response) for each trial
-# deltaWheel from start of closedLoop to response for nogos
-# nogos are sliced from trialStart to resp, and also go-tone to end.  Predictive turning.  ask sam.
+# deltaWheel FROM start of stim TO response (or no response) for each trial -- uses respFrame
+# deltaWheel FROM start of closedLoop TO response (mvmt) or end of trial for nogos
+# nogos are FROM trialStart TO resp, and also go-tone to end.  Predictive turning - ignore trials moving before 100ms?  ask sam.
         ### change respFrame to trialEndFrame??  and create all slices the same length? like behAnalysis
+        # where length is the max possible length of trial, but before start (or stimStart) of next trial
+        
 trialWheel = []  
-nogoWheelFromCL = [] 
+nogoWheelFromCL = []   #this 2nd list serves for separate analysis 
 for i, (start, resp, mask) in enumerate(zip(trialStimStartFrame, trialResponseFrame, trialMaskContrast)):
     if trialRewardDirection[i]==0:
         if mask==0:  # nogo trials
-            wheel = (deltaWheel[start+openLoopFrames:(start+openLoopFrames+d['maxResponseWaitFrames'][()])])   #from start of closedLoop, len of go trial
+            # from start of closedLoop to len of max resp (of go trial)
+            # to analyze as if they had made a choice (incorrect nogo) - useful for velocity
+            wheel = (deltaWheel[start+trialOpenLoopFrames[i]:(start+trialOpenLoopFrames[i]+d['maxResponseWaitFrames'][()])])   
             nogoWheelFromCL.append(wheel)
-            wheel2 = (deltaWheel[start:resp])
+            #this captures the wheel up until significant mvmt, from go-tone
+            wheel2 = (deltaWheel[start+trialOpenLoopFrames[i]:resp])
             trialWheel.append(wheel2)
+            """potential issues!:
+                this isn't using the same measure as go trials; quiescent threshold vs any mvmt
+                keeping this in trialWheel might add these trials to velocity calculation
+                acceleration is lower at start of turn
+            """
         elif mask>0:   # maskOnly
-            wheel = (deltaWheel[start:resp+1])
+            wheel = (deltaWheel[start:resp+])  # wondering if this needs to change too, to capture entirety of choice
             trialWheel.append(wheel)
     else:
         wheel = (deltaWheel[start:resp])
         trialWheel.append(wheel)
 
 nogoCumWheelFromCL = []         # this is cum wheel mvmt from goTone to wheelMvmt (past threshold) 
-for time in nogoWheelFromCL:    # for nogo trials
-    time = np.cumsum(time)
-    nogoCumWheelFromCL.append(time)
+for time in nogoWheelFromCL:    # all same length (maxResp)
+    time1 = np.cumsum(time)
+    nogoCumWheelFromCL.append(time1)
     
 #since deltawheel provides the difference in wheel mvmt from trial to trial
 #taking the cumulative sum gives the actual wheel mvmt and plots as a smooth curve
@@ -114,16 +135,16 @@ interpWheel = []
 rxnTimes = []
 ignoreTrials = []
 for i, (times, resp) in enumerate(zip(cumWheel, trialResponse)):
-    if i in nogos or resp==0:   # excluding nogos from rxnTime analysis
+    if i in nogos or resp==0:   # excluding nogos from main rxnTime analysis
         rxnTimes.append(0)
         interpWheel.append(0)    
     else:
-        fp = times
+        fp = times    #vals in cumWheel
         xp = np.arange(0, len(fp))*1/framerate
         x = np.arange(0, xp[-1], .001)
         interp = np.interp(x,xp,fp)
         interpWheel.append(interp)
-        threshold = maxQuiescentMove*d['monSizePix'][0] 
+        threshold = maxQuiescentMove*d['monSizePix'][0]   #threshold to end nogo or q-period (unless we change nogo thresh...)
         t = np.argmax(abs(interp)>threshold)
         if t <= 100:
             ignoreTrials.append(i)
@@ -139,7 +160,10 @@ for i, (times, resp) in enumerate(zip(cumWheel, trialResponse)):
             elif abs(t-a) < (150):
                 rxnTimes.append(a)
             else:
-                b = np.argmax(abs(np.round(np.diff(interp[a::])))>0) + a
+                ### since a usu ends up being when some mvmt was made, b ends up being 0
+                # this seems like a good point to go from the end and narrow in
+                
+                b = np.argmax(abs(np.round(np.diff(interp[:a:-1])))>0) + a
                 if abs(t-b) < (200):
                     rxnTimes.append(b)
                 else:
