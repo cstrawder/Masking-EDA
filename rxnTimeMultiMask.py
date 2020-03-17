@@ -9,23 +9,19 @@ plots avg performance (reaction time, response time, response latency)
 @author: svc_ccg
 """
 
-import h5py 
-import fileIO
+import h5py
 import pandas as pd
 import numpy as np
 from dffxn import create_df
-import matplotlib.pyplot as plt
 from behaviorAnalysis import get_files, formatFigure
-from collections import defaultdict
+import matplotlib.pyplot as plt
 import seaborn as sns
-
+from collections import defaultdict
 
 mouse='495786'
-
-files = get_files(mouse,'masking_to_analyze')
+files = get_files(mouse,'masking_to_analyze')    #imports all masking files for mouse
 
 dn = {}
-
 for i, f in enumerate(files[-3:]):
     d = h5py.File(f) 
     dn['df_{}'.format(i)] = create_df(d)   #creates keys in dict dn with format df_#
@@ -34,7 +30,6 @@ for i, f in enumerate(files[-3:]):
 #dataframes already have reaction time calculated
 dictget = lambda x, *k: [x[i] for i in k]
 df1, df2, df3 = dictget(dn, 'df_0', 'df_1', 'df_2')    # assigns each dataframe to a new variable - essentially unpacks dict dn
-#var1, var2, var3 = (lambda df_0, df_1, df_2: (df_0, df_1, df_2))(**dn)
 
 dfall = df1.append(df2.append(df3))
 
