@@ -63,9 +63,7 @@ def create_df(d):
         if trial>0 and mask==0:
             trialMaskOnset[i]=noMaskVal       
     
-    # deltaWheel from start of stim to response (or no response) for each trial
-    # deltaWheel from start of closedLoop to response for nogos
-    # nogos are sliced from trialStart to resp, and also go-tone to end.  Predictive turning.  ask sam.
+
     trialWheel = []  
     nogoWheelFromCL = [] 
     for i, (start, resp, mask) in enumerate(zip(trialStimStartFrame, trialResponseFrame, trialMaskContrast)):
@@ -97,11 +95,11 @@ def create_df(d):
     #do not include nogo trials (==0); their wheel traces prior to gotone mess up rxn times)
     # time from stimStart to moving the wheel
     interpWheel = []
-    rxnTimes = []
+    timeToMoveWheel = []
     ignoreTrials = []
     for i, (times, resp) in enumerate(zip(cumWheel, trialResponse)):
         if i in nogos or resp==0:   # excluding nogos from rxnTime analysis
-            rxnTimes.append(0)
+            timeToMoveWheel.append(0)
             interpWheel.append(0)    
         else:
             fp = times
@@ -113,31 +111,31 @@ def create_df(d):
             t = np.argmax(abs(interp)>threshold)
             if t <= 100:
                 ignoreTrials.append(i)
-                rxnTimes.append(t)
+                timeToMoveWheel.append(t)
             elif t==0:
-                rxnTimes.append(0)   # no resp, or moving at start of trial
+                timeToMoveWheel.append(0)   # no resp, or moving at start of trial
             else:
                 t = np.argmax(abs(interp[100::])>threshold) + 100  #100 is limit of ignore trial
                 a = np.argmax(abs(np.round(np.diff(interp[100::])))>0) + 100
                 if 0 < a < 200:
                     ignoreTrials.append(i)    # ask sam about ignoring trials, including nogos 
-                    rxnTimes.append(0)
+                    timeToMoveWheel.append(0)
                 elif abs(t-a) < (150):
-                    rxnTimes.append(a)
+                    timeToMoveWheel.append(a)
                 else:
                     b = np.argmax(abs(np.round(np.diff(interp[a::])))>0) + a
                     if abs(t-b) < (200):
-                        rxnTimes.append(b)
+                        timeToMoveWheel.append(b)
                     else:
                         c = np.argmax(abs(np.round(np.diff(interp[b::])))>1) + b
                         if c!=b:
-                            rxnTimes.append(c)
+                            timeToMoveWheel.append(c)
                         else:
-                            rxnTimes.append(b)
+                            timeToMoveWheel.append(b)
         
     
     timeToOutcome = []    # time to outcome is time from rxnTime (1st wheel mvmt) to respFrame
-    for i,j in zip(cumWheel, rxnTimes):    
+    for i,j in zip(cumWheel, timeToMoveWheel):    
         i = np.round(len(i)*1000/framerate)
         timeToOutcome.append(i-j)    # ends up just being the diff btwn trialLength and rxnTime
     
@@ -146,7 +144,7 @@ def create_df(d):
         if type(time) is int:
             velo.append(0)          # no wheel mvmt is 0, an int
         else:
-            q = int(rxnTimes[i])   # rxn time of the trial, in ms, used as index of interpWheel
+            q = int(timeToMoveWheel[i])   # rxn time of the trial, in ms, used as index of interpWheel
             v = abs(time[-1] - time[q]) / timeToOutcome[i]   # dist (in pix??) moved over time/time
             velo.append(v)
             # in pix/ms?
@@ -168,7 +166,7 @@ def create_df(d):
     
     df = pd.DataFrame(data, index=index, columns=['rewDir', 'resp', 'stimStart', 'respFrame'])
     df['trialLength'] = [np.round(len(t)*1000/framerate) for t in trialWheel]
-    df['reactionTime'] = rxnTimes
+    df['timeToStartWheel'] = timeToMoveWheel
     df['timeToOutcome'] = timeToOutcome
     if len(maskOnset)>0:
         df['mask'] = trialMaskContrast
