@@ -51,8 +51,7 @@ def create_df(d):
     
     nogos = [i for i, (rew, con) in enumerate(zip(trialRewardDirection, trialMaskContrast)) if rew==0 and con==0]
 
-    nogoTurn, maskOnlyTurn, ind = nogo_turn(d)
-     
+
     noMaskVal = maskOnset[-1] + round(np.mean(np.diff(maskOnset)))  # assigns noMask condition an evenly-spaced value from soas
     maskOnset = np.append(maskOnset, noMaskVal)              # makes final value the no-mask condition
         
@@ -77,20 +76,11 @@ def create_df(d):
             wheel = (deltaWheel[start:resp])
             trialWheel.append(wheel)
     
-    nogoCumWheelFromCL = []         # this is cum wheel mvmt from goTone to wheelMvmt (past threshold) 
-    for time in nogoWheelFromCL:    # for nogo trials
-        time = np.cumsum(time)
-        nogoCumWheelFromCL.append(time)
+    nogoCumWheelFromCL = [np.cumsum(time) for time in nogoWheelFromCL]
         
-    #since deltawheel provides the difference in wheel mvmt from trial to trial
-    #taking the cumulative sum gives the actual wheel mvmt and plots as a smooth curve
-    cumWheel = []   
-    for mvmt in trialWheel:
-        time = np.cumsum(mvmt)
-        cumWheel.append(time)  # not using scipy.median.filter bc flattens final frames
-        
-    #do not include nogo trials (==0); their wheel traces prior to gotone mess up rxn times)
-    # time from stimStart to moving the wheel
+    cumWheel = [np.cumsum(time) for time in trialWheel]
+
+
     interpWheel = []
     timeToMoveWheel = []
     ignoreTrials = []
