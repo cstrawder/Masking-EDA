@@ -47,7 +47,7 @@ def create_df(d):
     openLoopMax = d['openLoopFramesMax'][()]
     trialOpenLoopFrames = d['trialOpenLoopFrames'][:end]
     maxQuiescentMove = d['maxQuiescentNormMoveDist'][()]
-    quiescentMoveFrames = d['quiescentMoveFrames'][:]
+    quiescentMoveFrames = d['quiescentMoveFrames'][:]    #would be nice to count these per trial
     trialStimStartFrame = d['trialStimStartFrame'][:]
     trialResponseFrame = d['trialResponseFrame'][:end] 
     trialEndFrame = d['trialEndFrame'][:end]
@@ -96,8 +96,7 @@ def create_df(d):
         for (ind, turn) in zip(inds[0], nogoTurn):
             if i==ind:
                 nogoMove[i] = turn
-
-       
+                
     data = list(zip(trialRewardDirection, trialResponse, trialStartFrame, trialStimStartFrame, trialResponseFrame))
     index = range(len(trialResponse))
 
@@ -111,7 +110,4 @@ def create_df(d):
     df['cumWheel'] = cumWheel
     
     return df
-
-
-
 

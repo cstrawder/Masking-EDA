@@ -49,12 +49,9 @@ def create_df(d):
         if target==0:
             trialRewardDirection[i] = 0
     
-    nogos = []   #not including maskOnly trials
-    for i, (rew, con) in enumerate(zip(trialRewardDirection, trialMaskContrast)):
-        if rew==0 and con==0:
-            nogos.append(i) 
-    
-    nogoTurn, maskOnlyTurn, ndx = nogo_turn(d)
+    nogos = [i for i, (rew, con) in enumerate(zip(trialRewardDirection, trialMaskContrast)) if rew==0 and con==0]
+
+    nogoTurn, maskOnlyTurn, ind = nogo_turn(d)
      
     noMaskVal = maskOnset[-1] + round(np.mean(np.diff(maskOnset)))  # assigns noMask condition an evenly-spaced value from soas
     maskOnset = np.append(maskOnset, noMaskVal)              # makes final value the no-mask condition

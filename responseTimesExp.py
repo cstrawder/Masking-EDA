@@ -118,7 +118,7 @@ for i, (times, resp) in enumerate(zip(cumWheel, trialResponse)):
     rewThreshold = d['normRewardDistance'][()]*d['monSizePix'][0]
     rew = np.argmax(abs(interp)>rewThreshold)
 
-    if 0<rew<200:
+    if 0<rew<150:           #if they move the wheel past the reward threshold before 150ms (pre-gotone)
         ignoreTrials.append(i)
         
     t = np.argmax(abs(interp)>qThreshold)
