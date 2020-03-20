@@ -43,9 +43,9 @@ end = len(trialResponse)
 trialRewardDirection = d['trialRewardDir'][:end]
 trialTargetFrames = d['trialTargetFrames'][:end]
 trialStartFrame = d['trialStartFrame'][:]    
-preStimFrames = d['preStimFramesFixed'][()]
-preStimVar = d['preStimFramesVariableMean'][()]              
-openLoopFrames = d['openLoopFramesFixed'][()]
+preStimFrames = d['preStimFramesFixed'][()]         #at some point, can use the prestim frames/q mvmt for analysis 
+preStimVar = d['preStimFramesVariableMean'][()]     # to analyze predictive turning, to see if choice correlates with        
+openLoopFrames = d['openLoopFramesFixed'][()]       # prestim movement (moving == miss?)
 openLoopVar = d['openLoopFramesVariableMean'][()]
 openLoopMax = d['openLoopFramesMax'][()]
 trialOpenLoopFrames = d['trialOpenLoopFrames'][:end]
@@ -106,7 +106,10 @@ interpWheel = []
 timeToMoveWheel = []    # time from stimStart to when they start moving the wheel
 ignoreTrials = []
 
-for i, (times, resp) in enumerate(zip(cumWheel, trialResponse)):
+maxDir = []
+same = []
+
+for i, (times, resp, direction) in enumerate(zip(cumWheel, trialResponse, trialRewardDirection)):
     fp = times    
     xp = np.arange(0, len(fp))*1/framerate
     x = np.arange(0, xp[-1], .001)    #wheel mvmt each ms 
@@ -115,21 +118,30 @@ for i, (times, resp) in enumerate(zip(cumWheel, trialResponse)):
     qThreshold = maxQuiescentMove*d['monSizePix'][0]   #threshold to end nogo or q-period (unless we change nogo thresh...)
     rewThreshold = d['normRewardDistance'][()]*d['monSizePix'][0]
     
-    rew = np.argmax(abs(interp)>rewThreshold)
-    if i in nogos and resp==1:
-        timeToMoveWheel.append(0)
+    qMove = np.argmax(abs(interp)>qThreshold)        # first time they move past quiescent thresh
+    rewMove = np.argmax(abs(interp)>rewThreshold)    # first move past reward dist (i.e make a choice)
+    maxDist = np.argmax(abs(interp))                 # farthest they move wheel either direction
+    
+    if interp[maxDist]/abs(interp[maxDist]) == direction:
+        same.append(True)
     else:
-        if 0<rew<150:           #if they move the wheel past the reward threshold before 150ms (pre-gotone)
-            ignoreTrials.append(i) 
+        same.append(False)
+    maxDir.append(interp[maxDist])
+        
+    if i in nogos and resp==1:
+        timeToMoveWheel.append(0)    # correct nogo; no mvmt
+    else:
+        if 0<rewMove<150:               #if they move the wheel past the reward threshold before 150ms (pre-gotone)
+            ignoreTrials.append(i)  # ignore this trial's wheel movement (more analysis can be done on ignoreTrials)
             timeToMoveWheel.append(0)
             print('first ignore ' + str(i))
         else:
-            t = np.argmax(abs(interp)>qThreshold)
-        
-            if 0 < t <= 100:
+            
+             
+            if 0 < t <= 50:                         # if it's before 50ms, ignore this trial
                 ignoreTrials.append(i)
                 print('second ignore ' + str(i))
-                timeToMoveWheel.append(0)   # no resp, or moving before 100 ms
+                timeToMoveWheel.append(0)   # no resp, or moving before 50 ms
             else:
                 t = np.argmax(abs(interp[100::])>qThreshold) + 100  #100 ms is limit of ignore trial
                 a = np.argmax(abs(np.round(np.diff(interp[100::])))>0) + 100
@@ -156,8 +168,10 @@ for i, (times, resp) in enumerate(zip(cumWheel, trialResponse)):
 #                        else:
 #                            timeToMoveWheel.append(b)
 
+compdf = pd.DataFrame(list(zip(trialRewardDirection, trialResponse, maxDir , same)), columns=['rewDir', 'resp', 'maxTurn', 'right_direction'])
 
 
+# should we be using angular velocity??
 velo = []           
 for i, time in enumerate(interpWheel):   #time is array of wheel mvmt
     if type(time) is int:
@@ -182,8 +196,8 @@ index = range(len(trialResponse))
 
 df = pd.DataFrame(data, index=index, columns=['rewDir', 'resp', 'stimStart', 'respFrame'])
 df['trialLength'] = convert_to_ms(np.array(trialLength))
-df['startMovingWheel'] = timeToMoveWheel
-df['timeToOutcome'] = convert_to_ms((df['respFrame'] - df['startMovingWheel']))  ## this is wrong - resp - rxn
+#df['startMovingWheel'] = timeToMoveWheel
+#df['timeToOutcome'] = convert_to_ms((df['respFrame'] - df['startMovingWheel']))  ## this is wrong - resp - rxn
 if len(maskOnset)>0:
     df['mask'] = trialMaskContrast
     df['soa'] = trialMaskOnset
