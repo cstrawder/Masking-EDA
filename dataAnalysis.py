@@ -82,7 +82,7 @@ def create_df(d):   #contrast, target, mask
     for i, (stimStart, resp) in enumerate(zip(trialStimStartFrame, trialResponseFrame)):
         trialWheel.append(deltaWheel[stimStart:resp])
     
-    cumWheel = [np.cumsum(mvmt) for mvmt in trialWheel]
+    cumulativeWheel = [np.cumsum(mvmt) for mvmt in trialWheel]
     
     ignoreTrials = ignore_trials(d)
 
@@ -94,7 +94,8 @@ def create_df(d):   #contrast, target, mask
             if i==ind:
                 nogoMove[i] = turn
     
-    data = list(zip(trialRewardDirection, trialResponse, trialStartFrame, trialStimStartFrame, trialResponseFrame))
+    data = list(zip(trialRewardDirection, trialResponse, 
+                    trialStartFrame, trialStimStartFrame, trialResponseFrame))
     index = range(len(trialResponse))
 
     df = pd.DataFrame(data, index=index, columns=[
@@ -112,7 +113,12 @@ def create_df(d):   #contrast, target, mask
     for i in ignoreTrials:
         df.loc[i, 'ignoreTrial'] = True
     df['nogoMove'] = nogoMove
-    df['cumWheel'] = cumWheel
+    df['nogo'] = False
+    for i in nogos:
+        df.loc[i, 'nogo'] = True
+    df['maskOnlyMove'] = np.zeros(len(trialResponse)).astype(int)
+    df.loc[i, 'maskOnlyMove'] = [turn for (i, turn) in zip(inds[1], maskOnly)]
+   # df['WheelTrace'] = cumulativeWheel
     
   
     return df

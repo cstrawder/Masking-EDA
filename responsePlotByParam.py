@@ -58,7 +58,7 @@ for val in np.unique(df['{}'.format(param)]):
         hits[i].append(hitVal[i])
         misses[i].append(missVal[i])
         
-Rmed = [np.median(x) for x in hits[0]]
+Rmed = list(map(np.median, hits[0]))  #one way
 Lmed = [np.median(x) for x in hits[1]]
 RmissMed = [np.median(x) for x in misses[0]]
 LmissMed = [np.median(x) for x in misses[1]]
@@ -81,7 +81,7 @@ ax.set_xticks(np.unique(df['{}'.format(param)]))
 a = ax.get_xticks().tolist()
 #a = [int(i) for i in a]     
 if param=='soa':
-    a[0] = 'MaskOnly'
+    a[0] = ''
     a[-1] = 'TargetOnly'
 ax.set_xticklabels(a)
 matplotlib.rcParams["legend.loc"] = 'best'
