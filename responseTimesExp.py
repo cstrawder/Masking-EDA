@@ -109,6 +109,13 @@ ignoreTrials = []
 maxDir = []
 same = []
 
+firstDiffList = []
+qMoveList = []      
+twiceQList = []
+halfwayList = []
+rewMoveList = []
+maxDistList = [] 
+
 for i, (times, resp, direction) in enumerate(zip(cumWheel, trialResponse, trialRewardDirection)):
     fp = times    
     xp = np.arange(0, len(fp))*1/framerate
@@ -118,9 +125,28 @@ for i, (times, resp, direction) in enumerate(zip(cumWheel, trialResponse, trialR
     qThreshold = maxQuiescentMove*d['monSizePix'][0]   #threshold to end nogo or q-period (unless we change nogo thresh...)
     rewThreshold = d['normRewardDistance'][()]*d['monSizePix'][0]
     
+    firstDiff = np.argmax(abs(np.round(np.diff(interp)))>0)
     qMove = np.argmax(abs(interp)>qThreshold)        # first time they move past quiescent thresh
+    twiceQ = np.argmax(abs(interp)>(qThreshold*2))
+    halfway = np.argmax(abs(interp)>(rewThreshold/2))
     rewMove = np.argmax(abs(interp)>rewThreshold)    # first move past reward dist (i.e make a choice)
     maxDist = np.argmax(abs(interp))                 # farthest they move wheel either direction
+    
+    idx2 = np.where(np.sign(np.diff(interp[:-1])) != np.sign(np.diff(interp[1:])))[0] + 1
+    notable = [i for (i,e) in zip(idx2, np.diff(idx2)) if e>25]
+    reward = np.argmax(np.cumsum(interp)>250)
+    
+    firstDiffList.append(firstDiff)
+    qMoveList.append(qMove)      
+    twiceQList.append(twiceQ)
+    halfwayList.append(halfway)
+    rewMoveList.append(rewMove)
+    maxDistList.append(maxDist)
+    
+    print((firstDiff, qMove, twiceQ, halfway, rewMove, maxDist, len(interp)))
+    
+mvmtdf = pd.DataFrame(data=list(zip(firstDiffList, qMoveList, twiceQList, halfwayList, rewMoveList, maxDistList)), 
+                      columns=('first', 'quiescent', 'twiceQ', 'halfRew', 'rew', 'max'))
     
     if interp[maxDist]/abs(interp[maxDist]) == direction:
         same.append(True)
@@ -132,22 +158,22 @@ for i, (times, resp, direction) in enumerate(zip(cumWheel, trialResponse, trialR
         timeToMoveWheel.append(0)    # correct nogo; no mvmt
     else:
         if 0<rewMove<150:               #if they move the wheel past the reward threshold before 150ms (pre-gotone)
-            ignoreTrials.append(i)  # ignore this trial's wheel movement (more analysis can be done on ignoreTrials)
+            ignoreTrials.append(i)     # ignore this trial's wheel movement (more analysis can be done on ignoreTrials)
             timeToMoveWheel.append(0)
             print('first ignore ' + str(i))
         else:
             
-             
-            if 0 < t <= 50:                         # if it's before 50ms, ignore this trial
+            if 0 < qMove <= 50:           # if they move past qthreshold before 50ms, ignore this trial
                 ignoreTrials.append(i)
                 print('second ignore ' + str(i))
                 timeToMoveWheel.append(0)   # no resp, or moving before 50 ms
             else:
-                t = np.argmax(abs(interp[100::])>qThreshold) + 100  #100 ms is limit of ignore trial
-                a = np.argmax(abs(np.round(np.diff(interp[100::])))>0) + 100
-                if 0 < a < 100:
-                    ignoreTrials.append(i)    # ask sam about ignoring trials, including nogos 
+                t = np.argmax(abs(interp[50::])>qThreshold) + 50  #100 ms is limit of ignore trial
+                a = np.argmax(abs(np.round(np.diff(interp[50::])))>0) + 50
+                if 0 < a < 50:
+                    ignoreTrials.append(i)    
                     print('third ignore ' + str(i))
+                    print(a)
                     timeToMoveWheel.append(0)
                 else:
                     timeToMoveWheel.append(a)
@@ -261,7 +287,7 @@ plt.title('Dist of reaction times by SOA:  ' + str(f.split('_')[-3:-1]))
 times = []
 for onset in np.unique(trialMaskOnset):
     lst = []
-    for i, (time, soa, resp,mask) in enumerate(zip(df['reactionTime'], df['soa'], df['resp'], df['mask'])):
+    for i, (time, soa, resp,mask) in enumerate(zip(df['trialLength_ms'], df['soa'], df['resp'], df['mask'])):
         if soa==onset and resp==1:
             #if mask==True: 
             if i not in ignoreTrials and time!=0:  # only masked trials and no obvious guessing trials included 
@@ -300,7 +326,7 @@ for onset in np.unique(trialMaskOnset):
     hitVal = [[],[]]
     missVal = [[],[]]
     for j, (time, soa, resp, mask, direc) in enumerate(zip(
-            df['reactionTime'], df['soa'], df['resp'], df['mask'], df['rewDir'])):
+            df['trialLength_ms'], df['soa'], df['resp'], df['mask'], df['rewDir'])):
         if soa==onset and resp!=0:   # not no resp
             if j not in ignoreTrials and time!=0:
                 if direc==1:       # soa=0 is targetOnly, R turning

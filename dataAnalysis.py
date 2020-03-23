@@ -12,6 +12,7 @@ import fileIO, h5py
 import numpy as np
 import pandas as pd
 from nogoData import nogo_turn
+from ignoreTrials import ignore_trials
 
 
 def import_data():
@@ -29,7 +30,7 @@ def create_vars(dn):
 
 
 
-def create_df(d):
+def create_df(d):   #contrast, target, mask    
     
     fi = d['frameIntervals'][:]
     framerate = int(np.round(1/np.median(fi)))
@@ -53,6 +54,7 @@ def create_df(d):
     trialEndFrame = d['trialEndFrame'][:end]
     deltaWheel = d['deltaWheelPos'][:]                      
     trialMaskContrast = d['trialMaskContrast'][:end]
+    trialTargetContrast = d['trialTargetContrast'][:end]
     nogoWait = d['nogoWaitFrames'][()]
     
     def convert_to_ms(value):
@@ -61,9 +63,6 @@ def create_df(d):
     # converted to ms
     maskOnset = convert_to_ms(d['maskOnset'][()])
     trialMaskOnset = convert_to_ms(d['trialMaskOnset'][:end])
-    maskLength = convert_to_ms(d['maskFrames'][0])
-    targetLength = convert_to_ms(d['targetFrames'][0])
-    maxResp = convert_to_ms(d['maxResponseWaitFrames'][()])
     
     for i, target in enumerate(trialTargetFrames):  # this is needed for older files nogos are randomly assigned a dir
         if target==0:
@@ -80,15 +79,13 @@ def create_df(d):
                 trialMaskOnset[i]=noMaskVal       
     
     trialWheel = []   
-    for i, (trialstart, stimstart, resp) in enumerate(zip(trialStartFrame, trialStimStartFrame, trialResponseFrame)):
-        if i in nogos:
-            wheel = deltaWheel[stimstart:resp]
-        else:
-            wheel = deltaWheel[trialstart:resp]
-        trialWheel.append(wheel)
+    for i, (stimStart, resp) in enumerate(zip(trialStimStartFrame, trialResponseFrame)):
+        trialWheel.append(deltaWheel[stimStart:resp])
     
     cumWheel = [np.cumsum(mvmt) for mvmt in trialWheel]
     
+    ignoreTrials = ignore_trials(d)
+
     nogoTurn, maskOnly, inds = nogo_turn(d)  # 1st 2 arrays are turned direction, 3rd is indices of 1st 2                       
 
     nogoMove = np.zeros(len(trialResponse)).astype(int)
@@ -96,18 +93,31 @@ def create_df(d):
         for (ind, turn) in zip(inds[0], nogoTurn):
             if i==ind:
                 nogoMove[i] = turn
-                
+    
     data = list(zip(trialRewardDirection, trialResponse, trialStartFrame, trialStimStartFrame, trialResponseFrame))
     index = range(len(trialResponse))
 
     df = pd.DataFrame(data, index=index, columns=[
             'rewDir', 'resp', 'trialStart', 'stimStart', 'respFrame'])
-    df['trialLength_ms'] = [convert_to_ms(len(t)) for t in trialWheel]
-    df['timeToOutcome_ms'] = convert_to_ms((df['respFrame'] - df['stimStart']))
+    
+    df['trialLength'] = [convert_to_ms(len(t)) for t in trialWheel]
     df['mask'] = trialMaskContrast
     df['soa'] = trialMaskOnset
+   # df['maskLength'] = convert_to_ms(d['trialMaskFrames'][:end])
+    df['maskContrast'] = trialMaskContrast
+
+    df['targetLength'] = convert_to_ms(d['trialTargetFrames'][:end])
+    df['targetContrast'] = trialTargetContrast
+    df['ignoreTrial'] = False   
+    for i in ignoreTrials:
+        df.loc[i, 'ignoreTrial'] = True
     df['nogoMove'] = nogoMove
     df['cumWheel'] = cumWheel
     
+  
     return df
+
+
+
+
 

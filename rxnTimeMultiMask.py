@@ -12,46 +12,52 @@ plots avg performance (reaction time, response time, response latency)
 import h5py
 import pandas as pd
 import numpy as np
-from dffxn import create_df
-from behaviorAnalysis import get_files, formatFigure
+import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 from collections import defaultdict
+
+from dataAnalysis import create_df
+from behaviorAnalysis import get_files, formatFigure
+
+matplotlib.rcParams['pdf.fonttype'] = 42
+sns.set_style('white')
 
 mouse='495786'
 files = get_files(mouse,'masking_to_analyze')    #imports all masking files for mouse
 
 dn = {}
-for i, f in enumerate(files[-3:]):
+for i, f in enumerate(files[:-3]):
     d = h5py.File(f) 
-    dn['df_{}'.format(i)] = create_df(d)   #creates keys in dict dn with format df_#
-   
-#this is the best way I could think to iterate through and create simliar dataframe variables for each set of data 
-#dataframes already have reaction time calculated
+    dn['df_{}'.format(i)] = create_df(d)        #creates keys in dict dn with format df_#
+
 dictget = lambda x, *k: [x[i] for i in k]
 df1, df2, df3 = dictget(dn, 'df_0', 'df_1', 'df_2')    # assigns each dataframe to a new variable - essentially unpacks dict dn
 
 dfall = df1.append(df2.append(df3))
 
-nonzeroRxns = dfall[(dfall['reactionTime']!=0) & (dfall['ignoreTrial']!=True) & (dfall['resp']!=0)]
-corrNonzero = nonzeroRxns[nonzeroRxns['resp']==1]
+nonzeroRxns = dfall[(dfall['trialLength']!=dfall['trialLength'].max()) & (dfall['ignoreTrial']!=True) & (dfall['resp']!=0)]
+corrNonzero = nonzeroRxns[(nonzeroRxns['resp']==1) & (nonzeroRxns['rewDir']!=0)]
+# this ignores nogos but also maskonly in masking sessions??
 
-np.mean(nonzeroRxns['reactionTime'])
+np.mean(nonzeroRxns['trialLength'])
 
 plt.figure()
-sns.violinplot(x=nonzeroRxns['soa'], y=nonzeroRxns['reactionTime'])
+sns.violinplot(x=nonzeroRxns['soa'], y=nonzeroRxns['trialLength_ms'])
 plt.title('Dist of reaction times by SOA:  ' + str(f.split('_')[-3:-1]))
+
+err = nonzeroRxns.groupby('soa')['trialLength'].std()
 
 trialMaskOnset = np.round(d['trialMaskOnset'][:] * 1000/120).astype(int)
 hits = [[],[]]  #R, L
 misses = [[],[]]
 
-for onset in np.unique(trialMaskOnset):
+for onset in np.unique(dfall['soa']):
     hitVal = [[],[]]
     missVal = [[],[]]
-    for j, (time, soa, resp, mask, direc) in enumerate(zip(
-            nonzeroRxns['reactionTime'], nonzeroRxns['soa'], nonzeroRxns['resp'], 
-            nonzeroRxns['mask'], nonzeroRxns['rewDir'])):
+    for j, (time, soa, resp, direc) in enumerate(zip(
+            nonzeroRxns['trialLength'], nonzeroRxns['soa'], nonzeroRxns['resp'], 
+            nonzeroRxns['rewDir'])):
         if soa==onset:  
             if direc==1:       # soa=0 is targetOnly, R turning
                 if resp==1:
@@ -93,13 +99,28 @@ a = ax.get_xticks().tolist()
 a = [int(i) for i in a]     
 a[0] = 'MaskOnly'
 ax.set_xticklabels(a)
+matplotlib.rcParams["legend.loc"] = 'best'
 ax.legend()
 
 
+fig, ax = plt.subplots()
+ax.plot(np.unique(trialMaskOnset[:-2]), Rmean, 'ro-', label='Rhit',  alpha=.6, lw=3)
+ax.plot(np.unique(trialMaskOnset[:-2]), RmissMean, 'ro-', label='R miss', ls='--', alpha=.3, lw=2)
+ax.plot(np.unique(trialMaskOnset[:-2]), Lmean, 'bo-', label='L hit', alpha=.6, lw=3)
+ax.plot(np.unique(trialMaskOnset[:-2]), LmissMean, 'bo-', label='L miss', ls='--', alpha=.3, lw=2)
+#ax.plot(0, np.median(maskOnly), marker='o', c='k')
+ax.set(title='Mean Reaction Time From StimStart, by SOA', xlabel='SOA', ylabel='Reaction Time (ms)')
+plt.suptitle(str(f.split('_')[-3:-1]) + '  Multiday masking')
+ax.set_xticks(np.unique(trialMaskOnset))
+a = ax.get_xticks().tolist()
+a = [int(i) for i in a]     
+a[0] = 'MaskOnly'
+ax.set_xticklabels(a)
+matplotlib.rcParams["legend.loc"] = 'best'
+ax.legend()
 
 
-
-
+err = [np.std(mean) for mean in Rmean]
 
 
 
