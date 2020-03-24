@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 from nogoData import nogo_turn
 from ignoreTrials import ignore_trials
+from collections import defaultdict
 
 
 def import_data():
@@ -23,11 +24,10 @@ def import_data():
 def extract_vars(data):
     return {key: data[str(key)][()] for key in data.keys()}
     
-
 def create_vars(dn):
     for key,val in dn.items():
-        return exec (key + '=val')
-
+        exec (key + '=val')
+        
 
 
 def create_df(d):   #contrast, target, mask    
@@ -41,13 +41,16 @@ def create_df(d):   #contrast, target, mask
     trialRewardDirection = d['trialRewardDir'][:end]
     trialTargetFrames = d['trialTargetFrames'][:end]
     trialStartFrame = d['trialStartFrame'][:]    
-    preStimFrames = d['preStimFramesFixed'][()]
-    preStimVar = d['preStimFramesVariableMean'][()]              
-    openLoopFrames = d['openLoopFramesFixed'][()]
-    openLoopVar = d['openLoopFramesVariableMean'][()]
-    openLoopMax = d['openLoopFramesMax'][()]
     trialOpenLoopFrames = d['trialOpenLoopFrames'][:end]
-    maxQuiescentMove = d['maxQuiescentNormMoveDist'][()]
+    if len(np.unique(trialOpenLoopFrames)>1):
+        pass
+        
+#    preStimFrames = d['preStimFramesFixed'][()]
+#    preStimVar = d['preStimFramesVariableMean'][()]              
+#    openLoopFrames = d['openLoopFramesFixed'][()]
+#    openLoopVar = d['openLoopFramesVariableMean'][()]
+#    openLoopMax = d['openLoopFramesMax'][()]
+   # maxQuiescentMove = d['maxQuiescentNormMoveDist'][()]
     quiescentMoveFrames = d['quiescentMoveFrames'][:]    #would be nice to count these per trial
     trialStimStartFrame = d['trialStimStartFrame'][:]
     trialResponseFrame = d['trialResponseFrame'][:end] 
@@ -55,7 +58,8 @@ def create_df(d):   #contrast, target, mask
     deltaWheel = d['deltaWheelPos'][:]                      
     trialMaskContrast = d['trialMaskContrast'][:end]
     trialTargetContrast = d['trialTargetContrast'][:end]
-    nogoWait = d['nogoWaitFrames'][()]
+    #nogoWait = d['nogoWaitFrames'][()]
+    repeats = d['trialRepeat'][()]
     
     def convert_to_ms(value):
         return np.round(value * 1000/framerate).astype(int)
@@ -78,22 +82,21 @@ def create_df(d):   #contrast, target, mask
             if trial>0 and mask==0:
                 trialMaskOnset[i]=noMaskVal       
     
-    trialWheel = []   
-    for i, (stimStart, resp) in enumerate(zip(trialStimStartFrame, trialResponseFrame)):
-        trialWheel.append(deltaWheel[stimStart:resp])
-    
+    trialWheel = [deltaWheel[start:resp] for i, (start, resp) in 
+                  enumerate(zip(trialStimStartFrame, trialResponseFrame))]   
     cumulativeWheel = [np.cumsum(mvmt) for mvmt in trialWheel]
     
     ignoreTrials = ignore_trials(d)
-
-    nogoTurn, maskOnly, inds = nogo_turn(d)  # 1st 2 arrays are turned direction, 3rd is indices of 1st 2                       
-
-    nogoMove = np.zeros(len(trialResponse)).astype(int)
-    for i in range(len(trialResponse)):
-        for (ind, turn) in zip(inds[0], nogoTurn):
-            if i==ind:
-                nogoMove[i] = turn
+    turns, inds = nogo_turn(d)  #for both of these, [0]=nogos, [1]=maskOnly                    
     
+    qDict = defaultdict(list)
+    for i, (start,end) in enumerate(zip(trialStartFrame, trialStimStartFrame)):
+        for x in quiescentMoveFrames:    
+            if start<x<end:
+                qDict[i].append(x)
+        
+### Create dataframe
+                
     data = list(zip(trialRewardDirection, trialResponse, 
                     trialStartFrame, trialStimStartFrame, trialResponseFrame))
     index = range(len(trialResponse))
@@ -109,18 +112,30 @@ def create_df(d):   #contrast, target, mask
 
     df['targetLength'] = convert_to_ms(d['trialTargetFrames'][:end])
     df['targetContrast'] = trialTargetContrast
-    df['ignoreTrial'] = False   
-    for i in ignoreTrials:
-        df.loc[i, 'ignoreTrial'] = True
-    df['nogoMove'] = nogoMove
+    
     df['nogo'] = False
     for i in nogos:
         df.loc[i, 'nogo'] = True
+   
+    df['nogoMove'] = np.zeros(len(trialResponse)).astype(int)
     df['maskOnlyMove'] = np.zeros(len(trialResponse)).astype(int)
-    df.loc[i, 'maskOnlyMove'] = [turn for (i, turn) in zip(inds[1], maskOnly)]
-   # df['WheelTrace'] = cumulativeWheel
+          
+    for e, col in enumerate(('nogoMove', 'maskOnlyMove')):
+        for (i,turn) in zip(inds[e], turns[e]):
+            df.at[i, col] = turn
     
-  
+    df['ignoreTrial'] = False   
+    for i in ignoreTrials:
+        df.loc[i, 'ignoreTrial'] = True
+        
+    df['repeat'] = repeats    
+    
+    df['Qviolations'] = np.zeros(len(trialResponse)).astype(int)
+    for key,val in qDict.items():
+        df.at[key, 'Qviolations'] = len(val)
+        
+    df['WheelTrace'] = cumulativeWheel
+    
     return df
 
 
