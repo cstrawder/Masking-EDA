@@ -10,18 +10,11 @@ plots avg performance (reaction time, response time, response latency)
 """
 
 import h5py
-import pandas as pd
 import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-import seaborn as sns
 from collections import defaultdict
-
 from dataAnalysis import create_df
 from behaviorAnalysis import get_files, formatFigure
-
-matplotlib.rcParams['pdf.fonttype'] = 42
-sns.set_style('white')
+from responsePlotByParam import plot_by_param
 
 mouse='495786'
 files = get_files(mouse,'masking_to_analyze')    #imports all masking files for mouse
@@ -36,115 +29,7 @@ df1, df2, df3 = dictget(dn, 'df_0', 'df_1', 'df_2')    # assigns each dataframe 
 
 dfall = df1.append(df2.append(df3))
 
-nonzeroRxns = dfall[(dfall['trialLength']!=dfall['trialLength'].max()) & (dfall['ignoreTrial']!=True) & (dfall['resp']!=0)]
-corrNonzero = nonzeroRxns[(nonzeroRxns['resp']==1) & (nonzeroRxns['rewDir']!=0)]
-# this ignores nogos but also maskonly in masking sessions??
-
-np.mean(nonzeroRxns['trialLength'])
-
-plt.figure()
-sns.violinplot(x=nonzeroRxns['soa'], y=nonzeroRxns['trialLength_ms'])
-plt.title('Dist of reaction times by SOA:  ' + str(f.split('_')[-3:-1]))
-
-err = nonzeroRxns.groupby('soa')['trialLength'].std()
-
-trialMaskOnset = np.round(d['trialMaskOnset'][:] * 1000/120).astype(int)
-hits = [[],[]]  #R, L
-misses = [[],[]]
-
-for onset in np.unique(dfall['soa']):
-    hitVal = [[],[]]
-    missVal = [[],[]]
-    for j, (time, soa, resp, direc) in enumerate(zip(
-            nonzeroRxns['trialLength'], nonzeroRxns['soa'], nonzeroRxns['resp'], 
-            nonzeroRxns['rewDir'])):
-        if soa==onset:  
-            if direc==1:       # soa=0 is targetOnly, R turning
-                if resp==1:
-                    hitVal[0].append(time)  
-                else:
-                    missVal[0].append(time)  
-            elif direc==-1:   # soa=0 is targetOnly, L turning
-                if resp==1:
-                    hitVal[1].append(time)  
-                else:
-                    missVal[1].append(time)
-       
-    for i in (0,1):         
-        hits[i].append(hitVal[i])
-        misses[i].append(missVal[i])
-        
-Rmed = [np.median(x) for x in hits[0]]
-Lmed = [np.median(x) for x in hits[1]]
-RmissMed = [np.median(x) for x in misses[0]]
-LmissMed = [np.median(x) for x in misses[1]]
-
-Rmean = [np.mean(x) for x in hits[0]]
-Lmean = [np.mean(x) for x in hits[1]]
-RmissMean = [np.mean(x) for x in misses[0]]
-LmissMean = [np.mean(x) for x in misses[1]]
-
-#max = np.max(np.mean(Rmed+Lmed))
-fig, ax = plt.subplots()
-ax.plot(np.unique(trialMaskOnset[:-2]), Rmed, 'ro-', label='Rhit',  alpha=.6, lw=3)
-ax.plot(np.unique(trialMaskOnset[:-2]), RmissMed, 'ro-', label='R miss', ls='--', alpha=.3, lw=2)
-ax.plot(np.unique(trialMaskOnset[:-2]), Lmed, 'bo-', label='L hit', alpha=.6, lw=3)
-ax.plot(np.unique(trialMaskOnset[:-2]), LmissMed, 'bo-', label='L miss', ls='--', alpha=.3, lw=2)
-#ax.plot(0, np.median(maskOnly), marker='o', c='k')
-ax.set(title='Median Reaction Time From StimStart, by SOA', xlabel='SOA', ylabel='Reaction Time (ms)')
-plt.suptitle(str(f.split('_')[-3:-1]))
-#ax.set_ylim([np.max()])
-ax.set_xticks(np.unique(trialMaskOnset))
-a = ax.get_xticks().tolist()
-a = [int(i) for i in a]     
-a[0] = 'MaskOnly'
-ax.set_xticklabels(a)
-matplotlib.rcParams["legend.loc"] = 'best'
-ax.legend()
-
-
-fig, ax = plt.subplots()
-ax.plot(np.unique(trialMaskOnset[:-2]), Rmean, 'ro-', label='Rhit',  alpha=.6, lw=3)
-ax.plot(np.unique(trialMaskOnset[:-2]), RmissMean, 'ro-', label='R miss', ls='--', alpha=.3, lw=2)
-ax.plot(np.unique(trialMaskOnset[:-2]), Lmean, 'bo-', label='L hit', alpha=.6, lw=3)
-ax.plot(np.unique(trialMaskOnset[:-2]), LmissMean, 'bo-', label='L miss', ls='--', alpha=.3, lw=2)
-#ax.plot(0, np.median(maskOnly), marker='o', c='k')
-ax.set(title='Mean Reaction Time From StimStart, by SOA', xlabel='SOA', ylabel='Reaction Time (ms)')
-plt.suptitle(str(f.split('_')[-3:-1]) + '  Multiday masking')
-ax.set_xticks(np.unique(trialMaskOnset))
-a = ax.get_xticks().tolist()
-a = [int(i) for i in a]     
-a[0] = 'MaskOnly'
-ax.set_xticklabels(a)
-matplotlib.rcParams["legend.loc"] = 'best'
-ax.legend()
-
-
-err = [np.std(mean) for mean in Rmean]
-
-
-
-
-
-
-
-
-plt.figure()
-for i,j,k,m in zip(nonzeroRxns.rewDir, nonzeroRxns.resp, nonzeroRxns.interpWheel, nonzeroRxns.soa):
-    if i==1:
-        if m==17:
-            plt.plot(k, alpha=.2, color='m')
-        elif m==33:
-            plt.plot(k, alpha=.2, color='g')
-        elif m==25:
-            plt.plot(k, alpha=.2, color='k')
-        elif m==50:
-            plt.plot(k, alpha=.2, color='c')
-        elif m==100:
-            plt.plot(k, alpha=.2, color='b')
-        
-    elif i==1 and j==-1:
-        plt.plot(k, alpha=.1, color='k')
+plot_by_param('soa', dfall)
     
     
     
