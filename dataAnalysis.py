@@ -50,11 +50,10 @@ def create_df(d):   #contrast, target, mask
 #    openLoopFrames = d['openLoopFramesFixed'][()]
 #    openLoopVar = d['openLoopFramesVariableMean'][()]
 #    openLoopMax = d['openLoopFramesMax'][()]
-   # maxQuiescentMove = d['maxQuiescentNormMoveDist'][()]
     quiescentMoveFrames = d['quiescentMoveFrames'][:]    #would be nice to count these per trial
     trialStimStartFrame = d['trialStimStartFrame'][:]
     trialResponseFrame = d['trialResponseFrame'][:end] 
-    trialEndFrame = d['trialEndFrame'][:end]
+   # trialEndFrame = d['trialEndFrame'][:end]
     deltaWheel = d['deltaWheelPos'][:]                      
     trialMaskContrast = d['trialMaskContrast'][:end]
     trialTargetContrast = d['trialTargetContrast'][:end]
