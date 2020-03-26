@@ -194,7 +194,8 @@ mvmtdf = pd.DataFrame(data=list(zip(firstDiffList, qMoveList, twiceQList, halfwa
 #                        else:
 #                            timeToMoveWheel.append(b)
 
-compdf = pd.DataFrame(list(zip(trialRewardDirection, trialResponse, maxDir , same)), columns=['rewDir', 'resp', 'maxTurn', 'right_direction'])
+compdf = pd.DataFrame(list(zip(trialRewardDirection, trialResponse, maxDir , same)), 
+                      columns=['rewDir', 'resp', 'maxTurn', 'right_direction'])
 
 
 # should we be using angular velocity??
