@@ -11,6 +11,7 @@ plots avg performance (reaction time, response time, response latency)
 
 import h5py
 import numpy as np
+import pandas as pd
 from collections import defaultdict
 from dataAnalysis import create_df
 from behaviorAnalysis import get_files, formatFigure
@@ -27,7 +28,7 @@ for i, f in enumerate(files[:-3]):
 dictget = lambda x, *k: [x[i] for i in k]
 df1, df2, df3 = dictget(dn, 'df_0', 'df_1', 'df_2')    # assigns each dataframe to a new variable - essentially unpacks dict dn
 
-dfall = df1.append(df2.append(df3))
+dfall = pd.concat([df1,df2,df3], ignore_index=True)
 
 plot_by_param('soa', dfall)
     
