@@ -31,7 +31,15 @@ for key,val in dn.items():
 def wheel_trace_slice(dataframe):
     df = dataframe
     # process wheel trace using stim start and resp frames
-    # assign to variable wheel
+    # assign to variable 'wheel'
+    wheelDF = df[['trialStart','stimStart', 'respFrame', 'WheelTrace']]
+  # want to create a col that has the len of each WheelTrace
+    wheelDF['wheelLen'] = list(map(len, wheelDF['WheelTrace']))
+    assert np.all(wheelDF['wheelLen'] == (wheelDF['respFrame'] - wheelDF['trialStart'])), 'Wheel error'
+    wheelDF['diff1'] = wheelDF['stimStart'] - wheelDF['trialStart']
+    wheelDF['diff2'] = wheelDF['respFrame'] - wheelDF['trialStart']
+    wheel = [wheel[start:stop] for (wheel, start, stop) in zip(
+            wheelDF['WheelTrace'], wheelDF['diff1'], wheelDF['diff2'])]
     
     return wheel
     
