@@ -16,8 +16,26 @@ df = create_df(d)
 dn = extract_vars(d)
 
 for key,val in dn.items():   
-    exec (key + '=val', globals())
+    exec (key + '=val')
 
+
+
+### issue now is that the df is importing the wheel trace for the entire trial
+### and techncially we want from the start of the stim to when they start moving 
+### at least here;  in another place it might be nice to look at movement after a resp 
+### like a nogo, or movement (velocity, direction) BEFORE a stim starts 
+### so this should be a felxible function that can accomodate all these conditions 
+### rather than writing the whole loop over and over 
+### maybe you need to slice the wheelTrace BEFORE using in the func
+    
+def wheel_trace_slice(dataframe):
+    df = dataframe
+    # process wheel trace using stim start and resp frames
+    # assign to variable wheel
+    
+    return wheel
+    
+ # use wheel_trace_slice as arg in interpWheel() 
 
 interpWheel = []
 timeToMoveWheel = [] 
@@ -31,14 +49,6 @@ twiceQList = []
 halfwayList = []
 rewMoveList = []
 maxDistList = [] 
-
-### issue now is that the df is importing the wheel trace for the entire trial
-### and techncially we want from the start of the stim to when they start moving 
-### at least here;  in another place it might be nice to look at movement after a resp 
-### like a nogo, or movement (velocity, direction) BEFORE a stim starts 
-### so this should be a felxible function that can accomodate all these conditions 
-### rather than writing the whole loop over and over 
-### maybe you need to slice the wheelTrace BEFORE using in the func
 
 def interpWheel(dataframe, wheel):   #where wheel is already processed from the same df
     df = dataframe
@@ -75,7 +85,7 @@ def interpWheel(dataframe, wheel):   #where wheel is already processed from the 
     rewMoveList.append(rewMove)
     maxDistList.append(maxDist)
     
-    print((firstDiff, qMove, twiceQ, halfway, rewMove, maxDist, len(interp)))
+   # print((firstDiff, qMove, twiceQ, halfway, rewMove, maxDist, len(interp)))
     
 
     
@@ -128,3 +138,9 @@ def interpWheel(dataframe, wheel):   #where wheel is already processed from the 
  
 mvmtdf = pd.DataFrame(data=list(zip(firstDiffList, qMoveList, twiceQList, halfwayList, rewMoveList, maxDistList)), 
                       columns=('first', 'quiescent', 'twiceQ', 'halfRew', 'rew', 'max'))
+
+# add column to df with TimeToMove values (ms)
+# for trialLength in df.trialLength, subtract TimeToMove from trialLength, 
+# use in ang velocity calculation (look at resptimeExp) w pixels/radians wheel moved
+
+
