@@ -12,13 +12,9 @@ need to specify mouse # and slicing of files at start
 
 import h5py
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib as plt
-from collections import defaultdict
-from dataAnalysis import create_df, import_data
+import matplotlib
 from behaviorAnalysis import get_files, formatFigure
-from responsePlotByParam import plot_by_param
 
 
 showTrialN = True
@@ -30,7 +26,7 @@ mouse='486633'
 files = get_files(mouse,'masking_to_analyze') 
 
 dn = {}
-for i, f in enumerate(files[:]):   #change index for desired files
+for i, f in enumerate(files[:-3]):   #change index for desired files
     d = h5py.File(f) 
     dn['df_{}'.format(i)] = d
 
