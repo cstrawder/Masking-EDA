@@ -144,7 +144,7 @@ for num, denom, title in zip(
             else:
                 ax.plot(-15, 0, 'go')
     formatFigure(fig, ax, xLabel='Stimulus Onset Asynchrony (ms)', yLabel=title, 
-                 title = mouse + ' , Combined masking 2/12-2/14')
+                 title = mouse + ' , Combined masking 2/12-2/14')   # need to get dates at start
                  
     
     xticks = maskOnset
