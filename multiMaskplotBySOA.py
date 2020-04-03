@@ -7,6 +7,7 @@ Created on Wed Apr  1 17:15:15 2020
 
 combines data from masking sessions into a single plot - use for consecutive masking days 
 need to specify mouse# and slicing of files at start
+Needs some editing
 
 """
 
@@ -22,8 +23,9 @@ showTrialN = True
 showNogo = True
     
 matplotlib.rcParams['pdf.fonttype'] = 42
-    
-files = get_files('486634','masking_to_analyze') 
+
+mouse = '486634'            #need use mouse# later 
+files = get_files(mouse,'masking_to_analyze') 
 
 dn = {}
 for i, f in enumerate(files[:-3]):   #change index for desired files

@@ -42,9 +42,8 @@ create dfs from those files in the dict?
 the issue below is that it only works for 3 files, as far as i understand it
 '''
 def combine_dfs(dict1):
-    dictget = lambda x, *k: [x[i] for i in k]
-    df1, df2, df3 = dictget(dn, 'df_0', 'df_1', 'df_2') 
-    return pd.concat([df1,df2,df3], ignore_index=True)
+    dictget = lambda x, k: [x[i] for i in k]
+    return pd.concat(dictget(dn, list(map(str, dn.keys()))), ignore_index=True)
 
     
     

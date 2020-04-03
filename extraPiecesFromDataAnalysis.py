@@ -16,6 +16,37 @@ def create_vars(dn):
         globals()
         exec (key + '= val')
 
+# IN PLOTTING BY PARAM
+  
+    
+miss = missNonzero.pivot_table(values='trialLength', index=param, columns='rewDir', 
+                        margins=True, dropna=True)
+hit = corrNonzero.pivot_table(values='trialLength', index=param, columns='rewDir', 
+                        margins=True, dropna=True)
+
+print('hits avg t \n', hit)
+print('\n' * 2)
+print('misses avg t \n', miss)
+  
+# use the df to filter the trial by RewDir 
+# maybe use multiindex?? 
+
+y = corrNonzero.groupby(['rewDir', param])['trialLength'].describe()
+print(y)
+#y.to_excel("date_describe.xlsx")
+
+#to reduce bulk below; something like this?
+Rhit = corrNonzero[corrNonzero['rewDir']==1]
+avgs = Rhit.groupby('soa')['trialLength'].mean()
+
+
+
+
+    #hit.plot(title='hits')
+    #miss.plot(title='misses')
+    print('hits \n', hit)
+    print('\n' * 2)
+    print('misses \n', miss)
 
 x = stats.f_oneway(dfall['trialLength'].groupby(df['soa']))
 
