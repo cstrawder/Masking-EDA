@@ -5,8 +5,8 @@ Created on Wed Apr  1 17:15:15 2020
 @author: chelsea.strawder
 
 
-combiens data from masking sessions into a single plot - use for consecutive masking days 
-need to specify mouse # and slicing of files at start
+combines data from masking sessions into a single plot - use for consecutive masking days 
+need to specify mouse# and slicing of files at start
 
 """
 
@@ -14,6 +14,7 @@ import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+from nogoData import nogo_turn
 from behaviorAnalysis import get_files, formatFigure
 
 
@@ -22,13 +23,13 @@ showNogo = True
     
 matplotlib.rcParams['pdf.fonttype'] = 42
     
-mouse='486633'
-files = get_files(mouse,'masking_to_analyze') 
+files = get_files('486634','masking_to_analyze') 
 
 dn = {}
 for i, f in enumerate(files[:-3]):   #change index for desired files
     d = h5py.File(f) 
     dn['df_{}'.format(i)] = d
+
 
 totalHits = []
 totalMisses = []
@@ -37,6 +38,7 @@ nogoTotal = 0
 nogoMove = 0
 nogoR, nogoL = 0,0
 maskOnlyTotal = 0
+maskOnlyCorr = 0
 maskOnlyMove = 0
 maskOnlyR, maskOnlyL = 0,0
 
