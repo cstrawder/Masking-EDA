@@ -6,6 +6,18 @@ Created on Thu Mar 26 15:09:56 2020
 """
 
 from dataAnalysis import import_data, create_df
+import scipy.stats as stats
+
+dn = {}
+for i, f in enumerate(files[-3:]):              #change index for desired files
+    d = h5py.File(f) 
+    dn['df_{}'.format(i)] = create_df(d)        #creates keys in dict dn with format df_#
+
+dictget = lambda x, *k: [x[i] for i in k]
+df1, df2, df3 = dictget(dn, 'df_0', 'df_1', 'df_2')    # assigns each dataframe to a new variable - essentially unpacks dict dn
+
+dfall = pd.concat([df1,df2,df3], ignore_index=True)
+
 
 
 def extract_vars(data):
@@ -48,7 +60,12 @@ avgs = Rhit.groupby('soa')['trialLength'].mean()
     print('\n' * 2)
     print('misses \n', miss)
 
-x = stats.f_oneway(dfall['trialLength'].groupby(df['soa']))
+
+b = stats.f_oneway(df['trialLength'][df['soa'] == 17], 
+             df['trialLength'][df['soa'] == 25],
+             df['trialLength'][df['soa'] == 33],
+             df['trialLength'][df['soa'] == 50],
+             df['trialLength'][df['soa'] == 100])
 
 
 b = stats.f_oneway(dfall['trialLength'][dfall['soa'] == 17], 
@@ -61,11 +78,11 @@ b = stats.f_oneway(dfall['trialLength'][dfall['soa'] == 17],
 #When i do this 1-way ANOVA on the correct hits, pval isnt significant, but when I do on misses it is 
 # only using actual masking SOAs
 
-b = stats.f_oneway(missNonzero['trialLength'][missNonzero['soa'] == 17], 
-             missNonzero['trialLength'][missNonzero['soa'] == 25],
-             missNonzero['trialLength'][missNonzero['soa'] == 33],
-             missNonzero['trialLength'][missNonzero['soa'] == 50],
-             missNonzero['trialLength'][missNonzero['soa'] == 100])
+b = stats.f_oneway(nonzeroRxns['trialLength'][nonzeroRxns['soa'] == 17], 
+             nonzeroRxns['trialLength'][nonzeroRxns['soa'] == 25],
+             nonzeroRxns['trialLength'][nonzeroRxns['soa'] == 33],
+             nonzeroRxns['trialLength'][nonzeroRxns['soa'] == 50],
+             nonzeroRxns['trialLength'][nonzeroRxns['soa'] == 100])
 
 
 

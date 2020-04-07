@@ -21,29 +21,21 @@ from responsePlotByParam import plot_by_param
 
 files = get_files('486634','masking_to_analyze') 
 
-def combine_files(files, output='df', *dates):
+def combine_files(files, *dates, output='df'):
     dn = {}
-    for date in *dates:
-        #use regex or other matching
-        filtered_files = [#file with date in file]
-    
-    for i, f in enumerate(filtered_files):   #change index for desired files
+    filtered_files = [file for file in files for date in dates if date in file]
+    for i, f in enumerate(filtered_files):  
         d = h5py.File(f) 
-        if output='df':
+        if output=='df':
             dn['df_{}'.format(i)] = create_df(d)
         else:
             dn['df_{}'.format(i)] = d
     return dn
 
-'''
-maybe it makes more sense to let this return a dict of files, and then 
-create dfs from those files in the dict?
 
-the issue below is that it only works for 3 files, as far as i understand it
-'''
 def combine_dfs(dict1):
     dictget = lambda x, k: [x[i] for i in k]
-    return pd.concat(dictget(dn, list(map(str, dn.keys()))), ignore_index=True)
+    return pd.concat(dictget(dict1, list(map(str, dict1.keys()))), ignore_index=True)
 
     
     

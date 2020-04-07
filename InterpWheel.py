@@ -8,15 +8,14 @@ import numpy as np
 import pandas as pd
 import matplotlib 
 import matplotlib.pyplot as plt
-from dataAnalysis import import_data, create_df, extract_vars
-
+from dataAnalysis import import_data, create_df
 
 d = import_data()
 df = create_df(d)
-dn = extract_vars(d)
-
-for key,val in dn.items():   
-    exec (key + '=val')
+#dn = extract_vars(d)
+#
+#for key,val in dn.items():   
+#    exec (key + '=val')
 
 
 
@@ -35,7 +34,10 @@ def wheel_trace_slice(dataframe):
     wheelDF = df[['trialStart','stimStart', 'respFrame', 'WheelTrace']]
   # want to create a col that has the len of each WheelTrace
     wheelDF['wheelLen'] = list(map(len, wheelDF['WheelTrace']))
-    assert np.all(wheelDF['wheelLen'] == (wheelDF['respFrame'] - wheelDF['trialStart'])), 'Wheel error'
+    # wheel len will not match the trial len bc I extended the trials when slicing deltaWheel
+    # to include extra frames past response frame, so we can see their full movement 
+   # assert np.all(wheelDF['wheelLen'] == (wheelDF['respFrame'] - wheelDF['trialStart'])), 'Wheel error'
+   # this is essentially normalizing the wheel trace, since we can't use the actual frame indices to slice
     wheelDF['diff1'] = wheelDF['stimStart'] - wheelDF['trialStart']
     wheelDF['diff2'] = wheelDF['respFrame'] - wheelDF['trialStart']
     wheel = [wheel[start:stop] for (wheel, start, stop) in zip(
