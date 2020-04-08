@@ -103,17 +103,17 @@ threshold = maxQuiescentMove * monitorSize
 
 
 
-def rxnTimes(df, wheel):
+def rxnTimes(df):
     
-   # call wheel slicing func 
-   # wheel = wheel_trace_slice(df)
+
+    wheel = wheel_trace_slice(df)
 
     cumulativeWheel = [np.cumsum(mvmt) for mvmt in wheel]
 
     interpWheel = []
     timeToMoveWheel = []
     
-    for i, (times, resp, nogo) in enumerate(zip(cumulativeWheel[100:120], df['resp'][100:120], df['nogo'][100:120])):
+    for i, (times, resp, nogo) in enumerate(zip(cumulativeWheel, df['resp'], df['nogo'])):
         if nogo==True or resp==0:   
             timeToMoveWheel.append(0)
             interpWheel.append(0)   
@@ -167,17 +167,21 @@ def rxnTimes(df, wheel):
   
     
 
-timeToMove = rxnTimes(df, wheel)
-df['timeToMove'] = np.array(timeToMove)  # already in ms
-respTime = np.round(list(map(lambda x: x * (1000/120), (df['respFrame'] - df['stimStart'])))).astype(int)
-# this needs to be converted to ms, but right now the func is local in dataAnalysis 
-# and the framerate changes -- need to be really careful
+    timeToMove = rxnTimes(df, wheel)
+    
+    respTime = np.round(list(map(lambda x: x * (1000/120), (df['respFrame'] - df['stimStart'])))).astype(int)
+    # this needs to be converted to ms, but right now the func is local in dataAnalysis 
+    # and the framerate changes -- need to be really careful
+    
+    timeToOutcome = [resp-move for resp, move in zip(respTime, timeToMove)]  
+    
+    for e, (i,j,k) in enumerate(zip(timeToMove, timeToOutcome, df['trialLength'])):
+        assert i + j ==k, 'error at {}'.format(e)
+    
+    df['timeToMove'] = np.array(timeToMove)  # already in ms
+    df['timeToOutcome'] = np.array(timeToOutcome)
 
-timeToOutcome = [resp-move for resp, move in zip(respTime, timeToMove)]  
-
-for e, (i,j,k) in enumerate(zip(timeToMove, timeToOutcome, df['trialLength'])):
-    assert i + j ==k, 'error at {}'.format(e)
-
+    return df 
 
 #velo = []           
 #for i, time in enumerate(interpWheel):   #time is array of wheel mvmt
