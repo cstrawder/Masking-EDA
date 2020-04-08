@@ -58,6 +58,8 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 d = import_data()       # want to use d later to pull vals for analysis
 df = create_df(d)
 
+
+
 def wheel_trace_slice(dataframe):
     df = dataframe
 
@@ -71,7 +73,7 @@ def wheel_trace_slice(dataframe):
     
     
     wheel = [wheel[start:stop] for (wheel, start, stop) in zip(
-            wheelDF['WheelTrace'], wheelDF['diff1'], wheelDF['diff2'])]
+            wheelDF['WheelTrace'], wheelDF['diff1'], wheelDF['wheelLen'])]
     
     return wheel
 
@@ -99,18 +101,23 @@ normRewardDist = d['normRewardDistance'][()]
 rewThreshold = normRewardDist * monitorSize
 threshold = maxQuiescentMove * monitorSize
 
+
+
 def rxnTimes(df, wheel):
     
    # call wheel slicing func 
    # wheel = wheel_trace_slice(df)
 
+    cumulativeWheel = [np.cumsum(mvmt) for mvmt in wheel]
+
     interpWheel = []
     timeToMoveWheel = []
     
-    for i, (times, resp, nogo) in enumerate(zip(wheel, df['resp'], df['nogo'])):
+    for i, (times, resp, nogo) in enumerate(zip(cumulativeWheel, df['resp'], df['nogo'])):
         if nogo==True or resp==0:   
             timeToMoveWheel.append(0)
-            interpWheel.append(0)    
+            interpWheel.append(0)   
+            print('noresp \n')
         else:
             fp = times
             xp = np.arange(0, len(fp))*1/framerate
@@ -118,33 +125,47 @@ def rxnTimes(df, wheel):
             interp = np.interp(x,xp,fp)
             interpWheel.append(interp)
             t = np.argmax(abs(interp)>threshold)
+            t2 = np.argmax(abs(interp)>(rewThreshold/2))
+            print('trial: ' + str(i))
+            print(t, t2)
+            print(str(resp) + '\n')
+            
             if t <= 100:
                 timeToMoveWheel.append(t)
+                print('1', str(t))
             elif t==0:
-                timeToMoveWheel.append(0)   # no resp, or moving at start of trial
+                timeToMoveWheel.append(0)  
+                print('2')
             else:
                 t = np.argmax(abs(interp[100::])>threshold) + 100  #100 ms is limit of ignore trial
                 a = np.argmax(abs(np.round(np.diff(interp[100::])))>0) + 100
+                print('t= ' + str(t), 'a= '+str(a))
                 if 0 < a < 200:
                     timeToMoveWheel.append(0)
+                    print('3')
                 elif abs(t-a) < (150):
                     timeToMoveWheel.append(a)
+                    print('4')
                 else:
                     b = np.argmax(abs(np.round(np.diff(interp[a::])))>0) + a
+                    print('b= ' + str(b), 't= '+str(t))
                     if abs(t-b) < (200):
                         timeToMoveWheel.append(b)
+                        print('5')
                     else:
                         c = np.argmax(abs(np.round(np.diff(interp[b::])))>1) + b
                         if c!=b:
                             timeToMoveWheel.append(c)
+                            print('6')
                         else:
                             timeToMoveWheel.append(b)
+                            print('7')
         
     return timeToMoveWheel
   
     
 
-interpWheel = rxnTimes(df)
+timeToMove = rxnTimes(df, wheel)
     
 
 
