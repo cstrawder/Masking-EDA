@@ -66,8 +66,8 @@ def wheel_trace_slice(dataframe):
     wheelDF = df[['trialStart','stimStart', 'respFrame', 'WheelTrace']]
     wheelDF['wheelLen'] = list(map(len, wheelDF['WheelTrace']))
     
-    wheelDF['diff1'] = wheelDF['stimStart'] - wheelDF['trialStart']
-    wheelDF['diff2'] = wheelDF['respFrame'] - wheelDF['trialStart']
+    wheelDF['diff1'] = wheelDF['stimStart'] - wheelDF['trialStart']  #prestim
+    wheelDF['diff2'] = wheelDF['respFrame'] - wheelDF['trialStart']  #entire trial
     
     # unless we do the selecting for nogos and maskOnly HERE - to then look at down there
     
@@ -114,17 +114,41 @@ def rxnTimes(dataframe):
     timeToMoveWheel = []
     avgs=[]
     
-    for i, (times, resp, nogo) in enumerate(zip(cumulativeWheel, df['resp'], df['nogo'])):
-        if (nogo==True and resp==1) or (resp==0) or (df.iloc[i]['ignoreTrial']==True):   
+    ohno=[]
+    
+    for i, (times, resp, rew) in enumerate(zip(cumulativeWheel, df['resp'], df['rewDir'])):
+        if (rew==0 and resp==1) or (resp==0) or (df.iloc[i]['ignoreTrial']==True):   
             timeToMoveWheel.append(0)
             interpWheel.append(0)   
-            print('noresp \n')
         else:
             fp = times
             xp = np.arange(0, len(fp))*1/framerate
             x = np.arange(0, xp[-1], .001)
             interp = np.interp(x,xp,fp)
             interpWheel.append(interp)
+            
+            if rew==0:   #this is a nogo turn OR maskOnly turn - treat differently bc might not reach rew
+                timeToMoveWheel.append(np.argmax(abs(np.round(np.diff(interp)))>0))
+                (print('rew is 0' + str(i) + '\n'))
+            else:
+            
+                k = np.argmax(abs(np.round(np.diff(interp)))>0)
+                t = np.argmax(abs(interp)>threshold)
+                t2 = np.argmax(abs(interp)>(threshold*1.5))
+                t3 = np.argmax(abs(interp)>rewThreshold)
+
+                if t3 ==0:
+                    ohno.append(i)
+                print('trial: ' + str(i))
+                print(k, t, t2, t3)
+                print(str(resp) + '\n')
+            
+           check =  [222 ,243 ,265, 297, 436, 458, 475, 487]
+            # 297 : 265 ms
+            # 436 : 200 ms
+            # 458 is fine, mouse hesitates 
+            # 475 - does move a little at start, but then waits
+            # 487 should be ignored
             
             a = np.argmax(abs(np.round(np.diff(interp)))>0)
             
@@ -136,18 +160,20 @@ def rxnTimes(dataframe):
                          t3 = np.argmax(abs(interp)>rewThreshold)
                          if t3 == 0:
                              t3 = np.argmax(abs(interp)>(threshold*2))
+                             if t3 == 0:
+                                 print('look at trial {}'.format(i))
                              
-                         b = np.argmax(abs(np.round(np.diff(interp[t3::-1])))<1)
-                         c = t3-b
-                         if c<100:
-                             print('look at trial {}'.format(i))
-                         #go backwards from reward - watch for pauses in turning 
-                     else:
-                         b = np.argmax(abs(np.round(np.diff(interp[t2::-1])))<1)
-                         c = t2-b
-                         if c >100:
-                             timeToMoveWheel.append(c)
-                         
+                        b = np.argmax(abs(np.round(np.diff(interp[t3::-1])))<1)
+                        c = t3-b
+                        if c<100:
+                            print('look at trial {}'.format(i))
+                            #go backwards from reward - watch for pauses in turning 
+                else:
+                    b = np.argmax(abs(np.round(np.diff(interp[t2::-1])))<1)
+                    c = t2-b
+                    if c >100:
+            timeToMoveWheel.append(c)
+ 
                  
                 
                 
@@ -159,8 +185,8 @@ def rxnTimes(dataframe):
             
             
             
-            t = np.argmax(abs(interp)>threshold*.33)
-            t2 = np.argmax(abs(interp)>(threshold))
+            t = np.argmax(abs(interp)>threshold)
+            t2 = np.argmax(abs(interp)>(threshold*1.5))
             t3 = np.argmax(abs(interp)>rewThreshold)
             k = np.argmax(abs(np.round(np.diff(interp)))>0)
 
