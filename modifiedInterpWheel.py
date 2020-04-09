@@ -103,18 +103,19 @@ threshold = maxQuiescentMove * monitorSize
 
 
 
-def rxnTimes(df):
+def rxnTimes(dataframe):
     
-
+    df = dataframe
     wheel = wheel_trace_slice(df)
 
     cumulativeWheel = [np.cumsum(mvmt) for mvmt in wheel]
 
     interpWheel = []
     timeToMoveWheel = []
+    avgs=[]
     
     for i, (times, resp, nogo) in enumerate(zip(cumulativeWheel, df['resp'], df['nogo'])):
-        if nogo==True or resp==0:   
+        if (nogo==True and resp==1) or (resp==0) or (df.iloc[i]['ignoreTrial']==True):   
             timeToMoveWheel.append(0)
             interpWheel.append(0)   
             print('noresp \n')
@@ -124,14 +125,53 @@ def rxnTimes(df):
             x = np.arange(0, xp[-1], .001)
             interp = np.interp(x,xp,fp)
             interpWheel.append(interp)
-            t = np.argmax(abs(interp)>threshold)
-            t2 = np.argmax(abs(interp)>(rewThreshold/2))
-            print('trial: ' + str(i))
-            print(t, t2)
-            print(str(resp) + '\n')
             
-            if t <= 100:
-                timeToMoveWheel.append(t)
+            a = np.argmax(abs(np.round(np.diff(interp)))>0)
+            
+            if a < 100:
+                 t = np.argmax(abs(interp)>threshold)
+                 if t < 100:
+                     t2 = np.argmax(abs(interp)>(threshold*1.5))
+                     if t2<100:
+                         t3 = np.argmax(abs(interp)>rewThreshold)
+                         if t3 == 0:
+                             t3 = np.argmax(abs(interp)>(threshold*2))
+                             
+                         b = np.argmax(abs(np.round(np.diff(interp[t3::-1])))<1)
+                         c = t3-b
+                         if c<100:
+                             print('look at trial {}'.format(i))
+                         #go backwards from reward - watch for pauses in turning 
+                     else:
+                         b = np.argmax(abs(np.round(np.diff(interp[t2::-1])))<1)
+                         c = t2-b
+                         if c >100:
+                             timeToMoveWheel.append(c)
+                         
+                 
+                
+                
+                # this should work most of the time, unless they are moving before 100 ms
+                # THEN apply more logic, and avoid all the other stuff 
+            else:
+                timeToMoveWheel.append(a)
+            
+            
+            
+            
+            t = np.argmax(abs(interp)>threshold*.33)
+            t2 = np.argmax(abs(interp)>(threshold))
+            t3 = np.argmax(abs(interp)>rewThreshold)
+            k = np.argmax(abs(np.round(np.diff(interp)))>0)
+
+            
+            print('trial: ' + str(i))
+            print(k, t, t2, t3)
+            print(str(resp) + '\n')
+            avgs.append(abs(t2-t))
+            
+            if t2 <= 100:
+                timeToMoveWheel.append(t2)
                 print('1', str(t))
             elif t==0:
                 timeToMoveWheel.append(0)  
@@ -140,7 +180,7 @@ def rxnTimes(df):
                 t = np.argmax(abs(interp[100::])>threshold) + 100  #100 ms is limit of ignore trial
                 a = np.argmax(abs(np.round(np.diff(interp[100::])))>0) + 100
                 print('t= ' + str(t), 'a= '+str(a))
-                if 0 < a < 200:
+                if 0 < a < 110:
                     timeToMoveWheel.append(0)
                     print('3')
                 elif abs(t-a) < (150):
@@ -163,22 +203,22 @@ def rxnTimes(df):
                             timeToMoveWheel.append(b)
                             print('7')
         
-    return timeToMoveWheel
+   # return timeToMoveWheel
   
     
 
-    timeToMove = rxnTimes(df, wheel)
+   # timeToMove = rxnTimes(df, wheel)
     
     respTime = np.round(list(map(lambda x: x * (1000/120), (df['respFrame'] - df['stimStart'])))).astype(int)
     # this needs to be converted to ms, but right now the func is local in dataAnalysis 
     # and the framerate changes -- need to be really careful
     
-    timeToOutcome = [resp-move for resp, move in zip(respTime, timeToMove)]  
+    timeToOutcome = [resp-move for resp, move in zip(respTime, timeToMoveWheel)]  
     
-    for e, (i,j,k) in enumerate(zip(timeToMove, timeToOutcome, df['trialLength'])):
+    for e, (i,j,k) in enumerate(zip(timeToMoveWheel, timeToOutcome, df['trialLength'])):
         assert i + j ==k, 'error at {}'.format(e)
     
-    df['timeToMove'] = np.array(timeToMove)  # already in ms
+    df['timeToMove'] = np.array(timeToMoveWheel)  # already in ms
     df['timeToOutcome'] = np.array(timeToOutcome)
 
     return df 
