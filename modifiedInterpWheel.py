@@ -115,11 +115,13 @@ def rxnTimes(dataframe):
     avgs=[]
     
     ohno=[]
+    tresohno = []
     
     for i, (times, resp, rew) in enumerate(zip(cumulativeWheel, df['resp'], df['rewDir'])):
         if (rew==0 and resp==1) or (resp==0) or (df.iloc[i]['ignoreTrial']==True):   
             timeToMoveWheel.append(0)
-            interpWheel.append(0)   
+            interpWheel.append(0)
+            print('{} appended step 1'.format(i))
         else:
             fp = times
             xp = np.arange(0, len(fp))*1/framerate
@@ -127,21 +129,54 @@ def rxnTimes(dataframe):
             interp = np.interp(x,xp,fp)
             interpWheel.append(interp)
             
-            if rew==0:   #this is a nogo turn OR maskOnly turn - treat differently bc might not reach rew
-                timeToMoveWheel.append(np.argmax(abs(np.round(np.diff(interp)))>0))
-                (print('rew is 0' + str(i) + '\n'))
-            else:
+            k = np.argmax(abs(np.round(np.diff(interp)))>0)
             
-                k = np.argmax(abs(np.round(np.diff(interp)))>0)
+            if rew==0:   #this is a nogo turn OR maskOnly turn - treat differently bc might not reach rew
+                timeToMoveWheel.append(k)
+                print('{} appended step 2'.format(i))
+
+            else:  #made a choice
                 t = np.argmax(abs(interp)>threshold)
                 t2 = np.argmax(abs(interp)>(threshold*1.5))
                 t3 = np.argmax(abs(interp)>rewThreshold)
+                # if t>150 (avoid a lot of below)
+                
+                if k>150 and (t3-k<200):
+                    timeToMoveWheel.append(k)
+                    print('{} appended step 3'.format(i))
 
-                if t3 ==0:
-                    ohno.append(i)
-                print('trial: ' + str(i))
-                print(k, t, t2, t3)
-                print(str(resp) + '\n')
+                else:
+                    if k>150 and t>150:
+                        a = np.argmax(abs(np.round(np.diff(interp[k:])))>0) + k
+                        print(a)
+                        if a == k:
+                            b = np.argmax(abs(np.round(np.diff(interp[t::-1])))<1)
+                            a = t-b
+                            print(a)
+                            print('{} appended step 10'.format(i))  
+
+                        tresohno.append(i)
+                    elif (k<150) or (t3-k>200):
+                        ohno.append(i)
+                        if k<150 and t<150:
+                            a = np.argmax(abs(np.round(np.diff(interp[100:])))>0) + 100
+                            print('{} appended step 4'.format(i))  
+                        elif k<150 and t>150:
+                            b = np.argmax(abs(np.round(np.diff(interp[t::-1])))<1)
+                            a = t-b
+                            print('{} appended step 5'.format(i))
+                        elif t<150 and t2>150:
+                            b = np.argmax(abs(np.round(np.diff(interp[t2::-1])))<1) 
+                            a = t2-b
+                            print('{} appended step 6'.format(i))  
+                        else:  
+                            b = np.argmax(abs(np.round(np.diff(interp[t3::-1])))<1)
+                            a = t3-b
+                            print('{} appended at step 7'.format(i))
+                    timeToMoveWheel.append(a)
+                    print('{} appended step 9'.format(i))
+
+  
             
            check =  [222 ,243 ,265, 297, 436, 458, 475, 487]
             # 297 : 265 ms
@@ -149,89 +184,7 @@ def rxnTimes(dataframe):
             # 458 is fine, mouse hesitates 
             # 475 - does move a little at start, but then waits
             # 487 should be ignored
-            
-            a = np.argmax(abs(np.round(np.diff(interp)))>0)
-            
-            if a < 100:
-                 t = np.argmax(abs(interp)>threshold)
-                 if t < 100:
-                     t2 = np.argmax(abs(interp)>(threshold*1.5))
-                     if t2<100:
-                         t3 = np.argmax(abs(interp)>rewThreshold)
-                         if t3 == 0:
-                             t3 = np.argmax(abs(interp)>(threshold*2))
-                             if t3 == 0:
-                                 print('look at trial {}'.format(i))
-                             
-                        b = np.argmax(abs(np.round(np.diff(interp[t3::-1])))<1)
-                        c = t3-b
-                        if c<100:
-                            print('look at trial {}'.format(i))
-                            #go backwards from reward - watch for pauses in turning 
-                else:
-                    b = np.argmax(abs(np.round(np.diff(interp[t2::-1])))<1)
-                    c = t2-b
-                    if c >100:
-            timeToMoveWheel.append(c)
- 
-                 
-                
-                
-                # this should work most of the time, unless they are moving before 100 ms
-                # THEN apply more logic, and avoid all the other stuff 
-            else:
-                timeToMoveWheel.append(a)
-            
-            
-            
-            
-            t = np.argmax(abs(interp)>threshold)
-            t2 = np.argmax(abs(interp)>(threshold*1.5))
-            t3 = np.argmax(abs(interp)>rewThreshold)
-            k = np.argmax(abs(np.round(np.diff(interp)))>0)
-
-            
-            print('trial: ' + str(i))
-            print(k, t, t2, t3)
-            print(str(resp) + '\n')
-            avgs.append(abs(t2-t))
-            
-            if t2 <= 100:
-                timeToMoveWheel.append(t2)
-                print('1', str(t))
-            elif t==0:
-                timeToMoveWheel.append(0)  
-                print('2')
-            else:
-                t = np.argmax(abs(interp[100::])>threshold) + 100  #100 ms is limit of ignore trial
-                a = np.argmax(abs(np.round(np.diff(interp[100::])))>0) + 100
-                print('t= ' + str(t), 'a= '+str(a))
-                if 0 < a < 110:
-                    timeToMoveWheel.append(0)
-                    print('3')
-                elif abs(t-a) < (150):
-                    timeToMoveWheel.append(a)
-                    print('4')
-                else:
-                    b = np.argmax(abs(np.round(np.diff(interp[a::])))>0) + a
-                    print('b= ' + str(b), 't= '+str(t))
-                    if abs(t-b) < (200):
-                        timeToMoveWheel.append(b)
-                        print('5')
-                    else:
-                       # d = np.argmax(abs(np.round(np.diff(interp[b::])))>0) + b
-                        c = np.argmax(abs(np.round(np.diff(interp[b::])))>1) + b
-                        
-                        if c!=b:
-                            timeToMoveWheel.append(c)
-                            print('6')
-                        else:
-                            timeToMoveWheel.append(b)
-                            print('7')
-        
-   # return timeToMoveWheel
   
-    
 
    # timeToMove = rxnTimes(df, wheel)
     
