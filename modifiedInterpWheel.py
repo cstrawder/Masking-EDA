@@ -121,7 +121,7 @@ def rxnTimes(dataframe):
         if (rew==0 and resp==1) or (resp==0) or (df.iloc[i]['ignoreTrial']==True):   
             timeToMoveWheel.append(0)
             interpWheel.append(0)
-            print('{} appended step 1'.format(i))
+           # print('{} appended step 1'.format(i))
         else:
             fp = times
             xp = np.arange(0, len(fp))*1/framerate
@@ -133,7 +133,7 @@ def rxnTimes(dataframe):
             
             if rew==0:   #this is a nogo turn OR maskOnly turn - treat differently bc might not reach rew
                 timeToMoveWheel.append(k)
-                print('{} appended step 2'.format(i))
+              #  print('{} appended step 2'.format(i))
 
             else:  #made a choice
                 t = np.argmax(abs(interp)>threshold)
@@ -141,9 +141,47 @@ def rxnTimes(dataframe):
                 t3 = np.argmax(abs(interp)>rewThreshold)
                 # if t>150 (avoid a lot of below)
                 
-                if k>150 and (t3-k<200):
+                #check if k is noise 
+                noise = abs(interp[k+50] - interp[k])
+                if noise > 35:
+                    # if it's more than 10, it's def movement 
                     timeToMoveWheel.append(k)
-                    print('{} appended step 3'.format(i))
+                elif noise < 35:
+                    # if this is less than 10, it might be noise
+                
+                    if k>150:  #ms
+                        if t2-k<200:
+                            a = k
+                        elif t2-k>200:
+                            b = np.argmax(abs(np.round(np.diff(interp[t::-1])))==0)
+                            a = t-b
+                    
+                    elif k<150: # sometimes are moving at beginning and then stop
+                        if t<150: 
+                            if t2>150:
+                                b = np.argmax(abs(np.round(np.diff(interp[t2::-1])))<1) 
+                                a = t2-b
+                            elif t2<150:
+                                b = np.argmax(abs(np.round(np.diff(interp[t3::-1])))<1)
+                                a = t3-b
+                        elif t>150:
+                            b = np.argmax(abs(np.round(np.diff(interp[t::-1])))<1)
+                            a = t-b
+                    timeToMoveWheel.append(a)
+                print(i, noise)
+  
+                      
+test = np.random.randint(0, len(interpWheel), 60)
+
+test = [i for i, e in enumerate(interpWheel) if type(e)!=int]
+
+for i in test[:100]:
+    plt.figure()
+    plt.plot(interpWheel[i])
+    plt.title(i)
+    plt.vlines(timeToMoveWheel[i], -100, 100, ls='--')                    
+
+
 
                 else:
                     if k>150 and t>150:
