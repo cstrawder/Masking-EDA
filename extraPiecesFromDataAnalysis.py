@@ -31,9 +31,9 @@ def create_vars(dn):
 # IN PLOTTING BY PARAM
   
     
-miss = missNonzero.pivot_table(values='trialLength', index=param, columns='rewDir', 
+miss = missNonzero.pivot_table(values=param2, index=param1, columns='rewDir', 
                         margins=True, dropna=True)
-hit = corrNonzero.pivot_table(values='trialLength', index=param, columns='rewDir', 
+hit = corrNonzero.pivot_table(values=param2, index=param1, columns='rewDir', 
                         margins=True, dropna=True)
 
 print('hits avg t \n', hit)
