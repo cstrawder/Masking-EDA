@@ -63,8 +63,8 @@ df = create_df(d)
 def wheel_trace_slice(dataframe):
     df = dataframe
 
-    wheelDF = df[['trialStart','stimStart', 'respFrame', 'WheelTrace']]
-    wheelDF['wheelLen'] = list(map(len, wheelDF['WheelTrace']))
+    wheelDF = df[['trialStart','stimStart', 'respFrame', 'deltaWheel']]
+    wheelDF['wheelLen'] = list(map(len, wheelDF['deltaWheel']))
     
     wheelDF['diff1'] = wheelDF['stimStart'] - wheelDF['trialStart']  #prestim
     wheelDF['diff2'] = wheelDF['respFrame'] - wheelDF['trialStart']  #entire trial
@@ -73,7 +73,7 @@ def wheel_trace_slice(dataframe):
     
     
     wheel = [wheel[start:stop] for (wheel, start, stop) in zip(
-            wheelDF['WheelTrace'], wheelDF['diff1'], wheelDF['wheelLen'])]
+            wheelDF['deltaWheel'], wheelDF['diff1'], wheelDF['wheelLen'])]
     
     return wheel
 
@@ -89,6 +89,9 @@ like:
     but THEN it's obnox bc how does it do anything with rxnTime info?
     have to create the df again to add to it
     unless it's rxnTimes(d, df) - but that seems excessive
+    
+    -- could create a new dataframe off the existing one, return that, 
+    and then you merge that with the existing (after calling )
     
 '''
 
@@ -117,17 +120,15 @@ def rxnTimes(dataframe):
 
     interpWheel = []
     timeToMoveWheel = []
-    avgs=[]
+
     
-    ohno=[]
-    tresohno = []
-    
-    for i, (times, resp, rew) in enumerate(zip(cumulativeWheel, df['resp'], df['rewDir'])):
+    for i, (wheel, resp, rew, soa) in enumerate(zip(cumulativeWheel, df['resp'], df['rewDir'], df['soa'])):
         if (rew==0 and resp==1) or (resp==0) or (df.iloc[i]['ignoreTrial']==True):   
+            
             timeToMoveWheel.append(0)
             interpWheel.append(0)
         else:
-            fp = times
+            fp = wheel
             xp = np.arange(0, len(fp))*1/framerate
             x = np.arange(0, xp[-1], .001)
             interp = np.interp(x,xp,fp)
@@ -140,17 +141,23 @@ def rxnTimes(dataframe):
             
             noise = abs(interp[k+50] - interp[k])   #check if k is noise 
             
-            if noise > 35:             # if it's more than 10, it's def movement 
-                timeToMoveWheel.append(k)
-            else:         # if this is less than 10, mvmt at k might be noise
+            if noise > 35:  
+                a = np.argmax(abs(interp)>5)
+                if a<k:
+                    timeToMoveWheel.append((a, soa))
+                else:
+                    timeToMoveWheel.append((k, soa))
+            # if this is less than 10, mvmt at k might be noise       
+            else:         
                 if k>150:  #ms
-                    if t2-k<150:
+                    
+                    if t-k<100:
+                        
                         if t2-t<50:
-                            a = k
-                        else:
                             b = np.argmax(abs(np.round(np.diff(interp[t::-1])))<1)
                             a = t-b
-                    elif t2-k>150:
+                            
+                    elif t-k>100:
                         val = abs(np.round(np.diff(interp[k:t])))
                         count = 0
                         for ind, (n, m) in enumerate(zip(val[:-1], val[1:])):
@@ -163,6 +170,8 @@ def rxnTimes(dataframe):
                             start = ind + k
                         b = np.argmax(abs(np.round(np.diff(interp[start:])))>0)
                         a = start + b
+                        if a>k:
+                            a=k
                 
                 elif k<150: # sometimes are moving at beginning and then stop
                     if t<150: 
@@ -173,39 +182,78 @@ def rxnTimes(dataframe):
                             b = np.argmax(abs(np.round(np.diff(interp[t3::-1])))<1)
                             a = t3-b
                     elif t>150:
-                        if t-k>300:
-                            b = np.argmax(abs(np.round(np.diff(interp[t::-1])))<1)
-                            a = t-b
-                        else:    
-                            val = abs(np.round(np.diff(interp[k:t])))
-                            count = 0
-                            for ind, (n, m) in enumerate(zip(val[:-1], val[1:])):
-                                if n == m:
-                                    count += 1
-                                elif n != m:
-                                    count = 0
-                                if count>20:
-                                    break
-                                start = ind + k
-                            b = np.argmax(abs(np.round(np.diff(interp[start:])))>0)
-                            if b==0:
-                                a = np.argmax(abs(np.round((interp[t::-1])))==0)
-                            else:
-                                a = start + b
-                timeToMoveWheel.append(a)
+                        if t-k>200:
+#                            if t2-t<100:
+#                                b = np.argmax(abs(np.round(interp[t::-1]))<10)
+#                                a = t-b
+#                            elif t2-t>100:
+                            b = np.argmax(abs(np.round(np.diff(interp[100:t])))>0)
+                            a = b + 100
+                        elif t-k<200:
+                            b = np.argmax(abs(np.round(np.diff(interp[100:t])))>0)
+                            c = np.argmax(abs(np.round(interp))>10)
+                            a = b + 100
+                            if a==k:
+                                a=c
+#                            pt = np.argmax(abs(interp)>10)
+#                            b = np.argmax(abs(np.round(np.diff(interp[pt::-1])))<1)
+#                            a = pt-b
+#                            if (t-pt) < (t-k)/2:
+#                                val = abs(np.round(np.diff(interp[pt:t])))
+#                                count = 0
+#                                for ind, (n, m) in enumerate(zip(val[:-1], val[1:])):
+#                                    if n == m:
+#                                        count += 1
+#                                    elif n != m:
+#                                        count = 0
+#                                    if count>20:
+#                                        break
+#                                    start = ind + (k-5)
+#                                b = np.argmax(abs(np.round(np.diff(interp[start:])))>0)
+#                                if b==0:
+#                                    a = np.argmax(abs(np.round((interp[t::-1])))==0)
+#                                else:
+#                                    a = start + b
+                timeToMoveWheel.append((a, soa))
             
     return timeToMoveWheel
-     
+  
+    
+
+
+
+
+for i, trace in enumerate(masterList):
+    plt.figure()
+    plt.plot(interpWheel[trace[0]])
+    plt.vlines(trace[1], -400, 400, ls='--', color='m')
+    plt.vlines(times[i], -400, 400, ls='-', color='g')
+    plt.title(trace[0])
              
 test = np.random.randint(0, len(interpWheel), 60)
 
 test = [i for i, e in enumerate(interpWheel) if type(e)!=int]
 
-for i in test[:]:
+for i in test[:10]:
     plt.figure()
-    plt.plot(interpWheel[i])
+    plt.plot(interpWheel[i], lw=2)
     plt.title(i)
-    plt.vlines(timeToMoveWheel[i], -100, 100, ls='--')                    
+    plt.vlines(timeToMoveWheel[i], -200, 200, ls='--', color='k', lw=2)
+
+
+maskTest = []
+for i, time in enumerate(timeToMoveWheel):
+    if type(time) is not int:
+        maskTest.append(i)
+        
+for i in maskTest[:10]:
+    plt.figure()
+    plt.plot(interpWheel[i], lw=2)
+    plt.title([i, timeToMoveWheel[i][1]])
+    plt.vlines(timeToMoveWheel[i][0], -200, 200, ls='--', color='k', lw=2)
+    if timeToMoveWheel[i][1]!=150.0:
+        plt.vlines(timeToMoveWheel[i][1], -100, 100, ls='-', color='m')   
+        plt.vlines(timeToMoveWheel[i][1]+200, -100, 100, ls='-', color='m')                 
 
   
     timeToMove = rxnTimes(df)
@@ -216,10 +264,10 @@ for i in test[:]:
     
     timeToOutcome = [resp-move for resp, move in zip(respTime, timeToMove)]  
     
-    for e, (i,j,k) in enumerate(zip(timeToMove, timeToOutcome, df['trialLength'])):
-        assert i + j ==k, 'error at {}'.format(e)
+#    for e, (i,j,k) in enumerate(zip(timeToMove, timeToOutcome, df['trialLength'])):
+#        assert i + j ==k, 'error at {}'.format(e)
     
-    df['timeToMove'] = np.array(timeToMove)  # already in ms
+    df['timeToMove'] = np.array(timeToMoveWheel)  # already in ms
     df['timeToOutcome'] = np.array(timeToOutcome)
 
     return df 
