@@ -63,8 +63,8 @@ df = create_df(d)
 def wheel_trace_slice(dataframe):
     df = dataframe
 
-    wheelDF = df[['trialStart','stimStart', 'respFrame', 'deltaWheel']]
-    wheelDF['wheelLen'] = list(map(len, wheelDF['deltaWheel']))
+    wheelDF = df[['trialStart','stimStart', 'respFrame', 'deltaWheel']].copy()
+    wheelDF['wheelLen'] = list(map(len, wheelDF.loc[:,'deltaWheel']))
     
     wheelDF['diff1'] = wheelDF['stimStart'] - wheelDF['trialStart']  #prestim
     wheelDF['diff2'] = wheelDF['respFrame'] - wheelDF['trialStart']  #entire trial
@@ -100,9 +100,12 @@ framerate = int(np.round(1/np.median(fi)))
 maxQuiescentMove = d['maxQuiescentNormMoveDist'][()]
 monitorSize = d['monSizePix'][0] 
 normRewardDist = d['normRewardDistance'][()]
+wheelSpeedGain = d['wheelSpeedGain'][()]
 
 rewThreshold = normRewardDist * monitorSize
 threshold = maxQuiescentMove * monitorSize
+initiationThreshDeg = 0.5  #how did he decide this?
+initiationThreshPix = initiationThreshDeg*np.pi/180*wheelSpeedGain
 
 ###### %%%%%  THIS NEEDS A LOT OF WORK _ HOW DOES IT ACTUALLY WORK WITH DF???  
 # should it be part of dataAnalysis
@@ -120,19 +123,30 @@ def rxnTimes(dataframe):
 
     interpWheel = []
     timeToMoveWheel = []
-
+    otherTime = []
+    ignoreTrials = []
     
     for i, (wheel, resp, rew, soa) in enumerate(zip(cumulativeWheel, df['resp'], df['rewDir'], df['soa'])):
         if (rew==0 and resp==1) or (resp==0) or (df.iloc[i]['ignoreTrial']==True):   
             
             timeToMoveWheel.append(0)
             interpWheel.append(0)
+            otherTime.append(0)
         else:
             fp = wheel
             xp = np.arange(0, len(fp))*1/framerate
             x = np.arange(0, xp[-1], .001)
             interp = np.interp(x,xp,fp)
             interpWheel.append(interp)
+            
+           
+            init = np.argmax(abs(interp)>initiationThreshPix)
+            otherTime.append(init)
+            if init<100:
+                ignoreTrials.append(i)
+                
+            
+ ######################################################################
             
             k = np.argmax(abs(np.round(np.diff(interp)))>0)
             t = np.argmax(abs(interp)>threshold)
@@ -144,9 +158,9 @@ def rxnTimes(dataframe):
             if noise > 35:  
                 a = np.argmax(abs(interp)>5)
                 if a<k:
-                    timeToMoveWheel.append((a, soa))
+                    timeToMoveWheel.append(a)
                 else:
-                    timeToMoveWheel.append((k, soa))
+                    timeToMoveWheel.append(k)
             # if this is less than 10, mvmt at k might be noise       
             else:         
                 if k>150:  #ms
@@ -214,7 +228,7 @@ def rxnTimes(dataframe):
 #                                    a = np.argmax(abs(np.round((interp[t::-1])))==0)
 #                                else:
 #                                    a = start + b
-                timeToMoveWheel.append((a, soa))
+                timeToMoveWheel.append(a)
             
     return timeToMoveWheel
   
@@ -234,24 +248,25 @@ test = np.random.randint(0, len(interpWheel), 60)
 
 test = [i for i, e in enumerate(interpWheel) if type(e)!=int]
 
-for i in test[:10]:
+for i in range(30):
     plt.figure()
     plt.plot(interpWheel[i], lw=2)
     plt.title(i)
-    plt.vlines(timeToMoveWheel[i], -200, 200, ls='--', color='k', lw=2)
-
+    plt.vlines(timeToMoveWheel[i], -200, 200, ls='--', color='k')
+    plt.vlines(initiationTime[i], -200, 200, ls='-', color='g')
+    plt.vlines(otherTime[i], -200, 200, ls='--', color='m')
 
 maskTest = []
 for i, time in enumerate(timeToMoveWheel):
     if type(time) is not int:
         maskTest.append(i)
         
-for i in maskTest[:10]:
+for i in maskTest[:50]:
     plt.figure()
     plt.plot(interpWheel[i], lw=2)
     plt.title([i, timeToMoveWheel[i][1]])
     plt.vlines(timeToMoveWheel[i][0], -200, 200, ls='--', color='k', lw=2)
-    if timeToMoveWheel[i][1]!=150.0:
+    if timeToMoveWheel[i][1]!=max(np.unique(df['soa'])):
         plt.vlines(timeToMoveWheel[i][1], -100, 100, ls='-', color='m')   
         plt.vlines(timeToMoveWheel[i][1]+200, -100, 100, ls='-', color='m')                 
 
