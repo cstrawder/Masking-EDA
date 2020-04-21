@@ -13,7 +13,7 @@ can either call this for ignore trials or the old code; old code calls this func
 """
 
 from dataAnalysis import import_data, create_df  # for now - won't need once function is complete
-from dataAnalysis import wheel_trace_slice
+from modifiedInterpWheel import wheel_trace_slice
 import numpy as np
 import pandas as pd
 
@@ -25,7 +25,7 @@ def rxnTimes(data, output='initiation'):
     '''
     outcome == 'initiation', 'ignoreTrials', 'outcomeTime', 'choice'
     'choice' refers to the wheel movement that leads to a choice; useful for looking
-    at wheel direction changes/calculating velocity 
+    at wheel direction changes/calculating velocity (sam's code, goes backwards from rewardThresh)
     '''
     
     d = data
