@@ -6,15 +6,16 @@ Created on Thu Aug 22 12:56:20 2019
 
 Returns a list of trials indices where they moved the wheel before a threshold
 Use these indices to exclude those trials from analysis
+rxnTimes(d) returns an np.array with 3 lists, the 3rd being ignoreTrials 
 
 """
 
-from finalRxnTime import rxnTimes
+from dataAnalysis import rxnTimes
 
 
 def ignore_trials(data):
     d = data
-    return rxnTimes(d, output='ignoreTrials')
+    return rxnTimes(d)[2]
 
 
 

@@ -6,30 +6,21 @@ Created on Mon Apr 20 14:15:32 2020
 
 combining my modifiedInterpWheel, Sam's code, and formating it for use with df
 
-call rxnTimes --> returns array; append array to df
+call rxnTimes --> returns array with 3 arrays; append arrays to df
 
 can either call this for ignore trials or the old code; old code calls this function
 
 """
 
-from dataAnalysis import import_data, create_df  # for now - won't need once function is complete
-from modifiedInterpWheel import wheel_trace_slice
+from dataAnalysis import create_df  
+from dataAnalysis import wheel_trace_slice
 import numpy as np
-import pandas as pd
 
 
-d = import_data()       # want to use d later to pull vals for analysis
-
-
-def rxnTimes(data, output='initiation'):
-    '''
-    outcome == 'initiation', 'ignoreTrials', 'outcomeTime', 'choice'
-    'choice' refers to the wheel movement that leads to a choice; useful for looking
-    at wheel direction changes/calculating velocity (sam's code, goes backwards from rewardThresh)
-    '''
+def rxnTimes(data, dataframe):
     
     d = data
-    df = create_df(d)
+    df = dataframe
     
     fi = d['frameIntervals'][:]
     framerate = int(np.round(1/np.median(fi)))
@@ -37,53 +28,59 @@ def rxnTimes(data, output='initiation'):
     monitorSize = d['monSizePix'][0] 
     
     normRewardDist = d['normRewardDistance'][()]
+    maxQuiescentMove = d['maxQuiescentNormMoveDist'][()]
     wheelSpeedGain = d['wheelSpeedGain'][()]
     
-    rewThreshold = normRewardDist * monitorSize
     initiationThreshDeg = 0.5  #how did he decide this?
     initiationThreshPix = initiationThreshDeg*np.pi/180*wheelSpeedGain
-    
+    sigThreshold = maxQuiescentMove * monitorSize
+    rewThreshold = normRewardDist * monitorSize
+
     wheelTrace = wheel_trace_slice(df)
     cumulativeWheel = [np.cumsum(mvmt) for mvmt in wheelTrace]
 
     interpWheel = []
     initiateMovement = []
-    ignoreTrials = []
+    significantMovement = []
+    ignoreTrials = []  # old ignore_trials func actually calls this func, returns this list
     outcomeTimes = []
+    
+    ## use below code to determine wheel direction changes during trial 
+    # during just trial time (ie in nogos before trial ends) or over entire potential time? 
     
     for i, (wheel, resp, rew, soa) in enumerate(zip(
             cumulativeWheel, df['resp'], df['rewDir'], df['soa'])):
-        if (rew==0 and resp==1) or (resp==0):   
-            
-            initiateMovement.append(0)
-            interpWheel.append(0)
-            outcomeTimes.append(0)
+
+        fp = wheel
+        xp = np.arange(0, len(fp))*1/framerate
+        x = np.arange(0, xp[-1], .001)
+        interp = np.interp(x,xp,fp)
+        interpWheel.append(interp)
+        
+        if (rew==0) and (resp==1):
+            init = 0 
+        elif (rew==0) and (resp==-1):
+            init = np.argmax(abs(interp[100:])>initiationThreshPix) + 100
+# sam wants to allow mvmt before 100 ms for nogos; doesnt matter what they do before 200 ms gotone
         else:
-            fp = wheel
-            xp = np.arange(0, len(fp))*1/framerate
-            x = np.arange(0, xp[-1], .001)
-            interp = np.interp(x,xp,fp)
-            interpWheel.append(interp)
-
             init = np.argmax(abs(interp)>initiationThreshPix)
-            initiateMovement.append(init)
-            if init<100:
-                ignoreTrials.append(i)
-                
-            outcome = np.argmax(abs(interp)>= rewThreshold)
-            if outcome>0:
-                outcomeTimes.append(outcome)
-            else:
-                outcomeTimes.append(0)
+        initiateMovement.append(init)
+        
+        sigMove = np.argmax(abs(interp)>=sigThreshold)
+        significantMovement.append(sigMove)
+        
+        if (0<init<100) and (0<sigMove<100):
+            ignoreTrials.append(i)
+            
+        outcome = np.argmax(abs(interp)>= rewThreshold)
+        if outcome>0:
+            outcomeTimes.append(outcome)
+        else:
+            outcomeTimes.append(0)
 
-    if output=='ignoreTrials':
-        return ignoreTrials
-    elif output=='outcomeTime':
-        return outcomeTimes
-    else:
-        return initiateMovement
+    return np.array([initiateMovement, outcomeTimes, ignoreTrials])
          
-                
+
                 
                 
                 

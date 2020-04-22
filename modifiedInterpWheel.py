@@ -252,6 +252,9 @@ for i in range(30):
     plt.figure()
     plt.plot(interpWheel[i], lw=2)
     plt.title(i)
+    plt.vlines(initiateMovement[i], -400, 400, ls='--')
+    plt.vlines(outcomeTimes[i], -400, 400, ls='--')
+    
     plt.vlines(timeToMoveWheel[i], -200, 200, ls='--', color='k')
     plt.vlines(initiationTime[i], -200, 200, ls='-', color='g')
     plt.vlines(otherTime[i], -200, 200, ls='--', color='m')
