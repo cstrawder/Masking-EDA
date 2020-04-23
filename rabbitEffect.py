@@ -86,11 +86,79 @@ rabbitt['prevCorrect'] = prevCorr
 
 
 
+#### ------------
+
+currentTrialPrevError = []
+currentTrialPrevCorr = []
+trialThatIsPrevError = []  # these are the inds of the prev trial in question
+trialThatIsPrevCorr = []
 
 
+# get indices of trials where prev trial was either corr/error 
+# e is the ind of previous trial, e+1 is ind of current trial (That we want the time for)
+for e, (prev, current) in enumerate(zip(df['resp'][:-1], df['resp'][1:])):
+    
+    if current==1:
+        if (df.loc[e, 'rewDir'] !=0) and (df.loc[e+1, 'rewDir'] !=0):
+            if (df.loc[e, 'ignoreTrial'] !=True) and (df.loc[e+1, 'ignoreTrial'] !=True):
+                if prev==-1:
+                    currentTrialPrevError.append(e+1)
+                    trialThatIsPrevError.append(e)
+                elif prev==1:
+                        currentTrialPrevCorr.append(e+1)  # append the ind of the current trial
+                        trialThatIsPrevCorr.append(e)
+
+# use indices to get outcome times from df    
+# these are the times for the previous trial
+timePrevIncorrect = [df.loc[time, 'outcomeTime'] for time in trialThatIsPrevError]
+timePrevCorrect = [df.loc[time, 'outcomeTime'] for time in trialThatIsPrevCorr]
+
+#these are all correct, current trials; preceding trials differ (above)
+timeCurrTrialPrevIncorrect = [df.loc[time, 'outcomeTime'] for time in currentTrialPrevError]
+timeCurrTrialPrevCorrect = [df.loc[time, 'outcomeTime'] for time in currentTrialPrevCorr]
 
 
+  
 
+plt.figure()
+sns.barplot(data=[timePrevIncorrect, timePrevCorrect])
+
+plt.ylabel('Response Time')
+plt.title('Response Time vs Previous Trial')
+plt.xlabel('Previous Trial Type')
+plt.xticks(ticks=[0,1], labels=['incorrect', 'correct'])
+
+plt.figure()
+plt.hist(timePrevIncorrect)
+plt.title('Distribution of response times, previous trial incorrect')
+plt.xlabel('Response Time')
+plt.ylabel('Number of Trials')
+
+plt.figure()
+plt.hist(timePrevCorrect, color='g')
+plt.title('Distribution of response times, prev trial correct')
+plt.title('Distribution of response times, previous trial correct')
+plt.xlabel('Response Time')
+plt.ylabel('Number of Trials')
+
+fig, ax = plt.subplots()
+plt.scatter(timePrevIncorrect, timeCurrTrialPrevIncorrect, color='m', alpha=.5)
+plt.title('Response Time of Current Trial vs Previous Incorrect Trial')
+plt.xlabel('Response Time, Previous Trial Incorrect (ms))')
+plt.ylabel('Response Time, Current Trial Correct (ms))')
+ax.plot((100,800), (100,800), ls="--", color='k', alpha=.3)
+ax.set_xlim(100,800)
+ax.set_ylim(100,800)
+
+
+fig, ax = plt.subplots()
+plt.scatter(timePrevCorrect, timeCurrTrialPrevCorrect, color='c', alpha=.5)
+plt.title('Response Time of Current Trial vs Previous Correct Trial')
+plt.xlabel('Response Time, Previous Trial Correct (ms))')
+plt.ylabel('Response Time, Current Trial Correct (ms))')
+ax.plot((100,800),(100,800), ls="--", color='k', alpha=.3)
+ax.set_xlim(100,800)
+ax.set_ylim(100,800)
 
 
 
