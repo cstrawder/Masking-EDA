@@ -248,12 +248,13 @@ test = np.random.randint(0, len(interpWheel), 60)
 
 test = [i for i, e in enumerate(interpWheel) if type(e)!=int]
 
-for i in range(30):
+for i in test[:40]:
     plt.figure()
     plt.plot(interpWheel[i], lw=2)
     plt.title(i)
-    plt.vlines(initiateMovement[i], -400, 400, ls='--')
-    plt.vlines(outcomeTimes[i], -400, 400, ls='--')
+    plt.vlines(initiateMovement[i], -400, 400, ls='--', color='m', alpha=.4)
+    plt.vlines(significantMovement[i], -400, 400, ls='--', color='c', alpha=.4 )
+    plt.vlines(outcomeTimes[i], -400, 400, ls='--', color='b', alpha=.3)
     
     plt.vlines(timeToMoveWheel[i], -200, 200, ls='--', color='k')
     plt.vlines(initiationTime[i], -200, 200, ls='-', color='g')

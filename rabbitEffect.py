@@ -9,11 +9,17 @@ will the response time be longer for a correct trial that follows an incorrect t
 
 incorrect == turned the wrong way (not no resp)
 
+possible combinations:
+    correct --> incorrect
+    correct --> correct
+    incorrect --> incorrect
+    incorrect --> correct * this is the one the theory is concerned with, 
+                            but the others are interesting as well 
+
 
 """
 
-from dataAnalysis import import_data, create_df  # for now - won't need once function is complete
-from dataAnalysis import wheel_trace_slice
+from dataAnalysis import import_data, create_df  
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -21,7 +27,7 @@ import matplotlib.pyplot as plt
 
 
 d = import_data()
-df = create_df()
+df = create_df(d)
 
 trials = []
 oppRabbit = []
@@ -159,7 +165,6 @@ plt.ylabel('Response Time, Current Trial Correct (ms))')
 ax.plot((100,800),(100,800), ls="--", color='k', alpha=.3)
 ax.set_xlim(100,800)
 ax.set_ylim(100,800)
-
 
 
 
