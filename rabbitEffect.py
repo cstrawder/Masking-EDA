@@ -19,7 +19,7 @@ possible combinations:
 
 """
 
-from dataAnalysis import import_data, create_df  
+from dataAnalysis import import_data, create_df, get_dates
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -94,9 +94,10 @@ rabbitt['prevCorrect'] = prevCorr
 
 #### ------------
 
-currentTrialPrevError = []
+currentTrialPrevError = []  # inds of current trial
 currentTrialPrevCorr = []
-trialThatIsPrevError = []  # these are the inds of the prev trial in question
+
+trialThatIsPrevError = []  # these are the inds of the prev trial to above trials
 trialThatIsPrevCorr = []
 
 
@@ -120,36 +121,39 @@ timePrevIncorrect = [df.loc[time, 'outcomeTime'] for time in trialThatIsPrevErro
 timePrevCorrect = [df.loc[time, 'outcomeTime'] for time in trialThatIsPrevCorr]
 
 #these are all correct, current trials; preceding trials differ (above)
-timeCurrTrialPrevIncorrect = [df.loc[time, 'outcomeTime'] for time in currentTrialPrevError]
-timeCurrTrialPrevCorrect = [df.loc[time, 'outcomeTime'] for time in currentTrialPrevCorr]
+timeCurrTrialWithPrevIncorrect = [df.loc[time, 'outcomeTime'] for time in currentTrialPrevError]
+timeCurrTrialWithPrevCorrect = [df.loc[time, 'outcomeTime'] for time in currentTrialPrevCorr]
 
 
-  
+date = get_dates(df)
+
 
 plt.figure()
-sns.barplot(data=[timePrevIncorrect, timePrevCorrect])
+sns.barplot(data=[timeCurrTrialWithPrevIncorrect, timeCurrTrialWithPrevCorrect])
 
-plt.ylabel('Response Time')
+plt.ylabel('Response Time of Next Trial (correct), (ms)')
 plt.title('Response Time vs Previous Trial')
+plt.suptitle(df.mouse + '  ' +  date)
 plt.xlabel('Previous Trial Type')
 plt.xticks(ticks=[0,1], labels=['incorrect', 'correct'])
 
-plt.figure()
-plt.hist(timePrevIncorrect)
-plt.title('Distribution of response times, previous trial incorrect')
-plt.xlabel('Response Time')
-plt.ylabel('Number of Trials')
-
-plt.figure()
-plt.hist(timePrevCorrect, color='g')
-plt.title('Distribution of response times, prev trial correct')
-plt.title('Distribution of response times, previous trial correct')
-plt.xlabel('Response Time')
-plt.ylabel('Number of Trials')
+#plt.figure()
+#plt.hist(timePrevIncorrect)
+#plt.title('Distribution of response times, previous trial incorrect')
+#plt.xlabel('Response Time')
+#plt.ylabel('Number of Trials')
+#
+#plt.figure()
+#plt.hist(timePrevCorrect, color='g')
+#plt.title('Distribution of response times, prev trial correct')
+#plt.title('Distribution of response times, previous trial correct')
+#plt.xlabel('Response Time')
+#plt.ylabel('Number of Trials')
 
 fig, ax = plt.subplots()
-plt.scatter(timePrevIncorrect, timeCurrTrialPrevIncorrect, color='m', alpha=.5)
+plt.scatter(timePrevIncorrect, timeCurrTrialWithPrevIncorrect, color='m', alpha=.5)
 plt.title('Response Time of Current Trial vs Previous Incorrect Trial')
+plt.suptitle(df.mouse + '  ' + df.date)
 plt.xlabel('Response Time, Previous Trial Incorrect (ms))')
 plt.ylabel('Response Time, Current Trial Correct (ms))')
 ax.plot((100,800), (100,800), ls="--", color='k', alpha=.3)
@@ -158,8 +162,9 @@ ax.set_ylim(100,800)
 
 
 fig, ax = plt.subplots()
-plt.scatter(timePrevCorrect, timeCurrTrialPrevCorrect, color='c', alpha=.5)
+plt.scatter(timePrevCorrect, timeCurrTrialWithPrevCorrect, color='c', alpha=.5)
 plt.title('Response Time of Current Trial vs Previous Correct Trial')
+plt.suptitle(df.mouse + '  ' + df.date)
 plt.xlabel('Response Time, Previous Trial Correct (ms))')
 plt.ylabel('Response Time, Current Trial Correct (ms))')
 ax.plot((100,800),(100,800), ls="--", color='k', alpha=.3)
