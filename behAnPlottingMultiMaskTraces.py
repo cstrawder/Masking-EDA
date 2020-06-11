@@ -4,6 +4,11 @@
 Created on Fri May 03 18:44:40 2019
 
 @author: svc_ccg
+
+This is supposed to be a copy of behaviorAnalysis that separates out trials by 
+mask onset, and plots those wheel traces together - or plots them all on one plot by color 
+
+
 """
 
 import numpy as np
@@ -151,39 +156,79 @@ def makeWheelPlot(data, returnData=False, responseFilter=[-1,0,1], ignoreRepeats
     formatFigure(fig, ax, xLabel='Time from stimulus onset (s)', 
                  yLabel='Wheel Position (pix)', title=name_date[-3:-1] + subtitle)
     plt.tight_layout()
+ 
+    
+'''
+Here is code to plot the masking trials separately from the other trials (target only, nogo)
+mask=True means plot the masking trials 
+maskOnly=True means only plot the masking trials, and separate by color 
+
+'''
+   
     
     if mask:
-        maskContrast = d['trialMaskContrast'][:len(trialResponse)]  
-        maskOnset = d['trialMaskOnset'][:len(trialResponse)]
+        trialMaskContrast = d['trialMaskContrast'][:len(trialResponse)]  
+        trialMaskOnset = d['trialMaskOnset'][:len(trialResponse)]
+        trialStimStartFrames = d['trialStimStartFrame'][:len(trialResponse)]
+        maxTrialFrames = d['maxResponseWaitFrames'][()]
+# better to use interp here?
+        trialTime = (np.arange(maxTrialFrames+framesToShowBeforeStart))/frameRate  
+
+        onset = np.unique(trialMaskOnset)   #soa==0 includes target only, nogo, and mask only - need to split
+        
         fig, ax = plt.subplots()
         nogoMask = []
         rightMask = []
         leftMask = []
         for i, (trialStart, trialEnd, rewardDirection, mask, soa, resp) in enumerate(zip(
-                trialStartFrames, trialEndFrames, trialRewardDirection, maskContrast, maskOnset, trialResponse)):
+                trialStimStartFrames, trialEndFrames, trialRewardDirection, 
+                trialMaskContrast, trialMaskOnset, trialResponse)):
             if i>0 and i<len(trialStartFrames):
                 if resp in responseFilter:
                     trialWheel = np.cumsum(
-                            deltaWheel[trialStart-framesToShowBeforeStart:trialStart-framesToShowBeforeStart + maxTrialFrames
-                                       ])
+                            deltaWheel[trialStart-framesToShowBeforeStart:
+                                trialStart + maxTrialFrames])
                     trialWheel -= trialWheel[0]
                     trialreward = np.where((rewardFrames>trialStart)&(rewardFrames<=trialEnd))[0]
                     rewardFrame = rewardFrames[trialreward[0]]-trialStart+framesToShowBeforeStart if len(trialreward)>0 else None
+
+#       plotting nogo trials - Necessary??
 #                    if nogo[i] and mask==0:
 #                        ax.plot(trialTime[:trialWheel.size], trialWheel, 'g', alpha=0.3)   # plotting no-go trials
+#                        
 #                        if rewardFrame is not None:
 #                            ax.plot(trialTime[rewardFrame], trialWheel[rewardFrame], 'go')
 #                        nogoMask.append(trialWheel)
                     
                     if maskOnly==True:
-                        pass
+                        if rewardDirection!=0:
+                            from matplotlib.cm import get_cmap
+                            cmap = get_cmap('Dark2')     # type: matplotlib.colors.ListedColormap
+                            colors = cmap.colors
+                            cols = int(len(onset)/2)
+                            fig, axes = plt.subplots(nrows=2, ncols=cols)
+                            for a, o, c in zip(axes.flatten(), onset, colors[:len(onset)]):
+                                if soa==o:
+                                    a.plot(trialTime[:trialWheel.size], trialWheel, color=c, alpha=.3, label=str(soa)) 
+           
+'''
+above approach not working - try to create a dict that saves all the wheel traces for each soa,
+then plots all the traces on a new subplot for each soa - 6 separate plots, or maybe 6 in one plot?
+'''
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     else:
                         if rewardDirection!=0:
 #                            ax.plot(trialTime[:trialWheel.size], trialWheel, 'r', alpha=0.2)  #plotting right turning 
 #                            if rewardFrame is not None:
 #                                ax.plot(trialTime[rewardFrame], trialWheel[rewardFrame], 'ro')
 #                            rightMask.append(trialWheel)
-                                
                             if soa==3:
                                 ax.plot(trialTime[:trialWheel.size], trialWheel,  color='m', alpha=.3) 
                                 rightMask.append(trialWheel)
@@ -200,6 +245,7 @@ def makeWheelPlot(data, returnData=False, responseFilter=[-1,0,1], ignoreRepeats
                             if rewardFrame is not None:
                                 ax.plot(trialTime[rewardFrame], trialWheel[rewardFrame], 'bo')
                             leftMask.append(trialWheel)
+                            
         rightMask = pd.DataFrame(rightMask).fillna(np.nan).values
         leftMask = pd.DataFrame(leftMask).fillna(np.nan).values
         nogoMask = pd.DataFrame(nogoMask).fillna(np.nan).values
@@ -208,25 +254,7 @@ def makeWheelPlot(data, returnData=False, responseFilter=[-1,0,1], ignoreRepeats
         ax.plot(trialTime[:nogoMask.shape[1]], np.nanmean(nogoMask,0), 'k', linewidth=3)
         ax.plot([trialTime[framesToShowBeforeStart+openLoopFrames]]*2, ax.get_ylim(), 'k--')
         
-        
-#        if table==True:
-#            cell_texts = session(d,ignoreRepeats=True, printValues=False)
-#            plt.figure()
-#            for i, (key, val) in enumerate(cell_texts.items()):
-#                plt.text(i,i, (key, val))
-#            plt.set_ylim
-#            columns = ('Trials', 'Correct', 'Incorrect', 'No Resp')
-#            rows = ('Total', 'Left', 'Right', 'No Go')
-#            table = ax.table(cellText=cell_texts,
-#                      rowLabels=rows,
-#                      colLabels=columns,
-#                      colWidths=[.2,.2,.2,.2],
-#                      loc='bottom',
-#                      bbox=[0, -0.5, 1, 0.275]
-#                      )
-#            plt.subplots_adjust(left=.2, bottom=0.2)
-#        
-        
+                      
         formatFigure(fig, ax, xLabel='Time from stimulus onset (s)', 
                      yLabel='Wheel Position (pix)', title=name_date[-3:-1] + [ 'Mask Trials'])
         plt.tight_layout()
