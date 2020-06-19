@@ -16,6 +16,9 @@ use .dtype to check data type in datasets
 This is a copy of the orginal script, intended for Python 3 and working at my computer.
 """
 
+# change this to use the dataframea
+
+
 import h5py as h5
 import numpy as np
 import fileIO
@@ -26,9 +29,9 @@ import fileIO
 
 #this returns an integer of how many trials fulfilled the criteria (i.e correct right response, incorrect left response)
 # these ints are later used to calculate the percent of the total
-def session_stats(d):
+def session_stats(d, nogo=False):
 
-    print(str(d))
+    print(str(d) + '\n')
 
     def count(resp, direction):
         return len(trialResponse[(trialResponse==resp) & (trialRewardDirection==direction) & (trialTargetFrames!=0)])
@@ -86,9 +89,9 @@ def session_stats(d):
         print(str(title) + '   ' + str(round(num/denom, 2)))
         
     
-    #  make this a function? 
+#######  make this a function? 
     
-    if 0 in trialTargetFrames:
+    if nogo==True :
         no_goTotal = len(trialTargetFrames[trialTargetFrames==0])
         no_goCorrect = len(trialResponse[(trialResponse==1) & (trialTargetFrames==0)]) 
         print('No-go Correct:  ' + str(round(no_goCorrect/no_goTotal, 2)*100) + '% of ' + str(no_goTotal))
@@ -146,10 +149,11 @@ def session_stats(d):
     else:
         print('*There were no nogos')
         
+#########        
     trialRewards = 0    
         
     for trial, rew in zip(trialResponse, trialRewardDirection):
-        if trial==0 & rew==0:
+        if trial==0 & np.isfinite(rew):   #ie not 'nan'
             trialRewards+=1
         elif rew==1:
             trialRewards+=1
