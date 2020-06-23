@@ -29,13 +29,15 @@ def catch_trials(d):
     df = create_df(d)
     
     monitorSize = d['monSizePix'][0] 
-    normRewardDist = d['normRewardDistance'][()]
+    normRewardDist = d['wheelRewardDistance'][()] if 'wheelRewardDistance' in d.keys() else d['normRewardDistance'][()]
     #maxQuiescentMove = d['maxQuiescentNormMoveDist'][()]
    # sigMove = maxQuiescentMove * monitorSize
-    rewThreshold = normRewardDist * monitorSize
+    ylabel = 'Wheel Distance Turned (mm)' if 'wheelRewardDistance' in d.keys() else 'Wheel Position'
+    wheelRad = d['wheelRadius'][()]
+    rewThreshold = normRewardDist if 'wheelRewardDistance' in d.keys() else normRewardDist*monitorSize
     maxResp = d['maxResponseWaitFrames'][()]
     trialRew = d['trialResponseDir'][:]
-    
+    closedLoop = d['openLoopFramesFixed'][()]
     
     catchTrials = [i for i, row in df.iterrows() if row.isnull().any()]
     
@@ -55,8 +57,8 @@ def catch_trials(d):
     wheelDir = []
     
     fig, ax = plt.subplots()
-    plt.vlines(24, -1000, 1000, ls='--', color='g', label='Start Closed Loop')
-    plt.vlines(maxResp + 24, -1000, 1000, ls='--', color='b', alpha=.5, label='Max Response Wait Frame')
+    plt.vlines(closedLoop, -20, 20, ls='--', color='g', label='Start Closed Loop')
+    plt.vlines(maxResp + closedLoop, -20, 20, ls='--', color='b', alpha=.5, label='Max Response Wait Frame')
     
     for i in catchTrials:
         stim = df.loc[i, 'stimStart']
@@ -64,6 +66,7 @@ def catch_trials(d):
         ol = int(df.loc[i, 'openLoopFrames'])
         ind = stim - start 
         wheel = np.cumsum(df.loc[i, 'deltaWheel'][ind:])
+        wheel *= wheelRad
         if i not in catchMove:
             ax.plot(wheel, c='k', alpha=.2)
             
@@ -72,7 +75,7 @@ def catch_trials(d):
             direction = np.argmax(abs(wheel[ol:]) >= (abs(rewThreshold + wheel[ol]))) + ol
             wheelDir.append(wheel[direction])
     
-    formatFigure(fig, ax, title="Catch Trial Wheel Traces", xLabel="Trial Length (s)", yLabel="Wheel Position") 
+    formatFigure(fig, ax, title="Catch Trial Wheel Traces", xLabel="Trial Length (s)", yLabel=ylabel) 
     
     ax.set_xticks(np.arange(0, 160, 24))
     xlabl = [np.round(i/df.framerate, 2) for i in ax.get_xticks()]

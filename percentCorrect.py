@@ -33,6 +33,28 @@ def session_stats(d, nogo=False):
 
     print(str(d) + '\n')
 
+
+    normReward = d['normRewardDistance'][()]
+    wheelReward = d['wheelRewardDistance'][()]
+    maxResp = d['maxResponseWaitFrames'][()]
+    probNogo = d['probNoGo'][()]
+    probGoR = d['probGoRight'][()]
+    
+    fi = d['frameIntervals'][:]
+    framerate = int(np.round(1/np.median(fi)))
+    sessionDuration = d['trialResponseFrame'][-1]
+    
+    if 'wheelRewardDistance' in d.keys():
+        print('Wheel Reward Dist: ' + str(wheelReward))
+    
+    print('Norm reward: ' + str(normReward))
+    print('Max wait frames: ' + str(maxResp))
+    print('Prob nogo: ' + str(probNogo))
+    print('Prob go right: ' + str(probGoR))
+    print('Session duration (mins): ' + str(np.round(sessionDuration/framerate/60, 2)))
+    print('\n')
+
+
     def count(resp, direction):
         return len(trialResponse[(trialResponse==resp) & (trialRewardDirection==direction) & (trialTargetFrames!=0)])
     
@@ -44,7 +66,7 @@ def session_stats(d, nogo=False):
     if d['incorrectTrialRepeats'][...]>0:
         ignore = 'yes' #input('Ignore repeats? (yes/no)  ')   # yes or no in console to ignore repeated trial results
     else:
-        pass
+        ignore = 'no'
     
     
     if ignore.upper()== 'YES': 
@@ -163,21 +185,7 @@ def session_stats(d, nogo=False):
     print("Rewards this session:  " + str(trialRewards))
     
     
-    normReward = d['normRewardDistance'][()]
-    maxResp = d['maxResponseWaitFrames'][()]
-    probNogo = d['probNoGo'][()]
-    probGoR = d['probGoRight'][()]
-    
-    fi = d['frameIntervals'][:]
-    framerate = int(np.round(1/np.median(fi)))
-    sessionDuration = d['trialResponseFrame'][-1]
-    
-    print('\n')
-    print('Norm reward: ' + str(normReward))
-    print('Max wait frames: ' + str(maxResp))
-    print('Prob nogo: ' + str(probNogo))
-    print('Prob go right: ' + str(probGoR))
-    print('Session duration (mins): ' + str(np.round(sessionDuration/framerate/60, 2)))
+
     
     
     
