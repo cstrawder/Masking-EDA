@@ -16,7 +16,7 @@ use .dtype to check data type in datasets
 This is a copy of the orginal script, intended for Python 3 and working at my computer.
 """
 
-# change this to use the dataframea
+# change this to use the dataframe ******  
 
 
 import h5py as h5
@@ -33,24 +33,17 @@ def session_stats(d, nogo=False):
 
     print(str(d) + '\n')
 
-
-    normReward = d['normRewardDistance'][()]
-    wheelReward = d['wheelRewardDistance'][()]
-    maxResp = d['maxResponseWaitFrames'][()]
-    probNogo = d['probNoGo'][()]
-    probGoR = d['probGoRight'][()]
-    
     fi = d['frameIntervals'][:]
     framerate = int(np.round(1/np.median(fi)))
     sessionDuration = d['trialResponseFrame'][-1]
     
     if 'wheelRewardDistance' in d.keys():
-        print('Wheel Reward Dist: ' + str(wheelReward))
+        print('Wheel Reward Dist: ' + str(d['wheelRewardDistance'][()]))
     
-    print('Norm reward: ' + str(normReward))
-    print('Max wait frames: ' + str(maxResp))
-    print('Prob nogo: ' + str(probNogo))
-    print('Prob go right: ' + str(probGoR))
+    print('Norm reward: ' + str(d['normRewardDistance'][()]))
+    print('Max wait frames: ' + str(d['maxResponseWaitFrames'][()]))
+    #print('Prob nogo: ' + str(d['probNoGo'][()]))
+    print('Prob go right: ' + str(d['probGoRight'][()]))
     print('Session duration (mins): ' + str(np.round(sessionDuration/framerate/60, 2)))
     print('\n')
 
@@ -61,24 +54,34 @@ def session_stats(d, nogo=False):
     trialResponse = d['trialResponse'][:]
     trialRewardDirection = d['trialRewardDir'][:len(trialResponse)]
     trialTargetFrames = d['trialTargetFrames'][:len(trialResponse)]
-    targetFrames = d['targetFrames'][()]
     
     if d['incorrectTrialRepeats'][...]>0:
-        ignore = 'yes' #input('Ignore repeats? (yes/no)  ')   # yes or no in console to ignore repeated trial results
+        ignore = 'yes' #input('Ignore repeats? (yes/no)  ')  
     else:
         ignore = 'no'
+        
+        
+    catchTrials = [e for e,i in enumerate(trialRewardDirection) if not np.isfinite(i)]
+    notCatch = [e for e,i in enumerate(trialRewardDirection) if np.isfinite(i)]
+    totalTrials = len(trialResponse) - len(catchTrials)
     
+    trialRewardDirection = trialRewardDirection[np.isfinite(trialResponse)]
+    trialTargetFrames = trialTargetFrames[np.isfinite(trialResponse)]
+    trialResponse = trialResponse[np.isfinite(trialResponse)]
+
     
     if ignore.upper()== 'YES': 
-        trialResponseOG = trialResponse
+        trialResponseOG = trialResponse.copy()
         prevTrialIncorrect = np.concatenate(([False],trialResponseOG[:-1]<1))
         trialResponse = trialResponseOG[prevTrialIncorrect==False]
         trialRewardDirection = trialRewardDirection[prevTrialIncorrect==False]
+        
         trialTargetFrames = trialTargetFrames[prevTrialIncorrect==False]
-        print('Repeats: ' + (str((len(trialResponseOG) - len(trialResponse)))) + '/' + str(len(trialResponseOG)))
+        print('Repeats: ' + (str(len(prevTrialIncorrect[prevTrialIncorrect==True])) + 
+                             '/' + str(len(trialResponseOG))))
     elif ignore.upper() == 'NO':
         trialResponse = d['trialResponse'][:]
-        print('Trials: ' + (str(len(trialResponse))))
+        print('Trials: ' + (str(totalTrials)))
     else:
         print('Please type yes or no')
         ignore = input('Ignore repeats?  ')
@@ -111,6 +114,20 @@ def session_stats(d, nogo=False):
         print(str(title) + '   ' + str(round(num/denom, 2)))
         
     
+    trialRewards = np.sum(trialResponse==1)  
+    
+        
+#    for i, (trial, rew) in enumerate(zip(trialResponse, trialRewardDirection)):
+#        if i not in catchTrials:
+#            if trial==1:
+#                trialRewards += 1
+        
+    print("Rewards this session:  " + str(trialRewards))
+    
+    
+    
+    
+    
 #######  make this a function? 
     
     if nogo==True :
@@ -118,9 +135,6 @@ def session_stats(d, nogo=False):
         no_goCorrect = len(trialResponse[(trialResponse==1) & (trialTargetFrames==0)]) 
         print('No-go Correct:  ' + str(round(no_goCorrect/no_goTotal, 2)*100) + '% of ' + str(no_goTotal))
         
-        
-        
-    
     #returns an array of values that show the direction turned for ALL no-go trials, then returns % per direction  
         no_goTurnDir = []
     
@@ -172,17 +186,7 @@ def session_stats(d, nogo=False):
         print('*There were no nogos')
         
 #########        
-    trialRewards = 0    
-        
-    for trial, rew in zip(trialResponse, trialRewardDirection):
-        if trial==0 & np.isfinite(rew):   #ie not 'nan'
-            trialRewards+=1
-        elif rew==1:
-            trialRewards+=1
-        else:
-            pass
-        
-    print("Rewards this session:  " + str(trialRewards))
+
     
     
 

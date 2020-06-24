@@ -65,13 +65,13 @@ def catch_trials(d):
         start = df.loc[i, 'trialStart']
         ol = int(df.loc[i, 'openLoopFrames'])
         ind = stim - start 
-        wheel = np.cumsum(df.loc[i, 'deltaWheel'][ind:])
-        wheel *= wheelRad
+        wheel = np.cumsum(df.loc[i, 'deltaWheel'][ind:]*wheelRad)
         if i not in catchMove:
             ax.plot(wheel, c='k', alpha=.2)
             
         if i in catchMove:
             ax.plot(wheel, c='c', alpha=.6, label="Reward Trial" if "Reward Trial" not in plt.gca().get_legend_handles_labels()[1] else '')  
+#            ax.plot(wheel[])  # plotting "rewards"
             direction = np.argmax(abs(wheel[ol:]) >= (abs(rewThreshold + wheel[ol]))) + ol
             wheelDir.append(wheel[direction])
     
