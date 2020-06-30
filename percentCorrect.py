@@ -16,23 +16,20 @@ use .dtype to check data type in datasets
 This is a copy of the orginal script, intended for Python 3 and working at my computer.
 """
 
-# change this to use the dataframe ******  
+####################### change this to use the dataframe ******  #####################
 
 
-import h5py as h5
 import numpy as np
-import fileIO
-
-#
-#f = fileIO.getFile(rootDir=r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking')
-#d = h5.File(f)
+from dataAnalysis import create_df
 
 #this returns an integer of how many trials fulfilled the criteria (i.e correct right response, incorrect left response)
 # these ints are later used to calculate the percent of the total
 def session_stats(d, nogo=False):
 
     print(str(d) + '\n')
-
+    
+    df = create_df(d)
+    
     fi = d['frameIntervals'][:]
     framerate = int(np.round(1/np.median(fi)))
     sessionDuration = d['trialResponseFrame'][-1]
@@ -124,7 +121,10 @@ def session_stats(d, nogo=False):
         
     print("Rewards this session:  " + str(trialRewards))
     
-    
+    ignored = df.groupby(['rewDir'])['ignoreTrial'].sum(sorted=True) # num of ignore trials by side and total
+
+    print('Ignored: ')
+    print(ignored)
     
     
     
