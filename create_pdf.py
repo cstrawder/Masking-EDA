@@ -15,40 +15,48 @@ import dataAnalysis
 import qualityControl
 from percentCorrect import session_stats
 from catchTrials import catch_trials
+import matplotlib.pyplot as plt
 
 
 # choose mouse file
 d = dataAnalysis.import_data()
-
-# plot session wheel trace - 1 plot, unless mask==True - 2 plots
-##  if session is from 1/13 - 1/28, use framesToShowBeforeStart=30, else 60
-
-behaviorAnalysis.makeWheelPlot(d, responseFilter=[-1,0,1], 
-                               ignoreRepeats=True, framesToShowBeforeStart=60, 
-                               mask=False, maskOnly=False, xlim=[0, .8])
-
-# plot no response trials only (with repeats)
-behaviorAnalysis.makeWheelPlot(d, responseFilter=[0], 
-                               ignoreRepeats=False, framesToShowBeforeStart=60, 
-                               mask=False, maskOnly=False,  xlim=[0, .8])
-
-# plot activity over entire session, trial-by-trial - 1 plot
-plot_session(d)
-
-
-# plots catch trial wheel traces 
-catch_trials(d, xlim=[0, .8])   
 
 mouse_id=d['subjectName'][()]
 date = d['startTime'][()].split('_')[0][-4:]
 date = date[:2]+'-'+date[2:]
 directory = r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking\active_mice'
 dataDir = os.path.join(os.path.join(directory, mouse_id), 'Plots') 
-plt.savefig(dataDir+'/Wheel Plots/Catch/' + mouse_id + ' catch ' + date + '.png', dpi=300, bbox_inches='tight')
+
+# daily wheel 
+behaviorAnalysis.makeWheelPlot(d, responseFilter=[-1,0,1], 
+                               ignoreRepeats=True, framesToShowBeforeStart=60, 
+                               mask=False, maskOnly=False, xlim=[0, .8])
+
+plt.savefig(dataDir+'/Wheel Plots/Daily Wheel/' + mouse_id + ' ' + date + '.png', dpi=300, bbox_inches='tight')
 
 
 # prints out performance counts/% from session
 session_stats(d)
+
+
+# plot no response trials only (with repeats)
+behaviorAnalysis.makeWheelPlot(d, responseFilter=[0], 
+                               ignoreRepeats=False, framesToShowBeforeStart=60, 
+                               mask=False, maskOnly=False,  xlim=[0, .8])
+
+
+
+# plots catch trial wheel traces 
+catch_trials(d, xlim=[0, .8]) 
+
+plt.savefig(dataDir+'/Wheel Plots/Catch/' + mouse_id + ' catch ' + date + '.png', dpi=300, bbox_inches='tight')
+
+
+# plot activity over entire session, trial-by-trial - 1 plot
+plot_session(d)
+plt.savefig(dataDir+'/Wheel Plots/Session/' + mouse_id + ' session ' + date + '.png', dpi=300, bbox_inches='tight')
+
+
 
 
 # check for dropped frames

@@ -202,14 +202,19 @@ maskOnly=True means only plot the masking trials, and separate by color
                     
                     if maskOnly==True:
                         if rewardDirection!=0:
-                            from matplotlib.cm import get_cmap
-                            cmap = get_cmap('Dark2')     # type: matplotlib.colors.ListedColormap
-                            colors = cmap.colors
-                            cols = int(len(onset)/2)
-                            fig, axes = plt.subplots(nrows=2, ncols=cols)
-                            for a, o, c in zip(axes.flatten(), onset, colors[:len(onset)]):
-                                if soa==o:
-                                    a.plot(trialTime[:trialWheel.size], trialWheel, color=c, alpha=.3, label=str(soa)) 
+                            print(soa)
+                            onsetDict = defaultdict(list)
+                            onsetDict[soa].append(trialWheel)
+                            
+                            
+                        
+        from matplotlib.cm import get_cmap
+        cmap = get_cmap('Dark2')     # type: matplotlib.colors.ListedColormap
+        colors = cmap.colors
+        cols = int(len(onset)/2)
+        fig, axes = plt.subplots(nrows=2, ncols=cols)
+        for a, o, c in zip(axes.flatten(), onsetDict, colors[:len(onset)]):
+            a.plot(o, trialWheel, color=c, alpha=.3, label=str(soa)) 
            
 '''
 above approach not working - try to create a dict that saves all the wheel traces for each soa,
