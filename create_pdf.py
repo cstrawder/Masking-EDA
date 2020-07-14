@@ -36,9 +36,14 @@ def create_daily_summary(d):
     directory = r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking\active_mice'
     dataDir = os.path.join(os.path.join(directory, mouse_id), 'Plots/') 
     
-    c = canvas.Canvas(mouse_id + ' Daily Summary ' + date + '.pdf', pagesize=letter)
+    outfileDir = ('/' + mouse_id + '/Daily Summary/')
+    outfileName = (mouse_id + ' Daily Summary ' + date + '.pdf')
+    outfilePath = os.path.join(outfileDir, outfileName)
     
-    # insert "Daily Summary" at top bold, mouse id, and date 
+    c = canvas.Canvas(directory + outfilePath, pagesize=letter)
+
+# page 1    
+# insert "Daily Summary" at top bold, mouse id, and date 
     c.setFont('Helvetica-Bold', 12)
     c.drawString(2*inch, 10.5*inch, 'Daily Summary:   ')
     c.setFont('Helvetica', 12)
@@ -47,18 +52,17 @@ def create_daily_summary(d):
     
     
     
-    # insert daily wheel plot on left of canvas
+# insert daily wheel plot on left of canvas
     reportlab.platypus.Image(dataDir + '/Wheel Plots/Daily Wheel/' + mouse_id + ' ' + date + '.png', 
                              width=6*inch, height=4.5*inch).drawOn(c, .1*inch, 5.5*inch)
     
-    # no response wheel plot under daily wheel, same size
-    
+# no response wheel plot under daily wheel, same size
     reportlab.platypus.Image(dataDir + '/Wheel Plots/No Resp Wheel/' + mouse_id + ' ' + date + ' no resp.png',
                              width=6*inch, height=4.5*inch).drawOn(c, .1*inch, .2*inch)
     
-    # insert textbox with daily summary to right of plot - use textObject 
-            # set text origin 6.25 from left, .9 from top (inches)
-            # use textLines and moveCursor
+# insert textbox with daily summary to right of plot - use textObject 
+# set text origin 6.25 from left, .9 from top (inches)
+# use textLines and moveCursor
     sessionText = c.beginText()
     sessionText.setTextOrigin(6.2*inch, 9.8*inch)
     sessionText.setFont('Helvetica', 9)
@@ -75,16 +79,16 @@ def create_daily_summary(d):
     noResponse.textLine('No Response Trials')
     c.drawText(noResponse)
     
-    # break
+# break
     c.showPage()
     
     
-    
-    # insert catch trial wheel trace plot top left 
+# page 2    
+# insert catch trial wheel trace plot top left 
     reportlab.platypus.Image(dataDir + '/Wheel Plots/Catch/' + mouse_id + ' catch ' + date + '.png',
                              width=6*inch, height=4.5*inch).drawOn(c, .2*inch, 6*inch)
     
-    # insert textbox to right of plot with catch trial counts
+# insert textbox to right of plot with catch trial counts
     catchText = c.beginText()
     catchText.setTextOrigin(6.2*inch, 9.8*inch)
     catchText.setFont('Helvetica', 9)
@@ -96,35 +100,35 @@ def create_daily_summary(d):
     c.drawText(catchText)
     
     
-    # insert session plot - takes up entire bottom half, is already perfect size 
+# insert session plot - takes up entire bottom half, is already perfect size 
     reportlab.platypus.Image(dataDir + '/Session plots/' + mouse_id + ' session ' + date + '.png',
-                             width=8.2*inch, height=5.5*inch).drawOn(c, 0, 0)
-    
-    # break
+                             width=8.2*inch, height=5.5*inch).drawOn(c, 0, 0) 
+# break
     c.showPage()
     
-    # insert frame dist plot in upper left 1/6 
+    
+# page 3
+# insert frame dist plot in upper left 1/6 
     reportlab.platypus.Image(dataDir + '/Other plots/frame dist/' + 'frame dist ' + date + '.png',
                              width=4*inch, height=3*inch).drawOn(c, .2*inch, 7.5*inch)
     
-    # insert frame intervals plot in upper right 1/6 (same size)
+# insert frame intervals plot in upper right 1/6 (same size)
     reportlab.platypus.Image(dataDir + '/Other plots/frame intervals/' + 'frame intervals ' + date + '.png',
                              width=4*inch, height=3*inch).drawOn(c, 4.2*inch, 7.5*inch)
     
-    # insert wheel pos dist plot underneath 
+# insert wheel pos dist plot underneath 
     reportlab.platypus.Image(dataDir + '/Other plots/wheel pos/' + 'wheel ' + date + '.png',
-                             width=8*inch, height=6*inch).drawOn(c, .5*inch, 1*inch)
-    
-    # break
+                             width=8*inch, height=6*inch).drawOn(c, .5*inch, 1*inch)    
+# break
     c.showPage()
     
-    
-    # insert qVio sum plot top left 2/3s
+# page 4    
+# insert qVio sum plot top left 2/3s
     
     reportlab.platypus.Image(dataDir + '/Other plots/quiescent violations/' + 'Qvio ' + date + '.png',
                              width=6*inch, height=4.5*inch).drawOn(c, .1*inch, 5.5*inch)
     
-    # insert textbox in top right 1/3 with Qvios and max
+# insert textbox in top right 1/3 with Qvios and max
     violations = check_qviolations(d, arrayOnly=True)
     
     qvioText = c.beginText()
@@ -137,25 +141,11 @@ def create_daily_summary(d):
         qvioText.textLine(i)
     c.drawText(qvioText)
     
-    # insert qVio count below qVio sum, same size 
+# insert qVio count below qVio sum, same size 
     reportlab.platypus.Image(dataDir + '/Other plots/quiescent violations/' + 'Qvio ' + date + ' count.png',
                              width=6*inch, height=4.5*inch).drawOn(c, .2*inch, .2*inch)
-    # save 
-    
+#finish pdf    
     c.showPage()
+# save 
     c.save()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
