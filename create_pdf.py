@@ -5,14 +5,8 @@ Created on Mon Jul 13 14:54:31 2020
 @author: chelsea.strawder
 """
 
-import behaviorAnalysis
 import performanceBySOA
-from plottingTargetContrast import plot_contrast
-from plotting_target_lengths import plot_flash
-from SessionPerformance import plot_session
-from responsePlotByParam import plot_by_param
 import dataAnalysis
-import qualityControl
 from percentCorrect import session_stats
 from catchTrials import catch_trials
 import matplotlib.pyplot as plt
@@ -51,30 +45,56 @@ c.drawString(3.3*inch, 10.5*inch, mouse_id + '                 ' + titleDate)
 
 # insert daily wheel plot on left of canvas
 reportlab.platypus.Image(dataDir + mouse_id + ' ' + date + '.png', 
-                         width=6*inch, height=4.5*inch).drawOn(c, 0, 5.5*inch)
+                         width=6*inch, height=4.5*inch).drawOn(c, .1*inch, 5.5*inch)
 
 # no response wheel plot under daily wheel, same size
 
 reportlab.platypus.Image(dataDir + '/Wheel Plots/No Resp Wheel/' + mouse_id + ' ' + date + ' no resp.png',
-                         width=6*inch, height=4.5*inch).drawOn(c, 0, .2*inch)
+                         width=6*inch, height=4.5*inch).drawOn(c, .1*inch, .2*inch)
 
 # insert textbox with daily summary to right of plot - use textObject 
         # set text origin 6.25 from left, .9 from top (inches)
         # use textLines and moveCursor
-textobject = c.beginText()
-textobject.setTextOrigin(2*inch, 10.5*inch)
-textobject.setFont('Helvetica', 12)
-for stat in session_stats():
-    pass
-c.drawText(textobject)
+sessionText = c.beginText()
+sessionText.setTextOrigin(6.2*inch, 9.8*inch)
+sessionText.setFont('Helvetica', 9)
+sessionText.setLeading(12)
+sessionText.setWordSpace(1)
+session = session_stats(d, returnAs='str_array')
+for stat in session:
+    sessionText.textLine(stat)
+c.drawText(sessionText)
+
+noResponse = c.beginText()
+noResponse.setTextOrigin(6.2*inch, 3*inch)
+noResponse.setFont('Helvetica', 8.5)
+noResponse.textLine('No Response Trials')
+c.drawText(noResponse)
 
 # break
 c.showPage()
 
 
 # insert catch trial wheel trace plot top left 
+reportlab.platypus.Image(dataDir + '/Wheel Plots/Catch/' + mouse_id + ' catch ' + date + '.png',
+                         width=6*inch, height=4.5*inch).drawOn(c, .2*inch, 6*inch)
+
 # insert textbox to right of plot with catch trial counts
+catchText = c.beginText()
+catchText.setTextOrigin(6.2*inch, 9.8*inch)
+catchText.setFont('Helvetica', 9)
+catchText.setLeading(12)
+catchText.setWordSpace(1)
+catch = catch_trials(d, arrayOnly=True)
+for count in catch:
+    catchText.textLine(count)
+c.drawText(catchText)
+
+
 # insert session plot - takes up entire bottom half, is already perfect size 
+reportlab.platypus.Image(dataDir + '/Session plots/' + mouse_id + ' session ' + date + '.png',
+                         width=8.2*inch, height=5.5*inch).drawOn(c, 0, 0)
+
 # break
 c.showPage()
 
