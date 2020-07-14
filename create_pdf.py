@@ -22,6 +22,7 @@ from reportlab.pdfgen import canvas
 from reportlab.platypus import Image
 from reportlab.lib.units import inch
 from reportlab.lib.pagesizes import letter
+from datetime import datetime
 
 
 d = dataAnalysis.import_data()
@@ -32,21 +33,41 @@ date = date[:2]+'-'+date[2:]
 
 date = date if date[:2] in ['10','11','12'] else date[-4:]
 
+fullDate = d['startTime'][()][:8]
+titleDate = datetime.strptime(fullDate, '%Y%m%d').strftime('%A %B %d, %Y')
+ 
+
 directory = r'\\allen\programs\braintv\workgroups\nc-ophys\corbettb\Masking\active_mice'
 dataDir = os.path.join(os.path.join(directory, mouse_id), 'Plots/') 
 
-c = canvas.Canvas(mouse_id + ' Daily Summary ' + date + '.pdf', pagesize=letter, bottomup=1)
-
-
+c = canvas.Canvas(mouse_id + ' Daily Summary ' + date + '.pdf', pagesize=letter)
 
 # insert "Daily Summary" at top bold, mouse id, and date 
+c.setFont('Helvetica-Bold', 12)
+c.drawString(2*inch, 10.5*inch, 'Daily Summary:   ')
+c.setFont('Helvetica', 12)
+c.drawString(3.3*inch, 10.5*inch, mouse_id + '                 ' + titleDate)
+
+
 # insert daily wheel plot on left of canvas
-reportlab.platypus.Image(dataDir + mouse_id + ' ' + date + '.png', width=6*inch, height=4.5*inch).drawOn(c, 0, 10*inch)
+reportlab.platypus.Image(dataDir + mouse_id + ' ' + date + '.png', 
+                         width=6*inch, height=4.5*inch).drawOn(c, 0, 5.5*inch)
+
+# no response wheel plot under daily wheel, same size
+
+reportlab.platypus.Image(dataDir + '/Wheel Plots/No Resp Wheel/' + mouse_id + ' ' + date + ' no resp.png',
+                         width=6*inch, height=4.5*inch).drawOn(c, 0, .2*inch)
 
 # insert textbox with daily summary to right of plot - use textObject 
         # set text origin 6.25 from left, .9 from top (inches)
-# no response wheel under daily wheel, same size
-# word "No Response" next to plot 
+        # use textLines and moveCursor
+textobject = c.beginText()
+textobject.setTextOrigin(2*inch, 10.5*inch)
+textobject.setFont('Helvetica', 12)
+for stat in session_stats():
+    pass
+c.drawText(textobject)
+
 # break
 c.showPage()
 
