@@ -13,8 +13,7 @@ from SessionPerformance import plot_session
 from responsePlotByParam import plot_by_param
 import dataAnalysis
 import qualityControl
-from percentCorrect import session_stats
-from catchTrials import catch_trials
+sfrom catchTrials import catch_trials
 import matplotlib.pyplot as plt
 import os
 from fpdf import FPDF
@@ -55,9 +54,6 @@ plt.savefig(wheelDir+'/Daily Wheel/' + mouse_id + ' ' + date + '.png', dpi=300, 
 pdf.image(wheelDir+'/Daily Wheel/' + mouse_id + ' ' + date + '.png', x = 1, 
           y = 1, w = 6, h = 4, type = '', link = '')
 
-
-# prints out performance counts/% from session
-session_stats(d)
 
 
 # plot no response trials only (with repeats)
