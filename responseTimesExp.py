@@ -6,10 +6,12 @@ Created on Thu Aug 22 12:56:20 2019
 
 Creats dataframe of response times per trial, by side, and plots distributions - 
 
-(how quickly they turn after stim onset and/or goTone)
+(when they start turning in a trial,
+how quickly they turn after stim onset and/or goTone,
+how long it takes to reach an outcome,
+and translating the velocity of their turns into choice confidence)
 
-
-*add a plot of rxn times from the start of mask (not stimStart) to see if there is
+*add a plot of rxn times from MASK onset (not stimStart) to see if there is
 dependence on mask presence
 
 """
@@ -19,8 +21,7 @@ import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
-import scipy.signal
-import scipy.stats
+from scipy import signal, stats
 import seaborn as sns 
 
 from nogoData import nogo_turn
@@ -36,139 +37,179 @@ d = h5py.File(f)
 fi = d['frameIntervals'][:]
 framerate = int(np.round(1/np.median(fi)))
 
-trialResponse = d['trialResponse'][()]
+#in frames
+trialResponse = d['trialResponse'][:]
 end = len(trialResponse)
 trialRewardDirection = d['trialRewardDir'][:end]
 trialTargetFrames = d['trialTargetFrames'][:end]
-trialStimStartFrame = d['trialStimStartFrame'][:]
-trialResponseFrame = d['trialResponseFrame'][:end]    
+trialStartFrame = d['trialStartFrame'][:]    
+preStimFrames = d['preStimFramesFixed'][()]         #at some point, can use the prestim frames/q mvmt for analysis 
+preStimVar = d['preStimFramesVariableMean'][()]     # to analyze predictive turning, to see if choice correlates with        
+openLoopFrames = d['openLoopFramesFixed'][()]       # prestim movement (moving == miss?)
+openLoopVar = d['openLoopFramesVariableMean'][()]
+openLoopMax = d['openLoopFramesMax'][()]
 trialOpenLoopFrames = d['trialOpenLoopFrames'][:end]
-openLoopFrames = d['openLoopFramesFixed'][()]
-quiescentMoveFrames = d['quiescentMoveFrames'][:]
 maxQuiescentMove = d['maxQuiescentNormMoveDist'][()]
+quiescentMoveFrames = d['quiescentMoveFrames'][:]
+trialStimStartFrame = d['trialStimStartFrame'][:]
+trialResponseFrame = d['trialResponseFrame'][:end] 
 trialEndFrame = d['trialEndFrame'][:end]
-deltaWheel = d['deltaWheelPos'][:]                      # has wheel movement for every frame of session
+deltaWheel = d['deltaWheelPos'][:]                      
 trialMaskContrast = d['trialMaskContrast'][:end]
+nogoWait = d['nogoWaitFrames'][()]
 
-#below in ms
-maskOnset = np.round(d['maskOnset'][()] * 1000/framerate).astype(int)
-trialMaskOnset = np.round(d['trialMaskOnset'][:end] * 1000/framerate).astype(int)
-maskLength = np.round(d['maskFrames'][()] * 1000/framerate).astype(int)
-targetLength = np.round(d['targetFrames'][()] * 1000/framerate).astype(int)
-maxResp = np.round(d['maxResponseWaitFrames'][()] * 1000/framerate).astype(int) 
+def convert_to_ms(value):
+    return np.round(value * 1000/framerate).astype(int)
+
+#in ms
+maskOnset = convert_to_ms(d['maskOnset'][()])
+trialMaskOnset = convert_to_ms(d['trialMaskOnset'][:end])
+maskLength = convert_to_ms(d['maskFrames'][0])
+targetLength = convert_to_ms(d['targetFrames'][0])
+maxResp = convert_to_ms(d['maxResponseWaitFrames'][()])
 
 
-for i, target in enumerate(trialTargetFrames):  # this is needed for older files nogos are randomly assigned a dir
+for i, target in enumerate(trialTargetFrames):  # this is needed for older files where nogos are randomly assigned a dir
     if target==0:
         trialRewardDirection[i] = 0
 
-nogos = []   #not including maskOnly trials
-for i, (rew, con) in enumerate(zip(trialRewardDirection, trialMaskContrast)):
-    if rew==0 and con==0:
-        nogos.append(i) 
+nogos = [i for i, (rew, con) in enumerate(zip(trialRewardDirection, trialMaskContrast)) if rew==0 and con==0]
 
-nogoTurn, maskOnlyTurn, ndx = nogo_turn(d)
- 
-noMaskVal = maskOnset[-1] + round(np.mean(np.diff(maskOnset)))  # assigns noMask condition an evenly-spaced value from soas
-maskOnset = np.append(maskOnset, noMaskVal)              # makes final value the no-mask condition
+if np.any(trialMaskOnset)>0:
+    noMaskVal = maskOnset[-1] + round(np.mean(np.diff(maskOnset)))  # creates an evenly-spaced value from soas for targetOnly condition 
+    maskOnset = np.append(maskOnset, noMaskVal)                     # makes final value the targetOnly condition in maskOnset
     
-for i, (mask, trial) in enumerate(zip(trialMaskOnset, trialTargetFrames)):   # filters target-Only trials 
-    if trial>0 and mask==0:
-        trialMaskOnset[i]=noMaskVal       
+    for i, (mask, trial) in enumerate(zip(trialMaskOnset, trialTargetFrames)):   # filters target-Only trials and applies value from above
+        if trial>0 and mask==0:
+            trialMaskOnset[i]=noMaskVal       
 
-# deltaWheel from start of stim to response (or no response) for each trial
-# deltaWheel from start of closedLoop to response for nogos
-# nogos are sliced from trialStart to resp, and also go-tone to end.  Predictive turning.  ask sam.
-        ### change respFrame to trialEndFrame??  and create all slices the same length? like behAnalysis
+
+maxGo = d['maxResponseWaitFrames'][()]
 trialWheel = []  
-nogoWheelFromCL = [] 
+nogoWheel = []     #this 2nd list serves for separate analysis of nogos
+trialLength = []
+
 for i, (start, resp, mask) in enumerate(zip(trialStimStartFrame, trialResponseFrame, trialMaskContrast)):
+    trialLength.append(len(deltaWheel[start:resp]))
     if trialRewardDirection[i]==0:
-        if mask==0:  # nogo trials
-            wheel = (deltaWheel[start+openLoopFrames:(start+openLoopFrames+d['maxResponseWaitFrames'][()])])   #from start of closedLoop, len of go trial
-            nogoWheelFromCL.append(wheel)
-            wheel2 = (deltaWheel[start:resp])
-            trialWheel.append(wheel2)
-        elif mask>0:   # maskOnly
-            wheel = (deltaWheel[start:resp+1])
-            trialWheel.append(wheel)
-    else:
-        wheel = (deltaWheel[start:resp])
-        trialWheel.append(wheel)
+        trialWheel.append(deltaWheel[start+trialOpenLoopFrames[i]:(start+trialOpenLoopFrames[i]+maxGo)])
+        if mask==0:   # nogo trials
+            nogoWheel.append(deltaWheel[start+trialOpenLoopFrames[i]:resp])  # wheel up until nogoMove, from go-tone
+    else:  #target 
+        trialWheel.append(deltaWheel[start:start+maxGo])
+        
+cumWheel = [np.cumsum(time) for time in trialWheel]  
+nogoCumWheel = [np.cumsum(time) for time in nogoWheel]   # from goTone to mouse response (past threshold) 
 
-nogoCumWheelFromCL = []         # this is cum wheel mvmt from goTone to wheelMvmt (past threshold) 
-for time in nogoWheelFromCL:    # for nogo trials
-    time = np.cumsum(time)
-    nogoCumWheelFromCL.append(time)
-    
-#since deltawheel provides the difference in wheel mvmt from trial to trial
-#taking the cumulative sum gives the actual wheel mvmt and plots as a smooth curve
-cumWheel = []   
-for mvmt in trialWheel:
-    time = np.cumsum(mvmt)
-    cumWheel.append(time)  # not using scipy.median.filter bc flattens final frames
-    
-#do not include nogo trials (==0); their wheel traces prior to gotone mess up rxn times)
-# time from stimStart to moving the wheel
+
 interpWheel = []
-rxnTimes = []
+timeToMoveWheel = []    # time from stimStart to when they start moving the wheel
 ignoreTrials = []
-for i, (times, resp) in enumerate(zip(cumWheel, trialResponse)):
-    if i in nogos or resp==0:   # excluding nogos from rxnTime analysis
-        rxnTimes.append(0)
-        interpWheel.append(0)    
-    else:
-        fp = times
-        xp = np.arange(0, len(fp))*1/framerate
-        x = np.arange(0, xp[-1], .001)
-        interp = np.interp(x,xp,fp)
-        interpWheel.append(interp)
-        threshold = maxQuiescentMove*d['monSizePix'][0] 
-        t = np.argmax(abs(interp)>threshold)
-        if t <= 100:
-            ignoreTrials.append(i)
-            rxnTimes.append(t)
-        elif t==0:
-            rxnTimes.append(0)   # no resp, or moving 
-        else:
-            t = np.argmax(abs(interp[100::])>threshold) + 100  #100 is limit of ignore trial
-            a = np.argmax(abs(np.round(np.diff(interp[100::])))>0) + 100
-            if 0 < a < 100:
-                ignoreTrials.append(i)    # ask sam about ignoring trials, including nogos 
-                rxnTimes.append(0)
-            elif abs(t-a) < (150):
-                rxnTimes.append(a)
-            else:
-                b = np.argmax(abs(np.round(np.diff(interp[a::])))>0) + a
-                if abs(t-b) < (200):
-                    rxnTimes.append(b)
-                else:
-                    c = np.argmax(abs(np.round(np.diff(interp[b::])))>1) + b
-                    if c!=b:
-                        rxnTimes.append(c)
-                    else:
-                        rxnTimes.append(b)
+
+maxDir = []
+same = []
+
+firstDiffList = []
+qMoveList = []      
+twiceQList = []
+halfwayList = []
+rewMoveList = []
+maxDistList = [] 
+
+for i, (times, resp, direction) in enumerate(zip(cumWheel, trialResponse, trialRewardDirection)):
+    fp = times    
+    xp = np.arange(0, len(fp))*1/framerate
+    x = np.arange(0, xp[-1], .001)    #wheel mvmt each ms 
+    interp = np.interp(x,xp,fp)
+    interpWheel.append(interp)
+    qThreshold = maxQuiescentMove*d['monSizePix'][0]   #threshold to end nogo or q-period (unless we change nogo thresh...)
+    rewThreshold = d['normRewardDistance'][()]*d['monSizePix'][0]
     
+    firstDiff = np.argmax(abs(np.round(np.diff(interp)))>0)
+    qMove = np.argmax(abs(interp)>qThreshold)        # first time they move past quiescent thresh
+    twiceQ = np.argmax(abs(interp)>(qThreshold*2))
+    halfway = np.argmax(abs(interp)>(rewThreshold/2))
+    rewMove = np.argmax(abs(interp)>rewThreshold)    # first move past reward dist (i.e make a choice)
+    maxDist = np.argmax(abs(interp))                 # farthest they move wheel either direction
+    
+    idx2 = np.where(np.sign(np.diff(interp[:-1])) != np.sign(np.diff(interp[1:])))[0] + 1
+    notable = [i for (i,e) in zip(idx2, np.diff(idx2)) if e>25]
+    reward = np.argmax(np.cumsum(interp)>250)
+    
+    firstDiffList.append(firstDiff)
+    qMoveList.append(qMove)      
+    twiceQList.append(twiceQ)
+    halfwayList.append(halfway)
+    rewMoveList.append(rewMove)
+    maxDistList.append(maxDist)
+    
+    print((firstDiff, qMove, twiceQ, halfway, rewMove, maxDist, len(interp)))
+    
+mvmtdf = pd.DataFrame(data=list(zip(firstDiffList, qMoveList, twiceQList, halfwayList, rewMoveList, maxDistList)), 
+                      columns=('first', 'quiescent', 'twiceQ', 'halfRew', 'rew', 'max'))
+    
+    if interp[maxDist]/abs(interp[maxDist]) == direction:
+        same.append(True)
+    else:
+        same.append(False)
+    maxDir.append(interp[maxDist])
+        
+    if i in nogos and resp==1:
+        timeToMoveWheel.append(0)    # correct nogo; no mvmt
+    else:
+        if 0<rewMove<150:               #if they move the wheel past the reward threshold before 150ms (pre-gotone)
+            ignoreTrials.append(i)     # ignore this trial's wheel movement (more analysis can be done on ignoreTrials)
+            timeToMoveWheel.append(0)
+            print('first ignore ' + str(i))
+        else:
+            
+            if 0 < qMove <= 50:           # if they move past qthreshold before 50ms, ignore this trial
+                ignoreTrials.append(i)
+                print('second ignore ' + str(i))
+                timeToMoveWheel.append(0)   # no resp, or moving before 50 ms
+            else:
+                t = np.argmax(abs(interp[50::])>qThreshold) + 50  #100 ms is limit of ignore trial
+                a = np.argmax(abs(np.round(np.diff(interp[50::])))>0) + 50
+                if 0 < a < 50:
+                    ignoreTrials.append(i)    
+                    print('third ignore ' + str(i))
+                    print(a)
+                    timeToMoveWheel.append(0)
+                else:
+                    timeToMoveWheel.append(a)
+               
+                
+#                else:
+#                    ### since a usu ends up being when some mvmt was made, b ends up being 0
+#                    # this seems like a good point to go from the end and narrow in
+#                    
+#                    b = rew - np.argmax(abs(np.round(np.diff(interp[rew::-1])))<=0) 
+                    
+#                    if abs(t-b) < (200):
+#                        timeToMoveWheel.append(b)
+#                    else:
+#                        c = np.argmax(abs(np.round(np.diff(interp[b::])))>1) + b
+#                        if c!=b:
+#                            timeToMoveWheel.append(c)
+#                        else:
+#                            timeToMoveWheel.append(b)
 
-timeToOutcome = []    # time to outcome is time from rxnTime (1st wheel mvmt) to respFrame
-for i,j in zip(cumWheel, rxnTimes):    
-    i = np.round(len(i)*1000/framerate)
-    timeToOutcome.append(i-j)    # ends up just being the diff btwn trialLength and rxnTime
+compdf = pd.DataFrame(list(zip(trialRewardDirection, trialResponse, maxDir , same)), 
+                      columns=['rewDir', 'resp', 'maxTurn', 'right_direction'])
 
+
+# should we be using angular velocity??
 velo = []           
 for i, time in enumerate(interpWheel):   #time is array of wheel mvmt
     if type(time) is int:
         velo.append(0)          # no wheel mvmt is 0, an int
     else:
-        q = int(rxnTimes[i])   # rxn time of the trial, in ms, used as index of interpWheel
+        q = int(timeToMoveWheel[i])   # rxn time of the trial, in ms, used as index of interpWheel
         v = abs(time[-1] - time[q]) / timeToOutcome[i]   # dist (in pix??) moved over time/time
         velo.append(v)
-        # in pix/ms?
+        # in pix/ms?  could convert to radians
 
-nogoRxnTimes = []               # num of frames from goTone to mvmt or reward
-for times in nogoCumWheelFromCL:
-    nogoRxnTimes.append(len(times)-4)
-       
+nogoRespTimes = [convert_to_ms(len(times)) for times in nogoCumWheel]     # num of frames from goTone to mvmt or reward   
 nogoTurn, maskOnly, inds = nogo_turn(d)  # 1st 2 arrays are turned direction, 3rd is indices of 1st 2                       
                             
 nogoMove = np.zeros(len(trialResponse)).astype(int)
@@ -181,15 +222,15 @@ data = list(zip(trialRewardDirection, trialResponse, trialStimStartFrame, trialR
 index = range(len(trialResponse))
 
 df = pd.DataFrame(data, index=index, columns=['rewDir', 'resp', 'stimStart', 'respFrame'])
-df['trialLength'] = [np.round(len(t)*1000/framerate) for t in trialWheel]
-df['reactionTime'] = rxnTimes
-df['timeToOutcome'] = timeToOutcome
+df['trialLength'] = convert_to_ms(np.array(trialLength))
+#df['startMovingWheel'] = timeToMoveWheel
+#df['timeToOutcome'] = convert_to_ms((df['respFrame'] - df['startMovingWheel']))  ## this is wrong - resp - rxn
 if len(maskOnset)>0:
     df['mask'] = trialMaskContrast
     df['soa'] = trialMaskOnset
-df['nogoMove'] = nogoMove  # turning direction of nogo trial
+df['nogoMove'] = nogoMove
 
-#for (ind, time) in zip(nogoTurn[2][0], nogoRxnTimes):    #adds rxnTimes to nogos; need to look at separately
+#for (ind, time) in zip(nogoTurn[2][0], nogotimeToMoveWheel):    #adds rxnTimes to nogos; need to look at separately
 #    df.loc[ind,'reactionTime'] = time
 
 
@@ -205,10 +246,10 @@ onsetIndex = s[(s!=128) & (s!=0)]   # indeices of trials that are masked (T and 
 ## Time to move wheel from start of wheel mvmt - will be (-) in some trials 
     # only for trials with target
 
-rxn = [i for e, i in enumerate(rxnTimes) if (0 < i < maxResp) & (e not in ignoreTrials)]
+rxn = [i for e, i in enumerate(timeToMoveWheel) if (0 < i < maxResp) & (e not in ignoreTrials)]
 plt.figure()
 sns.distplot(scipy.stats.zscore(rxn))
-np.mean(rxnTimes)
+np.mean(timeToMoveWheel)
 times = [j for e, j in enumerate(timeToOutcome) if (0<j<maxResp) & (e not in ignoreTrials)]
 sns.distplot(scipy.stats.zscore(times))
 
@@ -247,7 +288,7 @@ plt.title('Dist of reaction times by SOA:  ' + str(f.split('_')[-3:-1]))
 times = []
 for onset in np.unique(trialMaskOnset):
     lst = []
-    for i, (time, soa, resp,mask) in enumerate(zip(df['reactionTime'], df['soa'], df['resp'], df['mask'])):
+    for i, (time, soa, resp,mask) in enumerate(zip(df['trialLength_ms'], df['soa'], df['resp'], df['mask'])):
         if soa==onset and resp==1:
             #if mask==True: 
             if i not in ignoreTrials and time!=0:  # only masked trials and no obvious guessing trials included 
@@ -278,15 +319,15 @@ maskOnlyTimes = [[],[]]  #R, L
 
 for a, b in zip(inds[1], maskOnly):    # inds is index of maskOnly turning trials
     if b==1:
-        maskOnlyTimes[0].append(rxnTimes[a])  #maskonly turned R
+        maskOnlyTimes[0].append(timeToMoveWheel[a])  #maskonly turned R
     elif b==-1:
-        maskOnlyTimes[1].append(rxnTimes[a])  # maskOnly turned L
+        maskOnlyTimes[1].append(timeToMoveWheel[a])  # maskOnly turned L
 
 for onset in np.unique(trialMaskOnset):
     hitVal = [[],[]]
     missVal = [[],[]]
     for j, (time, soa, resp, mask, direc) in enumerate(zip(
-            df['reactionTime'], df['soa'], df['resp'], df['mask'], df['rewDir'])):
+            df['trialLength_ms'], df['soa'], df['resp'], df['mask'], df['rewDir'])):
         if soa==onset and resp!=0:   # not no resp
             if j not in ignoreTrials and time!=0:
                 if direc==1:       # soa=0 is targetOnly, R turning

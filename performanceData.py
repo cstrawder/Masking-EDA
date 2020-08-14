@@ -31,7 +31,7 @@ def performance_data(mouse, ignoreRepeats=True):
     no_goMoveL = []
     no_goMoveR = []
 
-    files = get_files(mouse)
+    files = get_files(mouse, 'training_')
     for i,f in enumerate(files):
         d = h5py.File(f)
  
