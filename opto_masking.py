@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib
 from matplotlib import pyplot as plt
 from behaviorAnalysis import formatFigure
-from dataAnalysis import get_dates, ignore_after, create_df
+from dataAnalysis import get_dates, ignore_after, create_df, import_data
 
 
 
@@ -88,7 +88,7 @@ def plot_opto_masking(d):
             
             
         fig, ax = plt.subplots()
-        for i, (al, c, lbl, pt) in enumerate(zip([.3,.5, .8, 1], ['k', 'c', 'k', 'm'],
+        for i, (al, c, text, lbl, pt) in enumerate(zip([.3,.5, .8, 1], ['k', 'c', 'k', 'm'], [1.2,1.15,1.1,1.05],
                ['Mask only', 'Target only', 'Masked trials', 'Catch'],
                list(respsNoOpto/totalsNoOpto))):   # this needs to be resps over totals for no opto
 
@@ -101,20 +101,20 @@ def plot_opto_masking(d):
                 ax.plot(xNoOpto, pt, 'o', color=c, alpha=al)
 
                     
-#        for x, trials in zip(optoOnset, np.transpose(totals)):  
-#            for y, n in zip([1.05,1.1,1.15,1.2], trials):
-#                fig.text(x,y,str(trials),transform=ax.transData,color='c', alpha=al, fontsize=10,ha='center',va='bottom')
+                for x, n in zip(optoOnset, np.transpose(denom[i])):  
+                    fig.text(x,text,str(n),transform=ax.transData,color=c, alpha=al, fontsize=10,ha='center',va='bottom')
 
 ## format the plots 
             
            
-        formatFigure(fig, ax, xLabel='Opto onset (ms)', yLabel=title)
+        formatFigure(fig, ax, xLabel='Opto onset from target onset (ms)', yLabel=title)
             
         fig.suptitle(('(' + mouse + '    ' + date + ')'), fontsize=13)
         
         xticks = list(optoOnset)
+            
        
-        xticklabels = [int(np.round((tick/framerate)*1000)) for tick in optoOnset]
+        xticklabels = [int(np.round((tick/framerate)*1000))-17 for tick in optoOnset]  # remove 17 ms of latency
         x,lbl = ([xNoOpto],['no\nopto'])
         xticks = np.concatenate((xticks,x))
         xticklabels = xticklabels+lbl
@@ -132,26 +132,3 @@ def plot_opto_masking(d):
         plt.subplots_adjust(top=0.815, bottom=0.135, left=0.1, right=0.92, hspace=0.2, wspace=0.2)
         plt.legend(loc='best', fontsize='small', numpoints=1) 
                 
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
