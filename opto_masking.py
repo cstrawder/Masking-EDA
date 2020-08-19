@@ -93,23 +93,31 @@ def plot_opto_masking(d):
                list(respsNoOpto/totalsNoOpto))):   # this needs to be resps over totals for no opto
 
 
-        #for fraction correct there should only be target and masked plotted 
-       # or the plot needs to be different, like the ones sam made 
-
+#for fraction correct there should only be target and masked plotted 
+# or the plot needs to be different, like the ones sam made 
+            if title=='Response Rate':
 
                 ax.plot(optoOnset, num[i]/denom[i], 'o-', color = c, lw=3, alpha=al, label=lbl)
                 ax.plot(xNoOpto, pt, 'o', color=c, alpha=al)
-
-                    
+                
                 for x, n in zip(optoOnset, np.transpose(denom[i])):  
                     fig.text(x,text,str(n),transform=ax.transData,color=c, alpha=al, fontsize=10,ha='center',va='bottom')
+            else:
+                if lbl=='Mask only' or lbl=='Catch':
+                    pass
+                else:
+                    ax.plot(optoOnset, num[i]/denom[i], 'o-', color = c, lw=3, alpha=al, label=lbl)
+                    ax.plot(xNoOpto, pt, 'o', color=c, alpha=al)
+                    
+                    for x, n in zip(optoOnset, np.transpose(denom[i])):  
+                        fig.text(x,text,str(n),transform=ax.transData,color=c, alpha=al, fontsize=10,ha='center',va='bottom')
 
 ## format the plots 
             
            
         formatFigure(fig, ax, xLabel='Opto onset from target onset (ms)', yLabel=title)
             
-        fig.suptitle(('(' + mouse + '    ' + date + ')'), fontsize=13)
+        fig.suptitle((mouse + ',  ' + date + '       ' + 'Masking with optogenetic silencing of V1'), fontsize=13)
         
         xticks = list(optoOnset)
             
@@ -131,4 +139,6 @@ def plot_opto_masking(d):
         ax.tick_params(direction='out',top=False,right=False)
         plt.subplots_adjust(top=0.815, bottom=0.135, left=0.1, right=0.92, hspace=0.2, wspace=0.2)
         plt.legend(loc='best', fontsize='small', numpoints=1) 
-                
+      
+
+          
