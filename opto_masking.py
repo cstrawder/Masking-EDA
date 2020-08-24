@@ -81,6 +81,9 @@ def plot_opto_masking(d):
 # plot the percent correct against the opto onset on the xaxis
     
     xNoOpto = max(optoOnset)+1
+    yText = [1.2,1.15,1.1,1.05]
+    colors = ['k', 'c', 'k', 'm']
+    alphas = [.3,.5, .8, 1]
     
     for num, denom, title in zip([resps, hits], 
                                  [totals, resps],
@@ -88,9 +91,9 @@ def plot_opto_masking(d):
             
             
         fig, ax = plt.subplots()
-        for i, (al, c, text, lbl, pt) in enumerate(zip([.3,.5, .8, 1], ['k', 'c', 'k', 'm'], [1.2,1.15,1.1,1.05],
+        for i, (al, c, text, lbl, noOptoResp, noOptoCorr) in enumerate(zip(alphas, colors , yText,
                ['Mask only', 'Target only', 'Masked trials', 'Catch'],
-               list(respsNoOpto/totalsNoOpto))):   # this needs to be resps over totals for no opto
+               list(respsNoOpto/totalsNoOpto), list(hitsNoOpto/respsNoOpto))):   # this needs to be resps over totals for no opto
 
 
 #for fraction correct there should only be target and masked plotted 
@@ -98,19 +101,34 @@ def plot_opto_masking(d):
             if title=='Response Rate':
 
                 ax.plot(optoOnset, num[i]/denom[i], 'o-', color = c, lw=3, alpha=al, label=lbl)
-                ax.plot(xNoOpto, pt, 'o', color=c, alpha=al)
+                ax.plot(xNoOpto, noOptoResp, 'o', color=c, alpha=al)
                 
                 for x, n in zip(optoOnset, np.transpose(denom[i])):  
                     fig.text(x,text,str(n),transform=ax.transData,color=c, alpha=al, fontsize=10,ha='center',va='bottom')
+                
+        
+
             else:
                 if lbl=='Mask only' or lbl=='Catch':
                     pass
                 else:
                     ax.plot(optoOnset, num[i]/denom[i], 'o-', color = c, lw=3, alpha=al, label=lbl)
-                    ax.plot(xNoOpto, pt, 'o', color=c, alpha=al)
+                    ax.plot(xNoOpto, noOptoCorr, 'o', color=c, alpha=al)
                     
                     for x, n in zip(optoOnset, np.transpose(denom[i])):  
-                        fig.text(x,text,str(n),transform=ax.transData,color=c, alpha=al, fontsize=10,ha='center',va='bottom')
+                        fig.text(x,text,str(n),transform=ax.transData,color=c, alpha=al, fontsize=10, ha='center', va='bottom')
+                    for r in respsNoOpto[1:3]:
+                        fig.text(xNoOpto, text, str(r), transform=ax.transData, color=c, alpha=al, fontsize=10, ha='center', va='bottom')
+
+
+        if title=='Response Rate':
+            for t, y, cl, alp in zip(totalsNoOpto, yText, colors, alphas):
+                fig.text(xNoOpto, y, str(t), transform=ax.transData, color=cl, alpha=alp, fontsize=10, ha='center', va='bottom')
+
+        elif title=='Fraction Correct':
+            for r, y, cl, alp in zip(respsNoOpto[1:3], yText[2:4], colors[1:3], alphas[1:3]):
+                fig.text(xNoOpto, y, str(r), transform=ax.transData, color=cl, alpha=alp, fontsize=10, ha='center', va='bottom')
+
 
 ## format the plots 
             
