@@ -11,7 +11,13 @@ from matplotlib import pyplot as plt
 from behaviorAnalysis import formatFigure
 from dataAnalysis import get_dates, ignore_after, create_df, import_data
 
-
+'''
+Plotting for masking sessions with optogenetic silencing 
+Plots the response rate and fraction correct for the 4 trial types 
+(mask, maskOnly, targetOnly, catch) against the optogenetic onsets 
+Also plots those same types without opto
+Responses by side are combined in plots, not separate
+'''
 
 def plot_opto_masking(d):
     matplotlib.rcParams['pdf.fonttype'] = 42
