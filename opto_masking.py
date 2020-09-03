@@ -117,21 +117,21 @@ def plot_opto_masking(d):
                     
                     for x, n in zip(optoOnset, np.transpose(denom[i])):  
                         fig.text(x,text,str(n),transform=ax.transData,color=c, alpha=al, fontsize=10, ha='center', va='bottom')
-                    for r in respsNoOpto[1:3]:
-                        fig.text(xNoOpto, text, str(r), transform=ax.transData, color=c, alpha=al, fontsize=10, ha='center', va='bottom')
-
+#                    for r in respsNoOpto[1:3]:
+#                        fig.text(xNoOpto, text, str(r), transform=ax.transData, color=c, alpha=al, fontsize=10, ha='center', va='bottom')
+#
 
         if title=='Response Rate':
             for t, y, cl, alp in zip(totalsNoOpto, yText, colors, alphas):
                 fig.text(xNoOpto, y, str(t), transform=ax.transData, color=cl, alpha=alp, fontsize=10, ha='center', va='bottom')
-
-        elif title=='Fraction Correct':
-            for r, y, cl, alp in zip(respsNoOpto[1:3], yText[2:4], colors[1:3], alphas[1:3]):
+    
+        elif title=='Fraction Correct Given Response':
+            for r, y, cl, alp in zip(respsNoOpto[1:3], yText[1:3], colors[1:3], alphas[1:3]):
                 fig.text(xNoOpto, y, str(r), transform=ax.transData, color=cl, alpha=alp, fontsize=10, ha='center', va='bottom')
-
-
-## format the plots 
-            
+    
+    
+    ## format the plots 
+                
            
         formatFigure(fig, ax, xLabel='Opto onset from target onset (ms)', yLabel=title)
             
@@ -157,6 +157,6 @@ def plot_opto_masking(d):
         ax.tick_params(direction='out',top=False,right=False)
         plt.subplots_adjust(top=0.815, bottom=0.135, left=0.1, right=0.92, hspace=0.2, wspace=0.2)
         plt.legend(loc='best', fontsize='small', numpoints=1) 
-      
-
           
+    
+              
