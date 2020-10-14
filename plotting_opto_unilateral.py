@@ -38,49 +38,7 @@ def plot_opto_uin(data, ignoreAfter):
     optoLeft = optoChan[:,0] & ~optoChan[:,1]
     optoRight = ~optoChan[:,0] & optoChan[:,1]
     optoBoth = optoChan[:,0] & optoChan[:,1]
-    
-    fig = plt.figure(figsize=(10,6))
-    gs = matplotlib.gridspec.GridSpec(2,2)
-    x = np.arange(4)
-    for j,contrast in enumerate([c for c in np.unique(targetContrast) if c>0]):
-        for i,ylbl in enumerate(('Response Rate','Fraction Correct')):
-            ax = fig.add_subplot(gs[i,j])
-            for trials,trialLabel,clr,ty in zip((catch,goLeft,goRight),('catch','stim right (go left)','stim left (go right)'),'kbr',(1.05,1.1,1.15)):
-                n = []
-                y = []
-                for opto in (noOpto,optoLeft,optoRight,optoBoth):
-                    ind = trials & opto
-                    if trialLabel != 'catch':
-                        ind = trials & opto & (targetContrast==contrast)
-                    r = ~np.isnan(responseDir[ind])
-                    if ylbl=='Response Rate':
-                        n.append(np.sum(ind))
-                        y.append(r.sum()/n[-1])
-                    else:
-                        n.append(r.sum())
-                        if trialLabel=='catch':
-                            y.append(np.nan)
-                        else:
-                            y.append(np.sum(r & (response[ind]==1))/n[-1])
-                ax.plot(x,y,clr,marker='o',mec=clr,mfc='none',label=trialLabel)
-                for tx,tn in zip(x,n):
-                    fig.text(tx,ty,str(tn),color=clr,transform=ax.transData,va='bottom',ha='center',fontsize=8)
-            for side in ('right','top'):
-                ax.spines[side].set_visible(False)
-            ax.tick_params(direction='out',top=False,right=False)
-            ax.set_xticks(x)
-            xticklabels = ('no\nopto','opto\nleft','opto\nright','opto\nboth') if i==1 else []
-            ax.set_xticklabels(xticklabels)
-            ax.set_xlim([-0.5,3.5])
-            ax.set_ylim([0,1.05])
-            if j==0:
-                ax.set_ylabel(ylbl)
-            if i==1 and j==0:
-                ax.legend(fontsize='small', loc='best')
-        tx = 0.3 if j==0 else 0.7
-        fig.text(tx,0.99,'contrast '+str(contrast),va='top',ha='center')
-    
-    
+     
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     for side,lbl,clr in zip((np.nan,-1,1),('no response','move left','move right'),'kbr'):
@@ -93,7 +51,7 @@ def plot_opto_uin(data, ignoreAfter):
                 y.append(np.sum(np.isnan(responseDir[ind]))/n[-1])
             else:
                 y.append(np.sum(responseDir[ind]==side)/n[-1])
-        ax.plot(x,y,clr,marker='o',mec=clr,mfc='none',label=lbl)
+        ax.plot(x,y,clr,lw=2, marker='o',mec=clr,mfc='none',label=lbl)
     for tx,tn in zip(x,n):
         fig.text(tx,1.05,str(tn),color='k',transform=ax.transData,va='bottom',ha='center',fontsize=8)
     for side in ('right','top'):
@@ -104,11 +62,12 @@ def plot_opto_uin(data, ignoreAfter):
     ax.set_xlim([-0.5,3.5])
     ax.set_ylim([0,1.05])
     ax.set_ylabel('Fraction of catch trials')
-    ax.legend()
+    ax.legend(fontsize='small', loc='best')
     fig.text(0.525,0.99,'Catch trial movements',va='top',ha='center')
+   
     
     
-    fig = plt.figure()
+    fig = plt.figure(figsize=(8,9))
     gs = matplotlib.gridspec.GridSpec(8,1)
     x = np.arange(4)
     for j,contrast in enumerate([c for c in np.unique(targetContrast) if c>0]):
@@ -141,7 +100,8 @@ def plot_opto_uin(data, ignoreAfter):
                     ax.set_ylabel('Fraction of trials')
                 if i==0 and j==0:
                     ax.legend(fontsize='small', loc=(0.71,0.71))
-                    
+#    plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=.3, hspace=.3)
+    formatFigure(fig, ax)              
                     
     
     
