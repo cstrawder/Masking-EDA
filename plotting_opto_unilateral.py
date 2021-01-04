@@ -67,8 +67,9 @@ def plot_opto_uni(data, param=None, ignoreNoRespAfter=0, array_only=False):
     ax.set_ylabel('Fraction of catch trials')
     ax.legend(fontsize='small', loc='best')
     plt.tight_layout()
+    plt.subplots_adjust(top=.920)
     fig.text(0.525,0.99,'Catch trial movements',va='top',ha='center')
-   
+    formatFigure(fig, ax) 
    
     
     
