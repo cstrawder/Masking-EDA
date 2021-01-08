@@ -60,7 +60,7 @@ def plot_soa(data,ignoreNoRespAfter=None,showNogo=True):
         
     for i, (mask, trial) in enumerate(zip(trialMaskOnset, trialTargetFrames)):   # filters target-Only trials 
         if trial>0 and mask==0:
-            trialMaskOnset[i]=noMaskVal
+            trialMaskOnset[i]=targetOnlyVal
     
     
      
@@ -127,14 +127,14 @@ def plot_soa(data,ignoreNoRespAfter=None,showNogo=True):
             
             xticks = maskOnset
             xticklabels = list(np.round(xticks).astype(int))
-            xticklabels[-1] = 'no mask'
+            xticklabels[-1] = 'Target Only'
     #        if title=='Response Rate':
     #            # add catch label to plot
     #            xticks = np.concatenate((x,xticks))
     #            xticklabels = lbl+xticklabels
             ax.set_xticks(xticks)
             ax.set_xticklabels(xticklabels)
-            ax.set_xlim([-20,xticks[-1]+10])
+            ax.set_xlim([0,xticks[-1]+5])
             ax.set_ylim([0,1.1])
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
@@ -142,4 +142,10 @@ def plot_soa(data,ignoreNoRespAfter=None,showNogo=True):
             
             if title=='Response Rate':
                 ax.xaxis.set_label_coords(0.5,-0.08)
-             
+      
+    ## outside of plot type, plot a combined average masking frac corr
+    # that includes both center and normal masks
+    
+    
+    
+    
