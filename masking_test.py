@@ -9,6 +9,7 @@ Taking over the old masking plotting code to plot the "position" masking session
 Mask appears either in center or overlapping target (normal)
 Compares the performance between these two conditions so we can understand more 
 about the effect of the mask presence 
+for most of the indexing, [0]=Left and [1]=Right turning
 """
 
 import numpy as np
@@ -57,17 +58,16 @@ def plot_soa(data,ignoreNoRespAfter=None,showNogo=True):
     
     
     targetOnlyVal = maskOnset[-1] + round(np.mean(np.diff(maskOnset)))  # assigns evenly-spaced value from soas
-    maskOnset = np.append(maskOnset, targetOnlyVal)              # makes final value the no-mask condition
         
     for i, (mask, trial) in enumerate(zip(trialMaskOnset, trialTargetFrames)):   # filters target-Only trials 
         if trial>0 and mask==0:
             trialMaskOnset[i]=targetOnlyVal
     
-    targetOnlyHit = [[],[]]
+    targetOnlyHit = [[],[]] # left turning, right turning
     targetOnlyResp = [[], []]
     targetOnlyTotals = [[],[]]
     
-    for i, side in enumerate([1, -1]):
+    for i, side in enumerate([-1, 1]):    # left turning, R turning
         for (typ, rew, resp) in zip(trialType, trialRewardDirection, trialResponse):
             if typ == 'targetOnly':
                 if rew==side:
@@ -88,15 +88,15 @@ def plot_soa(data,ignoreNoRespAfter=None,showNogo=True):
         
     for mask, j in zip(['mask lateral', 'mask center'], [1, 2]):
 
-        # [turn R] , [turn L]
+        # [turn L] , [turn R]
         hits = [[],[]]
         misses = [[], []]
         noResps = [[],[]]
         
-        for i, direction in enumerate([1,-1]):
+        for i, direction in enumerate([-1,1]):
             directionResponses = [trialResponse[(trialRewardDirection==direction) & 
                                                 (trialMaskArray==j) &
-                                                (trialMaskOnset==soa)] for soa in np.unique(maskOnset[:-1])]
+                                                (trialMaskOnset==soa)] for soa in np.unique(maskOnset)]
             hits[i].append([np.sum(drs==1) for drs in directionResponses])
             misses[i].append([np.sum(drs==-1) for drs in directionResponses])
             noResps[i].append([np.sum(drs==0) for drs in directionResponses])
@@ -131,14 +131,15 @@ def plot_soa(data,ignoreNoRespAfter=None,showNogo=True):
                 plt.suptitle('Mask Center Screen (non-overlapping)')
             
             if title=='Response Rate':
-                ax.plot(maskOnset[:-1], respOnly[0]/totalTrials[0], 'ro-', lw=3, alpha=.7)  # right turning
-                ax.plot(maskOnset[:-1], respOnly[1]/totalTrials[1], 'bo-', lw=3, alpha=.7)  # left turning
+                ax.plot(maskOnset, respOnly[0]/totalTrials[0], 'bo-', lw=3, alpha=.7)  # left turning
+                ax.plot(maskOnset, respOnly[1]/totalTrials[1], 'ro-', lw=3, alpha=.7)  # right turning
                  
                 ax.plot(0, (maskOnlyR/maskOnlyTotal), 'ro', ms=8)   
                 ax.plot(0, (maskOnlyL/maskOnlyTotal), 'bo', ms=8)
                 ax.plot(0, ((maskOnlyTotal-maskOnlyCorr)/maskOnlyTotal), 'ko')
-                ax.plot(targetOnlyVal, targetOnlyResp[0]/targetOnlyTotals[0], 'ro')
-                ax.plot(targetOnlyVal, targetOnlyResp[1]/targetOnlyTotals[1], 'bo')
+                
+                ax.plot(targetOnlyVal, targetOnlyResp[0]/targetOnlyTotals[0], 'bo')
+                ax.plot(targetOnlyVal, targetOnlyResp[1]/targetOnlyTotals[1], 'ro')
                
                ### add catch trials to resp rate
                ### add catch counts as text at top
@@ -147,15 +148,15 @@ def plot_soa(data,ignoreNoRespAfter=None,showNogo=True):
                
                
             elif title=='Fraction Correct Given Response':
-                ax.plot(maskOnset, hits[0]/respOnly[0], 'ro-', lw=3, alpha=.7)  #right turning
-                ax.plot(maskOnset, hits[1]/respOnly[1], 'bo-', lw=3, alpha=.7)  # left turning
+                ax.plot(maskOnset, hits[0]/respOnly[0], 'bo-', lw=3, alpha=.7)  # left turning
+                ax.plot(maskOnset, hits[1]/respOnly[1], 'ro-', lw=3, alpha=.7)  # right turning
     
-                ax.plot(targetOnlyVal, targetOnlyHit[0]/targetOnlyResp[0], 'ro')
-                ax.plot(targetOnlyVal, targetOnlyHit[1]/targetOnlyResp[1], 'bo')
+                ax.plot(targetOnlyVal, targetOnlyHit[0]/targetOnlyResp[0], 'bo')
+                ax.plot(targetOnlyVal, targetOnlyHit[1]/targetOnlyResp[1], 'ro')
                 
                 denom = respOnly
             
-            for x,Ltrials,Rtrials in zip(maskOnset, denom[0], denom[1]):   #deom[0]==L, denom[1]==R
+            for x,Ltrials,Rtrials in zip(maskOnset, denom[0], denom[1]):   #denom[0]==L, denom[1]==R
                     for y,n,clr in zip((1.03,1.08),[Rtrials, Ltrials],'rb'):
                         fig.text(x,y,str(n),transform=ax.transData,color=clr,fontsize=10,ha='center',va='bottom')
             
@@ -164,7 +165,7 @@ def plot_soa(data,ignoreNoRespAfter=None,showNogo=True):
                          
             ax.set_title(str(d).split('_')[-3:-1], fontdict={'fontsize':10}, pad=10)
             
-            xticks = maskOnset
+            xticks = np.append(maskOnset, targetOnlyVal)
             xticklabels = list(np.round(xticks).astype(int))
             xticklabels[-1] = 'Target Only'
     #        if title=='Response Rate':
