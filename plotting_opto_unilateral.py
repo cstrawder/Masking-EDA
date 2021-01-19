@@ -55,8 +55,8 @@ def plot_opto_uni(data, param=None, ignoreNoRespAfter=0, array_only=False):
             else:
                 y.append(np.sum(responseDir[ind]==side)/n[-1])
         ax.plot(x,y,clr,lw=2, marker='o',label=lbl)
-    for tx,tn in zip(x,n):
-        fig.text(tx,1.05,str(tn),color='k',transform=ax.transData,va='bottom',ha='center',fontsize=8)
+#    for tx,tn in zip(x,n):
+#        fig.text(tx,1.05,str(tn),color='k',transform=ax.transData,va='bottom',ha='center',fontsize=8)
     for side in ('right','top'):
         ax.spines[side].set_visible(False)
     ax.tick_params(direction='out',top=False,right=False)
@@ -96,10 +96,12 @@ def plot_opto_uni(data, param=None, ignoreNoRespAfter=0, array_only=False):
                     returnArray[i].append(y)
 
                     ax.plot(x,y,clr,marker='o', lw=2, label=respLabel)
-                for tx,tn in zip(x,n):
-                    fig.text(tx,ty,str(tn),color='k',transform=ax.transData,va='bottom',ha='center',fontsize=8)
+#                for tx,tn in zip(x,n):
+#                    fig.text(tx,ty,str(tn),color='k',transform=ax.transData,va='bottom',ha='center',fontsize=8)
                 title = trialLabel if trialLabel=='No Stimulus' else trialLabel+', Contrast '+str(contrast)
                 fig.text(1.5,1.25,title,transform=ax.transData,va='bottom',ha='center',fontsize=12)
+                
+                
                 for side in ('right','top'):
                     ax.spines[side].set_visible(False)
                 ax.tick_params(direction='out',top=False,right=False)
@@ -117,7 +119,7 @@ def plot_opto_uni(data, param=None, ignoreNoRespAfter=0, array_only=False):
                     
     if array_only==True:
         return(mouse_id, 
-               ['each list is stim L/R?none, and each list inside is move L/R'],
+               ['each list is stim L/R, and each list inside is move L/R'],
                ['Right Stimulus, 40% contrast', 'Left Stimulus, 40% contrast', 'No Stim'],
                ['Move Left', 'Move Right'],
                ['No Opto', 'Opto Left', 'Opto Right', 'Opto Both'],
