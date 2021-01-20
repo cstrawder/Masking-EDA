@@ -19,6 +19,7 @@ def plot_opto_uni(data, param=None, ignoreNoRespAfter=0, array_only=False):
     
     d = data
     end = ignore_after(d, ignoreNoRespAfter)[0]
+    assert end>50, 'Issue with IgnoreAfter limit'
     mouse_id = d['subjectName'][()]
 
     trialType = d['trialType'][:end]
