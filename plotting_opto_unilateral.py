@@ -12,13 +12,16 @@ import matplotlib.pyplot as plt
 import matplotlib
 
 
-def plot_opto_uni(data, param=None, ignoreNoRespAfter=0, array_only=False):
+def plot_opto_uni(data, param=None, ignoreNoRespAfter=0, masking=False, array_only=False):
 
     matplotlib.rcParams['pdf.fonttype'] = 42
 
     
     d = data
-    end = ignore_after(d, ignoreNoRespAfter)[0]
+    end = ignore_after(d, ignoreNoRespAfter)
+    if type(end) != int:
+        end = end[0]
+            
     mouse_id = d['subjectName'][()]
 
     trialType = d['trialType'][:end]
@@ -29,10 +32,14 @@ def plot_opto_uni(data, param=None, ignoreNoRespAfter=0, array_only=False):
     response = d['trialResponse'][:end]
     responseDir = d['trialResponseDir'][:end]
     
+    if masking==True:
+        maskOnset= d['trialMaskOnset'][:end]
+        masking = maskOnset>0
 
     goLeft = rewardDir==-1
     goRight = rewardDir==1
     catch = np.isnan(rewardDir)
+    
     noOpto = np.isnan(optoOnset)
     optoLeft = optoChan[:,0] & ~optoChan[:,1]
     optoRight = ~optoChan[:,0] & optoChan[:,1]
