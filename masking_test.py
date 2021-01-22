@@ -9,13 +9,13 @@ Taking over the old masking plotting code to plot the "position" masking session
 Mask appears either in center or overlapping target (normal)
 Compares the performance between these two conditions so we can understand more 
 about the effect of the mask presence 
+for most of the indexing, [0]=Left and [1]=Right turning
 """
 
 import numpy as np
 import matplotlib
 from matplotlib import pyplot as plt
 from behaviorAnalysis import formatFigure
-from nogoData import nogo_turn
 from dataAnalysis import ignore_after
 from ignoreTrials import ignore_trials
 
@@ -34,45 +34,75 @@ def plot_soa(data,ignoreNoRespAfter=None,showNogo=True):
         if i in ignore:
             ignoring[i] = 1
     
+    # bring in and clean relevant variables
     trialResponse = d['trialResponse'][:end][ignoring==0]
     trialRewardDirection = d['trialRewardDir'][:end][ignoring==0]
     trialTargetFrames = d['trialTargetFrames'][:end][ignoring==0]
     trialMaskContrast = d['trialMaskContrast'][:end][ignoring==0]
     trialMaskPosition = d['trialMaskPos'][:end][ignoring==0]
-    
-    trialMaskArray = np.full(len(trialMaskPosition), 0)  # used later to filter trials
-    
-    for i, t in enumerate(trialMaskPosition):
-        if 480 in t:
-            trialMaskArray[i] = 1   # mask lateral
-        elif 270 in t:
-            trialMaskArray[i] = 2   # mask center
-        else:
-            trialMaskArray[i] = 0
+    trialType = d['trialType'][:end][ignoring==0]
+    trialStimStart = d['trialStimStartFrame'][:end][ignoring==0]
+    trialRespFrame = d['trialResponseFrame'][:end][ignoring==0]
+    deltaWheel = d['deltaWheelPos'][:]
     
     framerate = int(np.round(1/np.median(d['frameIntervals'][:])))
     maskOnset = d['maskOnset'][()] * 1000/framerate              
     trialMaskOnset = d['trialMaskOnset'][:end][ignoring==0] * (1000/framerate)
     
     
-    targetOnlyVal = maskOnset[-1] + round(np.mean(np.diff(maskOnset)))  # assigns noMask condition an evenly-spaced value from soas
-    maskOnset = np.append(maskOnset, targetOnlyVal)              # makes final value the no-mask condition
+# create new, simpler array for mask position
+    trialMaskArray = np.full(len(trialMaskPosition), 0)  # used later to filter trials
+    
+    for i, t in enumerate(trialMaskPosition):
+        if 480 in t:
+            trialMaskArray[i] = 1   # mask lateral (overlapping target)
+        elif 270 in t:
+            trialMaskArray[i] = 2   # mask center
+        else:
+            trialMaskArray[i] = 0
+    
+    
+# filter and count target only trials (no mask)
+# these are independent from mask postition and thus outside of loop below
+    
+    targetOnlyVal = maskOnset[-1] + round(np.mean(np.diff(maskOnset)))  # assigns evenly-spaced value from soas
         
     for i, (mask, trial) in enumerate(zip(trialMaskOnset, trialTargetFrames)):   # filters target-Only trials 
         if trial>0 and mask==0:
             trialMaskOnset[i]=targetOnlyVal
     
+    targetOnlyHit = [[],[]]   # [left turning], [right turning]
+    targetOnlyResp = [[],[]]
+    targetOnlyTotals = [[],[]]
     
-     
+    for i, side in enumerate([-1, 1]):    # [L turning], [R turning]
+        for (typ, rew, resp) in zip(trialType, trialRewardDirection, trialResponse):
+            if typ == 'targetOnly':
+                if rew==side:
+                    targetOnlyTotals[i].append(1)
+                    if resp==1:
+                        targetOnlyHit[i].append(1)
+                    if resp!=0:
+                        targetOnlyResp[i].append(1)
+    
+    def total(var):
+        return list(map(sum, var))
+                    
+    targetOnlyHit = total(targetOnlyHit)
+    targetOnlyResp = total(targetOnlyResp)
+    targetOnlyTotals = total(targetOnlyTotals)
+    
+### PLOTTING    
         
     for mask, j in zip(['mask lateral', 'mask center'], [1, 2]):
 
-        # [turn R] , [turn L]
+        # depending on mask position, filter and count trial resps
+        # [turn L] , [turn R]
         hits = [[],[]]
         misses = [[], []]
         noResps = [[],[]]
         
-        for i, direction in enumerate([1,-1]):
+        for i, direction in enumerate([-1,1]):
             directionResponses = [trialResponse[(trialRewardDirection==direction) & 
                                                 (trialMaskArray==j) &
                                                 (trialMaskOnset==soa)] for soa in np.unique(maskOnset)]
@@ -86,16 +116,21 @@ def plot_soa(data,ignoreNoRespAfter=None,showNogo=True):
         totalTrials = hits+misses+noResps
         respOnly = hits+misses
         
-        turns, ind = nogo_turn(d, returnArray=True)  # returns arrays with turning direction as 1/-1
-        maskTurnTrial = ind[1]
+        # mask only -- mask only center and side
+        maskOnlyTurns = [[],[]]  # 1st is indices, 2nd is turning dir
+        
+        for i, (t, pos, start, end) in enumerate(zip(trialType, trialMaskArray, trialStimStart, trialRespFrame)):
+            if t == 'maskOnly' and pos == j:
+                wheel = (np.cumsum(deltaWheel[start:end])[-1])
+                maskOnlyTurns[0].append(i)
+                maskOnlyTurns[1].append((wheel/abs(wheel)).astype(int))
         
         ## add catch?  after this loop?
         
-        #maskTotal = len(trialResponse[(trialMaskContrast>0)])  sanity check
         maskOnlyTotal = len(trialResponse[(trialMaskContrast>0) & (trialTargetFrames==0)])   
-        maskOnlyCorr = len(trialResponse[(trialMaskContrast>0) & (trialResponse==1) & (trialTargetFrames==0)])
-        maskOnlyR = turns[1].count(1)
-        maskOnlyL = turns[1].count(-1) 
+        maskOnlyR = maskOnlyTurns[1].count(1)
+        maskOnlyL = maskOnlyTurns[1].count(-1) 
+        maskOnlyMove = len(maskOnlyTurns)
         
         for title in (['Response Rate', 'Fraction Correct Given Response']): 
         
@@ -107,29 +142,49 @@ def plot_soa(data,ignoreNoRespAfter=None,showNogo=True):
                 plt.suptitle('Mask Center Screen (non-overlapping)')
             
             if title=='Response Rate':
-                ax.plot(maskOnset, respOnly[0]/totalTrials[0], 'ro-', lw=3, alpha=.7)  # right turning
-                ax.plot(maskOnset, respOnly[1]/totalTrials[1], 'bo-', lw=3, alpha=.7)  # left turning
-                 
-                ax.plot(0, (maskOnlyR/maskOnlyTotal), 'ro', ms=8)   
-                ax.plot(0, (maskOnlyL/maskOnlyTotal), 'bo', ms=8)
-                ax.plot(0, ((maskOnlyTotal-maskOnlyCorr)/maskOnlyTotal), 'ko')
+                ax.plot(maskOnset, respOnly[0]/totalTrials[0], 'bo-', lw=3, alpha=.7)  # left turning
+                ax.plot(maskOnset, respOnly[1]/totalTrials[1], 'ro-', lw=3, alpha=.7)  # right turning
                 
-               ### add counts as text at top
-               ### add catch trials to resp rate
+                #plot mask only for given mask position
+                ax.plot(5, (maskOnlyR/maskOnlyTotal), 'ro')   
+                ax.plot(5, (maskOnlyL/maskOnlyTotal), 'bo')
+                ax.plot(5, ((maskOnlyTotal-maskOnlyCorr)/maskOnlyTotal), 'ko')
+                
+                ax.plot(targetOnlyVal, targetOnlyResp[0]/targetOnlyTotals[0], 'bo')
+                ax.plot(targetOnlyVal, targetOnlyResp[1]/targetOnlyTotals[1], 'ro')
+               
+               ### add catch trials to resp rate??
+               ### add catch counts as text at top
+               
+                denom = totalTrials
+               
                
             elif title=='Fraction Correct Given Response':
-                ax.plot(maskOnset, hits[0]/respOnly[0], 'ro-', lw=3, alpha=.7)  #right turning
-                ax.plot(maskOnset, hits[1]/respOnly[1], 'bo-', lw=3, alpha=.7)  # left turning
+                ax.plot(maskOnset, hits[0]/respOnly[0], 'bo-', lw=3, alpha=.7)  # left turning
+                ax.plot(maskOnset, hits[1]/respOnly[1], 'ro-', lw=3, alpha=.7)  # right turning
     
-                 
-            formatFigure(fig, ax, xLabel='Mask Onset From Target Onset (ms)', yLabel=title, 
-                         title=str(d).split('_')[-3:-1])
+                ax.plot(targetOnlyVal, targetOnlyHit[0]/targetOnlyResp[0], 'bo')
+                ax.plot(targetOnlyVal, targetOnlyHit[1]/targetOnlyResp[1], 'ro')
+                
+                denom = respOnly
             
-            xticks = maskOnset
+            for x,Ltrials,Rtrials in zip(maskOnset, denom[0], denom[1]):   #denom[0]==L, denom[1]==R
+                    for y,n,clr in zip((1.03,1.08),[Rtrials, Ltrials],'rb'):
+                        fig.text(x,y,str(n),transform=ax.transData,color=clr,fontsize=10,ha='center',va='bottom')
+            
+            
+            formatFigure(fig, ax, xLabel='Mask Onset From Target Onset (ms)', yLabel=title) 
+                         
+            ax.set_title(str(d).split('_')[-3:-1], fontdict={'fontsize':10}, pad=10)
+            
+            xticks = np.append(maskOnset, targetOnlyVal)
+            xticks = np.insert(xticks, 0, 5)
             xticklabels = list(np.round(xticks).astype(int))
+            xticklabels[0] = 'Mask Only'
             xticklabels[-1] = 'Target Only'
     #        if title=='Response Rate':
     #            # add catch label to plot
+    #               x = 0
     #            xticks = np.concatenate((x,xticks))
     #            xticklabels = lbl+xticklabels
             ax.set_xticks(xticks)
